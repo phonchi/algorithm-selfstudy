@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>動態規劃 — Dynamic Programming（CLRS Ch14）</title>
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+  --node-white:#ffffff;--node-gray:#bdc3c7;--node-black:#34495e;
+  --node-current:#f39c12;--node-found:#16a085;--node-start:#9b59b6;
+  --edge-default:#95a5a6;--edge-tree:#27ae60;--edge-explore:#f39c12;--edge-mst:#1a6b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+
+/* Hero */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden;background:linear-gradient(170deg,#1a1a2e 0%,#2c3e7a 40%,#1a6b4a 100%);}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0%,transparent 40%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);}
+.hero-content{position:relative;z-index:1;max-width:860px;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#fff;letter-spacing:.04em;line-height:1.3;margin-bottom:1rem;}
+.hero h1 .green{color:#2ecc71;}
+.hero h1 .blue{color:#5dade2;}
+.hero h1 .orange{color:#f39c12;}
+.hero h1 .purple{color:#bb8fce;}
+.hero .subtitle{font-size:clamp(.95rem,2.2vw,1.2rem);color:rgba(255,255,255,.65);font-weight:300;margin-bottom:2rem;}
+.hero .big-formula{color:#2ecc71;background:rgba(0,0,0,.3);padding:.8rem 2rem;border-radius:12px;display:inline-block;border:1px solid rgba(255,255,255,.1);margin-bottom:2rem;backdrop-filter:blur(4px);font-size:1.05rem;}
+.scroll-hint{color:rgba(255,255,255,.4);font-size:.9rem;animation:bounce 2s infinite;}
+.scroll-hint span{display:block;font-size:1.4rem;margin-top:.3rem;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+
+/* Hero mini-graph illustration */
+.hero-graph{position:absolute;right:5%;top:50%;transform:translateY(-50%);opacity:.18;pointer-events:none;}
+@media(max-width:900px){.hero-graph{display:none;}}
+
+/* Layout */
+.container{max-width:1180px;margin:0 auto;padding:3rem 1.5rem;}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;line-height:1.4;}
+h3{font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:var(--accent2);margin:1.4rem 0 .8rem;}
+section{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--card-border);}
+section:last-of-type{border-bottom:none;}
+p{margin-bottom:1rem;}
+code{font-family:'JetBrains Mono',monospace;font-size:.92em;background:rgba(44,62,122,.08);padding:1px 6px;border-radius:4px;color:var(--accent2);}
+strong{color:var(--ink);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0 2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.toc-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.7rem;}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem .8rem;}
+.toc-grid a{color:var(--accent2);text-decoration:none;font-size:.9rem;padding:.3rem 0;display:flex;align-items:center;gap:.4rem;transition:color .2s;}
+.toc-grid a:hover{color:var(--accent);}
+.toc-grid a .toc-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);min-width:34px;}
+
+/* Viz layout */
+.viz-layout{display:grid;grid-template-columns:1fr 320px;gap:1.3rem;margin:1.2rem 0;align-items:start;}
+@media(max-width:900px){.viz-layout{grid-template-columns:1fr;}}
+
+.viz-panel{background:linear-gradient(160deg,#fffdf7 0%,#f4efe3 100%);border:1px solid var(--card-border);border-radius:12px;padding:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06);position:relative;}
+
+/* Graph SVG canvas */
+.graph-canvas{position:relative;width:100%;height:380px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #ececec;}
+.graph-canvas svg{width:100%;height:100%;display:block;}
+
+/* SVG elements styles */
+.graph-edge{stroke:var(--edge-default);stroke-width:2;fill:none;transition:stroke .25s, stroke-width .25s;}
+.graph-edge.tree{stroke:var(--edge-tree);stroke-width:3.5;}
+.graph-edge.exploring{stroke:var(--edge-explore);stroke-width:3.5;stroke-dasharray:5 4;animation:dash 1s linear infinite;}
+.graph-edge.mst{stroke:var(--edge-mst);stroke-width:4;}
+.graph-edge.path{stroke:var(--accent);stroke-width:4;}
+.graph-edge.dotted{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+.edge-label{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;fill:var(--ink);pointer-events:none;}
+.edge-label-bg{fill:#fafafa;stroke:#ececec;stroke-width:1;}
+
+.graph-node{cursor:pointer;}
+.graph-node circle{fill:var(--node-white);stroke:var(--ink);stroke-width:2;transition:fill .25s, stroke .25s, r .2s;}
+.graph-node.gray circle{fill:var(--node-gray);}
+.graph-node.black circle{fill:var(--node-black);stroke:var(--node-black);}
+.graph-node.current circle{fill:var(--node-current);stroke:#d68910;stroke-width:3;}
+.graph-node.start circle{fill:var(--node-start);stroke:#7d3c98;stroke-width:3;}
+.graph-node.found circle{fill:var(--node-found);stroke:#117a65;stroke-width:3;}
+.graph-node.in-mst circle{fill:#82e0aa;stroke:var(--accent3);stroke-width:3;}
+.graph-node text.node-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.graph-node.black text.node-key{fill:#fff;}
+.graph-node.current text.node-key{fill:#fff;}
+.graph-node.start text.node-key{fill:#fff;}
+.graph-node.found text.node-key{fill:#fff;}
+.graph-node text.node-meta{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;fill:var(--accent);text-anchor:middle;pointer-events:none;}
+
+/* Status banner */
+.status-banner{margin-top:.8rem;padding:.7rem 1rem;background:var(--code-bg);color:#fff;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;min-height:42px;display:flex;align-items:center;gap:.6rem;}
+.status-banner .status-icon{color:#2ecc71;font-weight:700;}
+.status-banner .status-text{flex:1;}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--card-border);}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-play{background:var(--accent3);color:#fff;}
+.btn-play:hover{background:#22845c;}
+.btn-play.active{background:var(--accent);}
+.btn-step{background:var(--accent2);color:#fff;}
+.btn-step:hover{background:#1f2e5f;}
+.btn-step:disabled{background:#ccc;cursor:not-allowed;}
+.btn-reset{background:var(--card-border);color:var(--ink);}
+.btn-reset:hover{background:#ccc;}
+.btn-toggle{background:var(--accent2);color:#fff;}
+.btn-toggle:hover{background:#1f2e5f;}
+.btn-toggle.off{background:#bbb;color:#555;}
+.btn-shuffle{background:#8e44ad;color:#fff;}
+.btn-shuffle:hover{background:#6c3485;}
+
+/* Slider row */
+.slider-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:var(--paper);border-radius:8px;margin-bottom:.5rem;}
+.slider-row .slider-label{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent2);font-weight:600;min-width:60px;}
+.slider-row input[type="range"]{flex:1;accent-color:var(--accent3);height:5px;cursor:pointer;}
+.slider-row .slider-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:600;min-width:60px;text-align:right;}
+
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:.85rem;}
+.info-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:.85rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.info-card .ic-title{font-size:.72rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;border-bottom:1px solid var(--card-border);padding-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;}
+.info-card .ic-title .ic-badge{font-size:.7rem;color:#fff;background:var(--accent3);padding:1px 7px;border-radius:3px;letter-spacing:.05em;font-weight:700;}
+.info-card .ic-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.83rem;padding:.2rem 0;}
+.info-card .ic-label{color:var(--muted);}
+.info-card .ic-value{color:var(--ink);font-weight:600;}
+.info-card .ic-value.highlight{color:var(--accent);}
+.info-card .ic-value.big{font-size:1.4rem;color:var(--accent2);}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.4rem;}
+.stat-tile{background:var(--paper);border-radius:8px;padding:.5rem .7rem;text-align:center;}
+.stat-tile .stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.stat-tile .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent2);}
+
+/* Queue / Stack / PQ visualization */
+.ds-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--paper);border-radius:6px;padding:.5rem .7rem;min-height:36px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px dashed var(--card-border);}
+.ds-display .ds-empty{color:var(--muted);font-style:italic;}
+.ds-item{background:var(--accent2);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+.ds-item.front{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.top{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.pq{background:var(--accent3);}
+.ds-item.pq.min{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-arrow{color:var(--muted);}
+
+/* Pseudo code */
+.pseudo-code{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;overflow-x:auto;}
+.pseudo-code .line{padding:1px 4px;border-radius:3px;display:block;white-space:pre;}
+.pseudo-code .line.active{background:rgba(243,156,18,.3);color:#fff;border-left:3px solid var(--node-current);padding-left:6px;}
+.pseudo-code .kw{color:#ff79c6;}
+.pseudo-code .fn{color:#50fa7b;}
+.pseudo-code .num{color:#bd93f9;}
+.pseudo-code .com{color:#6272a4;font-style:italic;}
+.pseudo-code .str{color:#f1fa8c;}
+
+/* Adjacency table */
+.adj-display{margin:.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.adj-matrix{border-collapse:collapse;margin:.5rem auto;}
+.adj-matrix td,.adj-matrix th{border:1px solid var(--card-border);padding:6px 10px;text-align:center;min-width:34px;background:#fff;}
+.adj-matrix th{background:var(--accent2);color:#fff;font-weight:700;}
+.adj-matrix td.zero{color:#ccc;}
+.adj-matrix td.nonzero{background:#eafaf1;color:var(--accent3);font-weight:700;}
+.adj-matrix td.highlight{background:#fff3cd;}
+.adj-list{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:.7rem 1rem;}
+.adj-list .adj-row{padding:3px 0;border-bottom:1px dashed var(--card-border);}
+.adj-list .adj-row:last-child{border-bottom:none;}
+.adj-list .adj-key{color:var(--accent);font-weight:700;display:inline-block;min-width:32px;}
+.adj-list .adj-arrow{color:var(--muted);margin:0 6px;}
+.adj-list .adj-neighbor{background:#eef2ff;color:var(--accent2);padding:1px 8px;border-radius:4px;margin:1px 3px;display:inline-block;font-weight:600;}
+
+/* Chess board for Knight's tour */
+.chess-board{display:grid;background:#fff;border:2px solid var(--ink);border-radius:6px;overflow:hidden;margin:.5rem auto;width:fit-content;}
+.chess-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:700;position:relative;transition:background .2s;}
+.chess-cell.light{background:#f0d9b5;color:#666;}
+.chess-cell.dark{background:#b58863;color:#fff;}
+.chess-cell.visited{background:#27ae60 !important;color:#fff;}
+.chess-cell.current{background:#f39c12 !important;color:#fff;box-shadow:inset 0 0 0 3px #d68910;}
+.chess-cell.start{background:#9b59b6 !important;color:#fff;}
+.chess-cell .knight{font-size:1.4em;line-height:1;}
+.chess-cell .step-num{font-size:.7em;}
+
+/* Info box */
+.info-box{background:#eef2ff;border:2px solid var(--accent2);border-radius:10px;padding:1.1rem 1.4rem;margin:1.3rem 0;position:relative;}
+.info-box .info-label{position:absolute;top:-11px;left:14px;background:var(--accent2);color:#fff;font-size:.74rem;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em;}
+.info-box.warm{background:#fef5e7;border-color:#d68910;}
+.info-box.warm .info-label{background:#d68910;}
+.info-box.green{background:#eafaf1;border-color:var(--accent3);}
+.info-box.green .info-label{background:var(--accent3);}
+.info-box.purple{background:#f4ecf7;border-color:#8e44ad;}
+.info-box.purple .info-label{background:#8e44ad;}
+
+/* Pill labels */
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:4px;margin:0 .15rem;vertical-align:1px;}
+.pill-blue{background:rgba(41,128,185,.12);color:#2980b9;border:1px solid rgba(41,128,185,.3);}
+.pill-red{background:rgba(192,57,43,.12);color:var(--accent);border:1px solid rgba(192,57,43,.3);}
+.pill-green{background:rgba(39,174,96,.12);color:var(--accent3);border:1px solid rgba(39,174,96,.3);}
+.pill-orange{background:rgba(243,156,18,.12);color:#d68910;border:1px solid rgba(243,156,18,.3);}
+.pill-purple{background:rgba(142,68,173,.12);color:#8e44ad;border:1px solid rgba(142,68,173,.3);}
+.pill-gray{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid rgba(0,0,0,.12);}
+
+/* Comparison table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.86rem;margin:.8rem 0;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.cmp-table th{background:var(--accent2);color:#fff;padding:.6rem .8rem;text-align:center;font-weight:600;font-size:.82rem;}
+.cmp-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--card-border);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.cmp-table td:first-child{font-family:'Noto Sans TC',sans-serif;color:var(--accent2);font-weight:600;text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:nth-child(even){background:rgba(0,0,0,.015);}
+.cmp-table .best{color:var(--accent3);font-weight:700;}
+.cmp-table .worst{color:var(--accent);font-weight:700;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+.legend-item{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;background:var(--paper);border-radius:5px;}
+.legend-item .lg-swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink);}
+.legend-item .lg-edge{width:18px;height:3px;border-radius:2px;}
+
+/* Quiz */
+.quiz-box{background:var(--card);border:2px solid var(--accent2);border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0;}
+.quiz-box .quiz-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0;}
+.quiz-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;background:var(--paper);border:2px solid var(--card-border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+.quiz-opt:hover{border-color:var(--accent2);}
+.quiz-opt .opt-letter{font-weight:700;color:var(--accent2);min-width:22px;}
+.quiz-opt.correct{background:#eafaf1;border-color:var(--accent3);}
+.quiz-opt.correct .opt-letter{color:var(--accent3);}
+.quiz-opt.wrong{background:#fef5e7;border-color:var(--accent);}
+.quiz-opt.wrong .opt-letter{color:var(--accent);}
+.quiz-feedback{margin-top:.7rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.correct{background:#eafaf1;color:var(--accent3);border-left:4px solid var(--accent3);}
+.quiz-feedback.wrong{background:#fef5e7;color:var(--accent);border-left:4px solid var(--accent);}
+
+/* Floating sidebar navigation */
+.float-nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px;background:rgba(255,253,250,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--card-border);border-radius:12px;padding:10px 7px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-family:'JetBrains Mono',monospace;max-height:88vh;overflow-y:auto;transition:padding .25s ease;}
+.float-nav .fn-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.68rem;color:var(--accent2);text-align:center;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--card-border);max-width:0;overflow:hidden;transition:max-width .25s ease;}
+.float-nav:hover .fn-title{max-width:220px;}
+.float-nav a{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;white-space:nowrap;transition:all .2s ease;border-left:3px solid transparent;}
+.float-nav a .fn-num{font-weight:700;font-size:.66rem;color:var(--muted);letter-spacing:.4px;flex-shrink:0;width:30px;text-align:left;}
+.float-nav a .fn-name{font-family:'Noto Sans TC',sans-serif;font-size:.76rem;font-weight:500;max-width:0;overflow:hidden;transition:max-width .25s ease,padding .25s ease;padding:0;}
+.float-nav:hover a .fn-name{max-width:220px;padding-left:2px;}
+.float-nav a:hover{background:var(--card);}
+.float-nav a.active{background:var(--accent2);color:#fff;border-left-color:var(--accent);box-shadow:0 2px 6px rgba(192,57,43,.25);}
+.float-nav a.active .fn-num{color:rgba(255,255,255,.85);}
+.float-nav a.active .fn-name{color:#fff;}
+.float-nav .fn-top{margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);justify-content:center;}
+.float-nav .fn-top .fn-num{width:auto;color:var(--accent2);font-size:.78rem;}
+@media(max-width:768px){
+  .float-nav{right:8px;top:auto;bottom:14px;transform:none;padding:6px 5px;max-height:70vh;}
+  .float-nav .fn-title{display:none;}
+  .float-nav a{padding:4px 7px;}
+  .float-nav a .fn-num{width:26px;font-size:.62rem;}
+}
+
+footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+
+/* Distance / table inside graph viz */
+.vert-table{margin-top:.6rem;width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.vert-table th,.vert-table td{padding:4px 6px;text-align:center;border:1px solid var(--card-border);}
+.vert-table th{background:var(--accent2);color:#fff;font-weight:600;font-size:.74rem;}
+.vert-table td.tcell-current{background:#fff3cd;font-weight:700;color:var(--accent);}
+.vert-table td.tcell-done{background:#eafaf1;color:var(--accent3);}
+.vert-table td.tcell-inf{color:#ccc;}
+.sec-badge{font-size:.6em;color:var(--muted);border:1px solid var(--card-border);background:var(--card);padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:.6rem;font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.02em;white-space:nowrap;}
+
+/* Phase 8 shared widgets */
+.bs-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:4px;min-height:180px;justify-content:flex-start;padding:.6rem;}
+.bs-item{width:110px;text-align:center;padding:.4rem .6rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.bs-hl{background:#f39c12;}
+.bs-toplabel,.bq-label{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bq-row{display:flex;align-items:center;gap:6px;min-height:64px;flex-wrap:wrap;padding:.4rem;}
+.bq-item{min-width:52px;text-align:center;padding:.45rem .5rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.char-strip{display:flex;gap:3px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;padding:.4rem 0;}
+.char-cell{min-width:30px;text-align:center;padding:.35rem .25rem;border:1px solid var(--card-border);border-radius:5px;background:var(--card);}
+.char-cur{background:#f39c12;color:#fff;border-color:#f39c12;}
+.char-done{background:#e8f5ec;color:#1a6b4a;border-color:#bfe3cd;}
+.char-bad{background:#c0392b;color:#fff;border-color:#c0392b;}
+.token-out{display:flex;gap:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;min-height:40px;padding:.3rem 0;}
+.tok{padding:.3rem .55rem;border-radius:5px;background:#2c3e7a;color:#fff;font-weight:600;}
+.tok-op{background:#8e44ad;}
+.tok-new{outline:3px solid #f39c12;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+<style>
+/* ===== 網站化附加樣式（study-guide / flashcards / chapter-nav）===== */
+.study-guide{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.2rem 1.4rem;margin:0 0 2.2rem;}
+.study-guide .sg-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.5rem;}
+.study-guide p{font-size:.92rem;margin-bottom:.5rem;}
+.study-guide .sg-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.study-guide .sg-links a{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;color:var(--accent2);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .85rem;text-decoration:none;transition:all .2s;}
+.study-guide .sg-links a:hover{background:var(--accent2);color:#fff;}
+.fc-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0 1.2rem;}
+.fc-controls button{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:1px solid var(--card-border);cursor:pointer;background:var(--card);color:var(--ink);transition:all .2s;}
+.fc-controls button:hover{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:.9rem;}
+.fc-card{perspective:900px;height:170px;cursor:pointer;}
+.fc-card .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+.fc-card .fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.9rem;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.fc-card .fc-front{background:linear-gradient(150deg,var(--accent2),var(--ink));color:#fff;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;letter-spacing:.02em;flex-direction:column;gap:.4rem;}
+.fc-card .fc-front .fc-hint{font-size:.62rem;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.1em;}
+.fc-card .fc-back{background:var(--card);border:2px solid var(--accent3);color:var(--ink);font-size:.78rem;line-height:1.55;transform:rotateY(180deg);overflow-y:auto;}
+.chapter-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:stretch;margin:2.5rem 0 1rem;}
+.chapter-nav a{display:block;border:1px solid var(--card-border);border-radius:12px;padding:.8rem 1.1rem;text-decoration:none;color:var(--ink);background:var(--card);transition:all .2s;}
+.chapter-nav a:hover{border-color:var(--accent2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.chapter-nav .nav-dir{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.2rem;}
+.chapter-nav .nav-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.95rem;color:var(--accent2);}
+.chapter-nav a.next{text-align:right;}
+.chapter-nav a.home{display:flex;flex-direction:column;justify-content:center;text-align:center;}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr;}}
+</style>
+<style>
+/* ===== 講義範例卡 ===== */
+.deck-extra{margin:1.2rem 0;}
+.deck-extra .dx-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:.4rem;}
+.deck-extra .dx-note{font-size:.9rem;margin-top:.6rem;}
+.expected-out{background:var(--card);border:1px solid var(--card-border);border-left:4px solid var(--accent3);border-radius:0 8px 8px 0;padding:.5rem .9rem;margin-top:.5rem;}
+.expected-out .eo-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--accent3);display:block;margin-bottom:.2rem;}
+.expected-out pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre-wrap;margin:0;}
+.warn-box{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.25);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem 1rem;margin:.8rem 0;font-size:.9rem;}
+.warn-box b{color:var(--accent);}
+</style>
+<style>
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
+</style>
+</head>
+<body>
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#framework" data-target="framework"><span class="fn-num">P00</span><span class="fn-name">DP 框架</span></a>
+  <a href="#rodcut" data-target="rodcut"><span class="fn-num">P01</span><span class="fn-name">rod cutting</span></a>
+  <a href="#lcs" data-target="lcs"><span class="fn-num">P02</span><span class="fn-name">LCS</span></a>
+  <a href="#knapsack" data-target="knapsack"><span class="fn-num">P03</span><span class="fn-name">0/1 knapsack</span></a>
+  <a href="#obst" data-target="obst"><span class="fn-num">P04</span><span class="fn-name">optimal BST</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="green">動態規劃</span>：把指數遞迴壓成多項式表格</h1>
+    <div class="subtitle">第 05 章 — Dynamic Programming（CLRS 4e Ch 14）</div>
+    <div class="big-formula">optimal substructure｜overlapping subproblems｜memoization｜bottom-up</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 14）</div>
+  <p>① 資結課的「找零錢」你已見過 memoization 的威力；本章把那次經驗升級成<strong>正式方法論</strong>：判斷兩大特徵、走四個步驟、寫出遞迴式再填表。
+  ② 各節都跟著同一套節奏：<strong>先寫遞迴式</strong>（考試最大配分）→ 決定填表順序 → 回溯重建解。
+  ③ LCS 填表動畫（P02）看熟後，務必手畫一次 5×5 的表——期中考的手跑題就長那樣。
+  ④ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#framework"><span class="toc-num">P00</span>DP 框架四步驟</a>
+    <a href="#rodcut"><span class="toc-num">P01</span>rod cutting</a>
+    <a href="#lcs"><span class="toc-num">P02</span>LCS 填表</a>
+    <a href="#knapsack"><span class="toc-num">P03</span>0/1 knapsack</a>
+    <a href="#obst"><span class="toc-num">P04</span>optimal BST</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="framework">
+  <div class="section-number">P00 · 框架</div>
+  <h2>什麼問題可以 DP？兩大特徵、四個步驟 <span class="sec-badge">§14.1、14.3</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>DP 不是一個演算法，是一種<strong>用空間換掉重複計算</strong>的設計方法。適用的問題要有兩個特徵：</p>
+      <div class="info-box">
+        <span class="info-label">兩大特徵</span>
+        ① <strong>最佳子結構（optimal substructure）</strong>：問題的最佳解包含子問題的最佳解——「剪下再貼上」論證：若子解不是最佳，換成更好的子解會得到更好的總解，矛盾。<br>
+        ② <strong>重疊子問題（overlapping subproblems）</strong>：naive 遞迴會一再解到<em>同一批</em>子問題（子問題總數是多項式，但遞迴樹是指數）——存起來就賺。
+      </div>
+      <div class="info-box green">
+        <span class="info-label">四個步驟（§14.3）</span>
+        ① 刻劃最佳解的<strong>結構</strong>　② 遞迴地<strong>定義最佳解的值</strong>（遞迴式！）<br>
+        ③ 計算值——<strong>bottom-up 填表</strong>或 <strong>top-down memoization</strong>　④ 由表格<strong>回溯建構解本身</strong>
+      </div>
+      <p>步驟②的遞迴式是靈魂：之後每個例子都先問「<strong>子問題是什麼？狀態怎麼定義？最後一步在哪裡分歧？</strong>」。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">vs 分治</div>
+        <div style="font-size:.85rem;line-height:1.8;">分治的子問題<strong>不重疊</strong>（merge sort 左右兩半獨立）→ 存表沒好處。DP 的子問題大量共用 → 存表把指數壓成多項式。</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">memo vs bottom-up</div>
+        <div style="font-size:.85rem;line-height:1.8;">同樣 Θ(子問題數 × 轉移成本)。<br>▸ memo：好寫、只算用到的格子。<br>▸ bottom-up：無遞迴開銷、順序明確、好回溯。課本與考試以 bottom-up 為主。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · 特徵判定</div>
+    <p>「無權圖的<strong>最長</strong>簡單路徑」為什麼<strong>不能</strong>直接套 DP（而最短路徑可以）？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。最長簡單路徑缺乏最佳子結構：q→t 的最長路徑接上 s→q 的最長路徑可能重複經過節點（「簡單」被破壞），子解不能自由拼裝。最短路徑的子路徑必是最短（剪貼論證成立），所以 DP 可用。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> 它沒有最佳子結構：子路徑拼起來可能不是簡單路徑</div>
+      <div class="quiz-opt" data-correct="false" data-fb="子問題重疊與否不是障礙（重疊反而是 DP 的甜蜜點）；問題出在子解拼不起來。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 它的子問題不重疊</div>
+      <div class="quiz-opt" data-correct="false" data-fb="狀態數不是本質問題——就算願意花指數空間，子結構性質壞掉就是壞掉（事實上最長簡單路徑是 NP-hard，Ch 34 見）。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 狀態太多，表格存不下</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="rodcut">
+  <div class="section-number">P01 · ROD CUTTING</div>
+  <h2>rod cutting：從 2ⁿ 次呼叫到 n² 格表 <span class="sec-badge">§14.1</span></h2>
+  <p>長度 n 的鋼條、價目表 p[1..n]，怎麼切收益最大？遞迴式（最後一步 = 第一刀切在 i）：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式</span>
+    r<sub>n</sub> = max<sub>1≤i≤n</sub> ( p<sub>i</sub> + r<sub>n−i</sub> )，r₀ = 0。
+    <br>naive 遞迴恰好呼叫 <strong>2ⁿ</strong> 次（每個子問題被重複解指數次）；
+    子問題其實只有 n+1 個 → 存起來，Θ(n²)（每格掃一輪 max）。
+  </div>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="slider-row">
+        <span class="slider-label">n =</span>
+        <input type="range" id="rcN" min="5" max="30" value="10" oninput="rcRender()">
+        <span class="slider-val" id="rcNVal">10</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-tile"><div class="stat-label">naive 呼叫數 2ⁿ</div><div class="stat-value" id="rcNaive" style="font-size:1.1rem;">—</div></div>
+        <div class="stat-tile"><div class="stat-label">bottom-up 轉移數</div><div class="stat-value" id="rcDp" style="font-size:1.1rem;">—</div></div>
+      </div>
+      <div class="status-banner" id="rcStatus"><span class="status-icon">▸</span><span class="status-text">拉動滑桿。n = 30 時 naive 要 10 億次呼叫，DP 只要 465 次轉移。</span></div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctRc">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctRc','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctRc','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctRc','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code">
+            <div class="cc-title"><span class="fn">BOTTOM-UP-CUT-ROD</span>(p, n)</div>
+            <span class="line"><span class="ln">1</span>r[0] = 0</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> j = 1 <span class="kw">to</span> n　<span class="com">// 由小到大解子問題</span></span>
+            <span class="line"><span class="ln">3</span>    q = −∞</span>
+            <span class="line"><span class="ln">4</span>    <span class="kw">for</span> i = 1 <span class="kw">to</span> j</span>
+            <span class="line"><span class="ln">5</span>        q = max(q, p[i] + r[j−i])</span>
+            <span class="line"><span class="ln">6</span>    r[j] = q</span>
+            <span class="line"><span class="ln">7</span><span class="kw">return</span> r[n]</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">1</span>; j &lt;= n; ++j) {</span><span class="line">    <span class="kw">int</span> q = -<span class="num">1</span>;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= j; ++i)</span><span class="line">        <span class="kw">if</span> (p[i] + r[j-i] &gt; q) {</span><span class="line">            q = p[i] + r[j-i]; s[j] = i;   <span class="com">// 記第一刀</span></span><span class="line">        }</span><span class="line">    r[j] = q;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（CLRS 圖 14.1 價目表，n = 10）</span><pre>naive = 30（遞迴呼叫 1024 次 = 2^n）
+bottom-up = 30，切法：10</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="com"># 官方 Chapter 14/cut_rod.py（MIT License）</span></span><span class="line"><span class="kw">def</span> <span class="fn">bottom_up_cut_rod</span>(p, n):</span><span class="line">    r = [<span class="num">0</span>] * (n + <span class="num">1</span>)</span><span class="line">    <span class="kw">for</span> j <span class="kw">in</span> range(<span class="num">1</span>, n + <span class="num">1</span>):</span><span class="line">        q = -float(<span class="str">'inf'</span>)</span><span class="line">        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, j + <span class="num">1</span>):</span><span class="line">            q = max(q, p[i] + r[j - i])</span><span class="line">        r[j] = q</span><span class="line">    <span class="kw">return</span> r[n]</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>bottom_up_cut_rod(10): 30</pre></div>
+          <div class="ct-note">官方檔另有 memoized_cut_rod 與 extended 版（含切法重建），對應課本全部四個版本。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 子問題計數</div>
+    <p>rod cutting 的 naive 遞迴是 Θ(2ⁿ)，但 DP 只要 Θ(n²)。指數差距被壓縮的根本原因是？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。相異子問題只有 r(0)…r(n) 共 n+1 個；naive 遞迴樹有 2ⁿ 個節點，代表同一子問題被重解指數次。記住每個子問題的答案 → 每個只解一次 × 每次 O(n) 轉移 = Θ(n²)。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 相異子問題只有 n+1 個，naive 把它們重解了指數次</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩者解的是同一個問題、同一條遞迴式——差別只在「有沒有記住算過的」。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> DP 用了更聰明的遞迴式</div>
+      <div class="quiz-opt" data-correct="false" data-fb="排序與此無關；rod cutting 從頭到尾沒有排序。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> DP 先排序了價目表</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="lcs">
+  <div class="section-number">P02 · LCS</div>
+  <h2>最長共同子序列：二維狀態的招牌題 <span class="sec-badge">§14.4</span></h2>
+  <p>X = ABCBDAB、Y = BDCABA，找最長的<strong>共同子序列</strong>（可跳字、不可換序）。
+  狀態 c[i][j] = X 前 i 個字與 Y 前 j 個字的 LCS 長度，看「最後一個字」分歧：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式（定理 14.1）</span>
+    c[i][j] = 0（i 或 j 為 0）；<br>
+    c[i][j] = c[i−1][j−1] + 1（xᵢ = yⱼ，↖ 配對）；<br>
+    c[i][j] = max(c[i−1][j], c[i][j−1])（xᵢ ≠ yⱼ，↑ 或 ← 取大）。
+  </div>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div style="overflow-x:auto;"><table class="adj-matrix" id="lcsTable" style="font-size:.72rem;"></table></div>
+      <div class="status-banner" id="lcsStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」逐格填表（row-major）。↖ = 配對成功。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="lcsPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="lcsPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="lcsPlayer.reset()">↺ 重來</button>
+        <div class="slider-row" style="flex:1;margin:0;">
+          <span class="slider-label">速度</span>
+          <input type="range" id="lcsDelay" min="80" max="900" value="260">
+        </div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctLcs">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctLcs','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctLcs','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctLcs','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">LCS-LENGTH</span>(X, Y, m, n) <span class="com">— 核心</span></div>
+            <span class="line"><span class="ln">1</span>首列首行清 0</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> m；<span class="kw">for</span> j = 1 <span class="kw">to</span> n</span>
+            <span class="line"><span class="ln">3</span>  <span class="kw">if</span> xᵢ == yⱼ：c[i][j] = c[i−1][j−1]+1　<span class="com">// ↖</span></span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">elseif</span> c[i−1][j] ≥ c[i][j−1]：↑</span>
+            <span class="line"><span class="ln">5</span>  <span class="kw">else</span>：←</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">for</span> (i = <span class="num">1</span>; i &lt;= m; ++i)</span><span class="line">  <span class="kw">for</span> (j = <span class="num">1</span>; j &lt;= n; ++j)</span><span class="line">    c[i][j] = (X[i-<span class="num">1</span>] == Y[j-<span class="num">1</span>])</span><span class="line">      ? c[i-<span class="num">1</span>][j-<span class="num">1</span>] + <span class="num">1</span></span><span class="line">      : std::max(c[i-<span class="num">1</span>][j], c[i][j-<span class="num">1</span>]);</span><span class="line"><span class="com">// 重建：從 c[m][n] 反向走，相等就收字、否則往大的走</span></span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>LCS 長度 = 4
+BCBA</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 14/longest_common_subsequence.py</span></span><span class="line">c, b = lcs_length(X, Y, len(X), len(Y))</span><span class="line">print_lcs(b, X, len(X), len(Y))</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出（X=ABCBDAB, Y=BDCABA）</span><pre>LCS 長度: 4
+BCBA</pre></div>
+          <div class="ct-note">官方版把方向表 b（↖↑←）分開存，print_lcs 遞迴回溯列印。</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">成本</div>
+        <div class="ic-row"><span class="ic-label">狀態數</span><span class="ic-value">Θ(mn)</span></div>
+        <div class="ic-row"><span class="ic-label">每格轉移</span><span class="ic-value">O(1)</span></div>
+        <div class="ic-row"><span class="ic-label">總計</span><span class="ic-value highlight">Θ(mn)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 讀表回溯</div>
+    <p>填完 LCS 表後要重建答案字串，正確的方法是？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。從 c[m][n] 出發：xᵢ = yⱼ 就收下這個字、走 ↖；否則往 c[i−1][j] 與 c[i][j−1] 中較大的那格走。走到邊界為止，收到的字反轉就是 LCS——表格記的「值」加上「怎麼來的」＝完整的解。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 從 c[m][n] 反向走：相等收字走 ↖，否則往較大鄰格</div>
+      <div class="quiz-opt" data-correct="false" data-fb="c[m][n] 只是長度；最大值必在右下角（值沿路遞增），掃整張表找 max 沒有意義。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 掃整張表找最大值的位置</div>
+      <div class="quiz-opt" data-correct="false" data-fb="從 c[1][1] 正向走無法判斷「這格有沒有貢獻最終解」——只有從終點反推才知道哪條路徑被採用。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 從 c[1][1] 正向走，遇相等就收字</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="knapsack">
+  <div class="section-number">P03 · 0/1 KNAPSACK</div>
+  <h2>0/1 背包：狀態 = (前 i 件, 容量 c) <span class="sec-badge">練習 14.4 系列</span></h2>
+  <p>n 件物品（重量 wᵢ、價值 vᵢ）、背包容量 W，每件<strong>拿或不拿</strong>。最後一步看第 i 件：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式</span>
+    dp[i][c] = max( dp[i−1][c]，dp[i−1][c−wᵢ] + vᵢ )（後者需 c ≥ wᵢ）；dp[0][·] = 0。
+    <br>Θ(nW) ——注意這是<strong>擬多項式（pseudo-polynomial）</strong>：W 是數值不是輸入長度，W 用二進位表示只佔 lg W 位元（Ch 34 再回來談這件事）。
+  </div>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="font-size:.8rem;">
+    <thead><tr><th>物品 i</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+    <tbody>
+      <tr><td>重量 wᵢ</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+      <tr><td>價值 vᵢ</td><td>3</td><td>4</td><td>5</td><td>8</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="code-tabs" id="ctKs">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctKs','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctKs','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctKs','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">KNAPSACK</span>(w, v, n, W)</div>
+        <span class="line"><span class="ln">1</span>dp[0][c] = 0 <span class="kw">for all</span> c</span>
+        <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> n</span>
+        <span class="line"><span class="ln">3</span>    <span class="kw">for</span> c = 0 <span class="kw">to</span> W</span>
+        <span class="line"><span class="ln">4</span>        dp[i][c] = dp[i−1][c]　<span class="com">// 不拿</span></span>
+        <span class="line"><span class="ln">5</span>        <span class="kw">if</span> c ≥ w[i]</span>
+        <span class="line"><span class="ln">6</span>            dp[i][c] = max(dp[i][c], dp[i−1][c−w[i]] + v[i])　<span class="com">// 拿</span></span>
+        <span class="line"><span class="ln">7</span><span class="kw">return</span> dp[n][W]</span>
+      </div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; ++i)</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> c = <span class="num">0</span>; c &lt;= W; ++c) {</span><span class="line">        dp[i][c] = dp[i-<span class="num">1</span>][c];                          <span class="com">// 不拿第 i 件</span></span><span class="line">        <span class="kw">if</span> (c &gt;= w[i-<span class="num">1</span>])</span><span class="line">            dp[i][c] = std::max(dp[i][c],</span><span class="line">                dp[i-<span class="num">1</span>][c - w[i-<span class="num">1</span>]] + v[i-<span class="num">1</span>]);          <span class="com">// 拿</span></span><span class="line">    }</span><span class="line"><span class="com">// 回溯：dp[i][c] ≠ dp[i-1][c] ⟺ 第 i 件被拿了</span></span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（W = 9）</span><pre>W = 9 最大價值 = 13，選物品：3 4</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="com"># 自寫簡例（官方 clrsPython 未附 knapsack）</span></span><span class="line"><span class="kw">def</span> <span class="fn">knapsack</span>(w, v, W):</span><span class="line">    n = len(w)</span><span class="line">    dp = [[<span class="num">0</span>] * (W + <span class="num">1</span>) <span class="kw">for</span> _ <span class="kw">in</span> range(n + <span class="num">1</span>)]</span><span class="line">    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, n + <span class="num">1</span>):</span><span class="line">        <span class="kw">for</span> c <span class="kw">in</span> range(W + <span class="num">1</span>):</span><span class="line">            dp[i][c] = dp[i-<span class="num">1</span>][c]</span><span class="line">            <span class="kw">if</span> c &gt;= w[i-<span class="num">1</span>]:</span><span class="line">                dp[i][c] = max(dp[i][c],</span><span class="line">                    dp[i-<span class="num">1</span>][c - w[i-<span class="num">1</span>]] + v[i-<span class="num">1</span>])</span><span class="line">    <span class="kw">return</span> dp[n][W]</span></div>
+      <div class="expected-out"><span class="eo-tag">輸出</span><pre>knapsack([2,3,4,5], [3,4,5,8], 9) = 13</pre></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 手算</div>
+    <p>上表（W = 9）的最佳解是 13（物品 3＋4）。若改成<strong>每件可拿無限個</strong>（unbounded），最佳值變成？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。unbounded 時轉移改為 dp[c] = max(dp[c], dp[c−wᵢ] + vᵢ)（同列可重複用）：物品 1 拿兩件＋物品 4 一件 = 重量 9、價值 3+3+8 = 14 > 13。一個條件改變（0/1 → 無限），遞迴式跟著變——狀態設計是 DP 的核心。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 14（物品 1×2＋物品 4）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="13 是 0/1 的答案；開放重複拿之後 2+2+5=9 的組合（3+3+8=14）更好。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 仍是 13</div>
+      <div class="quiz-opt" data-correct="false" data-fb="15 裝不下：湊 15 至少要 v=3 五件（重量 10）或其他超重組合。W=9 的上限是 14。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 15</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="obst">
+  <div class="section-number">P04 · OPTIMAL BST</div>
+  <h2>optimal BST：區間型 DP <span class="sec-badge">§14.5</span></h2>
+  <p>n 個鍵、已知每個鍵被查的機率 pᵢ（與查不到落在間隙的機率 qᵢ），建一棵<strong>期望搜尋成本最低</strong>的 BST。
+  高頻鍵不一定當根——重點是整棵樹的期望深度加權和。狀態是<strong>鍵的連續區間</strong>：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式（§14.5）</span>
+    e[i][j] = 區間 kᵢ..kⱼ 的最小期望成本
+    = min<sub>i≤r≤j</sub> ( e[i][r−1] + e[r+1][j] + w(i,j) )，
+    <br>其中 w(i,j) = Σp + Σq 是「整個區間深度 +1」的代價。
+    嘗試每個 r 當根 → Θ(n³)（n² 個區間 × 每區間 O(n) 個根）。
+  </div>
+  <p>與 rod cutting（一維）、LCS（二維前綴）不同，這是<strong>區間 DP</strong>：按「區間長度由小到大」填表。
+  同型的還有 matrix-chain multiplication（§14.2，官方 <code>matrix_chain_order</code>）——期中考最愛的手算題型之一。
+  用 CLRS 圖 14.9 的機率表驗證（官方實作）：</p>
+  <div class="expected-out"><span class="eo-tag">官方 optimal_BST 輸出（p = [.15,.10,.05,.10,.20]、q = [.05,.10,.05,.05,.05,.10]）</span><pre>期望搜尋成本 e[1][5] = 2.75
+整棵樹的根 root[1][5] = k2</pre></div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 區間 DP 的順序</div>
+    <p>optimal BST（或 matrix chain）填表時，為什麼要「按區間長度由小到大」而不是 row-major？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。e[i][j] 依賴 e[i][r−1] 與 e[r+1][j]——都是「嚴格更短」的區間。填表順序唯一的鐵律是：算一格之前它依賴的格子都要就緒；區間 DP 的依賴方向就是「短 → 長」。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 每格依賴的是所有更短的子區間，必須先算好</div>
+      <div class="quiz-opt" data-correct="false" data-fb="快慢相同（都是 Θ(n³)）；差別在正確性——row-major 會在子區間還沒算好時就要用它。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> 按長度填比較快</div>
+      <div class="quiz-opt" data-correct="false" data-fb="記憶體用量一樣是 Θ(n²) 整張表；順序不影響空間。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 可以省一半記憶體</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>自己設計狀態</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 狀態設計</div>
+    <p>「最長遞增子序列（LIS）」：a = ⟨10, 9, 2, 5, 3, 7, 101, 18⟩。O(n²) DP 的狀態定義哪個對？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。L[i] =「以 aᵢ 結尾的 LIS 長度」= 1 + max{L[j] : j < i 且 aⱼ < aᵢ}。「以 i 結尾」讓子問題可以拼接——這是序列 DP 最常用的狀態技巧。答案 = max L[i] = 4（2,3,7,18 或 2,5,7,18）。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> L[i] = 以 aᵢ 結尾的 LIS 長度</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「前 i 個元素的 LIS 長度」無法轉移：知道 L[i−1] = 3 不知道那條 LIS 結尾多大，無從判斷 aᵢ 能否接上——狀態資訊不足。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> L[i] = 前 i 個元素中 LIS 的長度</div>
+      <div class="quiz-opt" data-correct="false" data-fb="固定起點沒有幫助——LIS 不必從特定位置開始；「結尾在哪」才是拼接需要的資訊。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> L[i] = 從 a₁ 開始的 LIS 長度</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 空間優化</div>
+    <p>LCS 只需要「長度」不需要重建字串時，空間可以從 Θ(mn) 壓到多少？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。c[i][j] 只依賴上一列（i−1）與本列左邊——滾動兩列即可，Θ(min(m,n))。但要重建 LCS 字串就得留整張表（或用 Hirschberg 分治，進階）。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> Θ(min(m, n))：滾動陣列留兩列</div>
+      <div class="quiz-opt" data-correct="false" data-fb="O(1) 不夠——至少要一整列才能算下一列。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> O(1)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不需要整張表：轉移只看上一列與左鄰格，舊列可以覆蓋。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 壓不了，必須 Θ(mn)</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章 DP 題型速查</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.85rem;">
+    <thead><tr><th>問題</th><th>狀態</th><th>遞迴式核心</th><th>複雜度</th><th>型</th></tr></thead>
+    <tbody>
+      <tr><td>rod cutting</td><td>r[j]：長度 j</td><td>max(p[i] + r[j−i])</td><td>Θ(n²)</td><td>一維</td></tr>
+      <tr><td>LCS</td><td>c[i][j]：兩前綴</td><td>配對 ↖+1；否則 max(↑, ←)</td><td>Θ(mn)</td><td>二維前綴</td></tr>
+      <tr><td>0/1 knapsack</td><td>dp[i][c]：前 i 件、容量 c</td><td>max(不拿, 拿)</td><td>Θ(nW)＊</td><td>二維／擬多項式</td></tr>
+      <tr><td>matrix chain</td><td>m[i][j]：區間</td><td>min 切點 k</td><td>Θ(n³)</td><td>區間</td></tr>
+      <tr><td>optimal BST</td><td>e[i][j]：鍵區間</td><td>min 根 r + w(i,j)</td><td>Θ(n³)</td><td>區間</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① 兩大特徵：最佳子結構（剪貼論證）＋重疊子問題（相異子問題數是多項式）。<br>
+    ② 四步驟：結構 → 遞迴式 → 填表（bottom-up／memo）→ 回溯重建。<br>
+    ③ 狀態設計問三件事：子問題是什麼？最後一步在哪分歧？轉移需要哪些已算好的格子？<br>
+    ④ 填表順序 = 依賴方向：一維由小到大、二維 row-major、區間型按長度。<br>
+    ⑤ Θ(nW) 是擬多項式——對輸入「位元長度」而言仍是指數（Ch 34 的伏筆）。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch5.json · 12 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="structures.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">Hash、BST 與紅黑樹</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="greedy_amortized.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">貪婪與攤還分析</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 05 章 Dynamic Programming（CLRS 4e Ch 14）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"動態規劃（Dynamic Programming）","back":"把問題拆成重疊的子問題，每個子問題只解一次並存表，用空間換掉指數級的重複計算。適用條件：最佳子結構＋重疊子問題。"},
+  {"front":"最佳子結構（Optimal Substructure）","back":"問題的最佳解包含其子問題的最佳解。用「剪下貼上」論證：若子解非最佳，替換之會得到更好的總解，矛盾。"},
+  {"front":"重疊子問題（Overlapping Subproblems）","back":"naive 遞迴會重複解到同一批子問題：相異子問題總數是多項式，但遞迴樹是指數。DP 的加速空間全在這裡。"},
+  {"front":"記憶化（Memoization）","back":"top-down：保留原本的遞迴結構，第一次算完就把答案存進表，之後直接查。只計算真正用到的子問題。"},
+  {"front":"bottom-up 填表","back":"把子問題按依賴順序（小 → 大）逐一算完存表。無遞迴開銷、順序明確、方便回溯重建解。與 memoization 漸近成本相同。"},
+  {"front":"切桿問題（Rod Cutting）","back":"rₙ = max(pᵢ + r₍ₙ₋ᵢ₎)。naive 遞迴 2ⁿ 次呼叫；相異子問題僅 n+1 個 → bottom-up Θ(n²)。DP 入門的一維範例。"},
+  {"front":"最長共同子序列（LCS）","back":"c[i][j]：xᵢ=yⱼ 時 ↖+1，否則 max(↑,←)。Θ(mn) 填表；從 c[m][n] 反向回溯重建字串。二維前綴 DP 的招牌。"},
+  {"front":"0/1 背包（0/1 Knapsack）","back":"dp[i][c] = max(不拿 dp[i−1][c]，拿 dp[i−1][c−wᵢ]+vᵢ)。Θ(nW) 為擬多項式：W 是數值，位元長度意義下仍指數。"},
+  {"front":"擬多項式時間（Pseudo-polynomial）","back":"執行時間對輸入的「數值大小」是多項式，但對「輸入位元長度」是指數。0/1 背包的 Θ(nW) 是典型；與 NP-completeness 的弱 NP-hard 概念相關。"},
+  {"front":"區間 DP（Interval DP）","back":"狀態是連續區間 [i, j]，轉移枚舉分割點；填表按區間長度由小到大。matrix chain（Θ(n³)）與 optimal BST 都是此型。"},
+  {"front":"矩陣鏈乘法（Matrix-Chain Multiplication）","back":"m[i][j] = min over k of m[i][k] + m[k+1][j] + p₍ᵢ₋₁₎pₖpⱼ：括號化順序使乘法次數最少。Θ(n³) 區間 DP。"},
+  {"front":"回溯重建（Solution Reconstruction）","back":"DP 表存的是最佳「值」；重建解要嘛額外存決策表（s、b 表），要嘛從終點反推「這格是哪個選擇轉移來的」。"}
+];
+
+/* ---------- P01 rod cutting 計數 ---------- */
+function rcRender() {
+  const n = parseInt($('rcN').value, 10);
+  $('rcNVal').textContent = n;
+  const naive = Math.pow(2, n);
+  $('rcNaive').textContent = naive >= 1e9 ? naive.toExponential(2).replace('e+','×10^') : naive.toLocaleString('en-US');
+  $('rcDp').textContent = (n * (n + 1) / 2).toLocaleString('en-US');
+  setStatus('rcStatus', `n = ${n}：naive 呼叫 2^${n} 次；bottom-up 只有 n(n+1)/2 = ${n*(n+1)/2} 次轉移。相異子問題只有 ${n+1} 個。`);
+}
+rcRender();
+
+/* ---------- P02 LCS 填表動畫 ---------- */
+function lcsFrames() {
+  const X = 'ABCBDAB', Y = 'BDCABA';
+  const m = X.length, n = Y.length;
+  const c = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  const dir = Array.from({length: m+1}, () => new Array(n+1).fill(''));
+  const frames = [{c: c.map(r=>[...r]), dir: dir.map(r=>[...r]), cur: null,
+    msg: '首列首行 = 0（空字串的 LCS 長度）。開始 row-major 填表。'}];
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++) {
+      let msg;
+      if (X[i-1] === Y[j-1]) {
+        c[i][j] = c[i-1][j-1] + 1; dir[i][j] = '↖';
+        msg = `X[${i}]=${X[i-1]} = Y[${j}]=${Y[j-1]}：配對！c = c[↖] + 1 = ${c[i][j]}。`;
+      } else if (c[i-1][j] >= c[i][j-1]) {
+        c[i][j] = c[i-1][j]; dir[i][j] = '↑';
+        msg = `${X[i-1]} ≠ ${Y[j-1]}：取 max(↑ ${c[i-1][j]}, ← ${c[i][j-1]}) = ${c[i][j]}（↑）。`;
+      } else {
+        c[i][j] = c[i][j-1]; dir[i][j] = '←';
+        msg = `${X[i-1]} ≠ ${Y[j-1]}：取 max(↑ ${c[i-1][j]}, ← ${c[i][j-1]}) = ${c[i][j]}（←）。`;
+      }
+      frames.push({c: c.map(r=>[...r]), dir: dir.map(r=>[...r]), cur: [i, j], msg});
+    }
+  frames.push({c: c.map(r=>[...r]), dir: dir.map(r=>[...r]), cur: null,
+    msg: `完成：LCS 長度 = c[${m}][${n}] = ${c[m][n]}。沿 ↖ 反向回溯得 BCBA。`});
+  return frames;
+}
+function lcsApply(f) {
+  const X = 'ABCBDAB', Y = 'BDCABA';
+  const tbl = $('lcsTable');
+  let html = '<tr><th></th><th>j=0</th>' + [...Y].map(ch => `<th>${ch}</th>`).join('') + '</tr>';
+  for (let i = 0; i <= X.length; i++) {
+    html += `<tr><th>${i === 0 ? 'i=0' : X[i-1]}</th>`;
+    for (let j = 0; j <= Y.length; j++) {
+      const isCur = f.cur && f.cur[0] === i && f.cur[1] === j;
+      const filled = i === 0 || j === 0 || f.dir[i][j] !== '';
+      const cls = isCur ? 'highlight' : (filled && f.c[i][j] > 0 ? 'nonzero' : (filled ? 'zero' : ''));
+      html += `<td class="${cls}">${filled ? (f.dir[i][j] ? f.dir[i][j] + f.c[i][j] : f.c[i][j]) : ''}</td>`;
+    }
+    html += '</tr>';
+  }
+  tbl.innerHTML = html;
+  setStatus('lcsStatus', f.msg);
+}
+const lcsPlayer = new Player({frames: lcsFrames(), apply: lcsApply, delayInput: null});
+lcsPlayer.delayInput = $('lcsDelay');
+lcsPlayer.reset();
+</script>
+<script>
+/* ============ shared utilities ============ */
+const $ = id => document.getElementById(id);
+
+function quizCheck(quizId, optEl) {
+  const isCorrect = optEl.dataset.correct === 'true';
+  optEl.parentElement.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct','wrong'));
+  optEl.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = $(quizId + 'Feedback');
+  fb.classList.remove('correct','wrong');
+  fb.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  fb.innerHTML = (isCorrect ? '<strong>正確 ✓</strong> ' : '<strong>不對 ✗</strong> ') + (optEl.dataset.fb || '');
+}
+
+function hlLine(rootId, n) {
+  const root = $(rootId);
+  if (!root) return;
+  root.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+  if (n != null) {
+    const line = root.querySelector(`.line[data-l="${n}"]`);
+    if (line) line.classList.add('active');
+  }
+}
+
+/* step player: frames = [{...}], apply(frame) renders */
+class Player {
+  constructor({frames, apply, delayInput, onDone}) {
+    this.frames = frames; this.apply = apply;
+    this.delayInput = delayInput; this.i = -1; this.timer = null;
+    this.onDone = onDone || (()=>{});
+  }
+  step() {
+    if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+    this.i += 1; this.apply(this.frames[this.i]);
+  }
+  play() {
+    this.stop();
+    const tick = () => {
+      if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+      this.step();
+      this.timer = setTimeout(tick, this.delayInput ? parseInt(this.delayInput.value,10) : 700);
+    };
+    tick();
+  }
+  stop() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  reset() { this.stop(); this.i = -1; if (this.frames.length) this.apply(this.frames[0]); }
+}
+
+function setStatus(id, html) {
+  const el = $(id); if (el) el.querySelector('.status-text').innerHTML = html;
+}
+
+/* vertical box stack renderer (DOM) */
+function renderBoxStack(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  const hl = opts.highlight ?? -1;   // index from top (0 = top)
+  el.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bs-toplabel';
+  label.textContent = items.length ? 'top ↓' : '(empty)';
+  el.appendChild(label);
+  items.slice().reverse().forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bs-item' + (idx === hl ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+
+/* horizontal queue renderer: front at left */
+function renderBoxQueue(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  el.innerHTML = '';
+  const front = document.createElement('div');
+  front.className = 'bq-label'; front.textContent = items.length ? 'front →' : '(empty)';
+  el.appendChild(front);
+  items.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item' + (idx === (opts.highlight ?? -1) ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  const rear = document.createElement('div');
+  rear.className = 'bq-label'; rear.textContent = items.length ? '← rear' : '';
+  el.appendChild(rear);
+}
+
+/* floating nav scroll spy */
+(function setupNav() {
+  const nav = $('floatNav');
+  const links = nav.querySelectorAll('a[data-target]');
+  const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
+  function update() {
+    const y = window.scrollY + window.innerHeight * 0.3;
+    let active = sections[0]?.id;
+    for (const s of sections) if (s.offsetTop <= y) active = s.id;
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+[
+ {
+  "front": "動態規劃（Dynamic Programming）",
+  "back": "把問題拆成重疊的子問題，每個子問題只解一次並存表，用空間換掉指數級的重複計算。適用條件：最佳子結構＋重疊子問題。"
+ },
+ {
+  "front": "最佳子結構（Optimal Substructure）",
+  "back": "問題的最佳解包含其子問題的最佳解。用「剪下貼上」論證：若子解非最佳，替換之會得到更好的總解，矛盾。"
+ },
+ {
+  "front": "重疊子問題（Overlapping Subproblems）",
+  "back": "naive 遞迴會重複解到同一批子問題：相異子問題總數是多項式，但遞迴樹是指數。DP 的加速空間全在這裡。"
+ },
+ {
+  "front": "記憶化（Memoization）",
+  "back": "top-down：保留原本的遞迴結構，第一次算完就把答案存進表，之後直接查。只計算真正用到的子問題。"
+ },
+ {
+  "front": "bottom-up 填表",
+  "back": "把子問題按依賴順序（小 → 大）逐一算完存表。無遞迴開銷、順序明確、方便回溯重建解。與 memoization 漸近成本相同。"
+ },
+ {
+  "front": "切桿問題（Rod Cutting）",
+  "back": "rₙ = max(pᵢ + r₍ₙ₋ᵢ₎)。naive 遞迴 2ⁿ 次呼叫；相異子問題僅 n+1 個 → bottom-up Θ(n²)。DP 入門的一維範例。"
+ },
+ {
+  "front": "最長共同子序列（LCS）",
+  "back": "c[i][j]：xᵢ=yⱼ 時 ↖+1，否則 max(↑,←)。Θ(mn) 填表；從 c[m][n] 反向回溯重建字串。二維前綴 DP 的招牌。"
+ },
+ {
+  "front": "0/1 背包（0/1 Knapsack）",
+  "back": "dp[i][c] = max(不拿 dp[i−1][c]，拿 dp[i−1][c−wᵢ]+vᵢ)。Θ(nW) 為擬多項式：W 是數值，位元長度意義下仍指數。"
+ },
+ {
+  "front": "擬多項式時間（Pseudo-polynomial）",
+  "back": "執行時間對輸入的「數值大小」是多項式，但對「輸入位元長度」是指數。0/1 背包的 Θ(nW) 是典型；與 NP-completeness 的弱 NP-hard 概念相關。"
+ },
+ {
+  "front": "區間 DP（Interval DP）",
+  "back": "狀態是連續區間 [i, j]，轉移枚舉分割點；填表按區間長度由小到大。matrix chain（Θ(n³)）與 optimal BST 都是此型。"
+ },
+ {
+  "front": "矩陣鏈乘法（Matrix-Chain Multiplication）",
+  "back": "m[i][j] = min over k of m[i][k] + m[k+1][j] + p₍ᵢ₋₁₎pₖpⱼ：括號化順序使乘法次數最少。Θ(n³) 區間 DP。"
+ },
+ {
+  "front": "回溯重建（Solution Reconstruction）",
+  "back": "DP 表存的是最佳「值」；重建解要嘛額外存決策表（s、b 表），要嘛從終點反推「這格是哪個選擇轉移來的」。"
+ }
+]

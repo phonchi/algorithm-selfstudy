@@ -1,0 +1,463 @@
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#framework" data-target="framework"><span class="fn-num">P00</span><span class="fn-name">DP 框架</span></a>
+  <a href="#rodcut" data-target="rodcut"><span class="fn-num">P01</span><span class="fn-name">rod cutting</span></a>
+  <a href="#lcs" data-target="lcs"><span class="fn-num">P02</span><span class="fn-name">LCS</span></a>
+  <a href="#knapsack" data-target="knapsack"><span class="fn-num">P03</span><span class="fn-name">0/1 knapsack</span></a>
+  <a href="#obst" data-target="obst"><span class="fn-num">P04</span><span class="fn-name">optimal BST</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="green">動態規劃</span>：把指數遞迴壓成多項式表格</h1>
+    <div class="subtitle">第 05 章 — Dynamic Programming（CLRS 4e Ch 14）</div>
+    <div class="big-formula">optimal substructure｜overlapping subproblems｜memoization｜bottom-up</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 14）</div>
+  <p>① 資結課的「找零錢」你已見過 memoization 的威力；本章把那次經驗升級成<strong>正式方法論</strong>：判斷兩大特徵、走四個步驟、寫出遞迴式再填表。
+  ② 各節都跟著同一套節奏：<strong>先寫遞迴式</strong>（考試最大配分）→ 決定填表順序 → 回溯重建解。
+  ③ LCS 填表動畫（P02）看熟後，務必手畫一次 5×5 的表——期中考的手跑題就長那樣。
+  ④ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#framework"><span class="toc-num">P00</span>DP 框架四步驟</a>
+    <a href="#rodcut"><span class="toc-num">P01</span>rod cutting</a>
+    <a href="#lcs"><span class="toc-num">P02</span>LCS 填表</a>
+    <a href="#knapsack"><span class="toc-num">P03</span>0/1 knapsack</a>
+    <a href="#obst"><span class="toc-num">P04</span>optimal BST</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="framework">
+  <div class="section-number">P00 · 框架</div>
+  <h2>什麼問題可以 DP？兩大特徵、四個步驟 <span class="sec-badge">§14.1、14.3</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>DP 不是一個演算法，是一種<strong>用空間換掉重複計算</strong>的設計方法。適用的問題要有兩個特徵：</p>
+      <div class="info-box">
+        <span class="info-label">兩大特徵</span>
+        ① <strong>最佳子結構（optimal substructure）</strong>：問題的最佳解包含子問題的最佳解——「剪下再貼上」論證：若子解不是最佳，換成更好的子解會得到更好的總解，矛盾。<br>
+        ② <strong>重疊子問題（overlapping subproblems）</strong>：naive 遞迴會一再解到<em>同一批</em>子問題（子問題總數是多項式，但遞迴樹是指數）——存起來就賺。
+      </div>
+      <div class="info-box green">
+        <span class="info-label">四個步驟（§14.3）</span>
+        ① 刻劃最佳解的<strong>結構</strong>　② 遞迴地<strong>定義最佳解的值</strong>（遞迴式！）<br>
+        ③ 計算值——<strong>bottom-up 填表</strong>或 <strong>top-down memoization</strong>　④ 由表格<strong>回溯建構解本身</strong>
+      </div>
+      <p>步驟②的遞迴式是靈魂：之後每個例子都先問「<strong>子問題是什麼？狀態怎麼定義？最後一步在哪裡分歧？</strong>」。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">vs 分治</div>
+        <div style="font-size:.85rem;line-height:1.8;">分治的子問題<strong>不重疊</strong>（merge sort 左右兩半獨立）→ 存表沒好處。DP 的子問題大量共用 → 存表把指數壓成多項式。</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">memo vs bottom-up</div>
+        <div style="font-size:.85rem;line-height:1.8;">同樣 Θ(子問題數 × 轉移成本)。<br>▸ memo：好寫、只算用到的格子。<br>▸ bottom-up：無遞迴開銷、順序明確、好回溯。課本與考試以 bottom-up 為主。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · 特徵判定</div>
+    <p>「無權圖的<strong>最長</strong>簡單路徑」為什麼<strong>不能</strong>直接套 DP（而最短路徑可以）？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。最長簡單路徑缺乏最佳子結構：q→t 的最長路徑接上 s→q 的最長路徑可能重複經過節點（「簡單」被破壞），子解不能自由拼裝。最短路徑的子路徑必是最短（剪貼論證成立），所以 DP 可用。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> 它沒有最佳子結構：子路徑拼起來可能不是簡單路徑</div>
+      <div class="quiz-opt" data-correct="false" data-fb="子問題重疊與否不是障礙（重疊反而是 DP 的甜蜜點）；問題出在子解拼不起來。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 它的子問題不重疊</div>
+      <div class="quiz-opt" data-correct="false" data-fb="狀態數不是本質問題——就算願意花指數空間，子結構性質壞掉就是壞掉（事實上最長簡單路徑是 NP-hard，Ch 34 見）。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 狀態太多，表格存不下</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="rodcut">
+  <div class="section-number">P01 · ROD CUTTING</div>
+  <h2>rod cutting：從 2ⁿ 次呼叫到 n² 格表 <span class="sec-badge">§14.1</span></h2>
+  <p>長度 n 的鋼條、價目表 p[1..n]，怎麼切收益最大？遞迴式（最後一步 = 第一刀切在 i）：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式</span>
+    r<sub>n</sub> = max<sub>1≤i≤n</sub> ( p<sub>i</sub> + r<sub>n−i</sub> )，r₀ = 0。
+    <br>naive 遞迴恰好呼叫 <strong>2ⁿ</strong> 次（每個子問題被重複解指數次）；
+    子問題其實只有 n+1 個 → 存起來，Θ(n²)（每格掃一輪 max）。
+  </div>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="slider-row">
+        <span class="slider-label">n =</span>
+        <input type="range" id="rcN" min="5" max="30" value="10" oninput="rcRender()">
+        <span class="slider-val" id="rcNVal">10</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-tile"><div class="stat-label">naive 呼叫數 2ⁿ</div><div class="stat-value" id="rcNaive" style="font-size:1.1rem;">—</div></div>
+        <div class="stat-tile"><div class="stat-label">bottom-up 轉移數</div><div class="stat-value" id="rcDp" style="font-size:1.1rem;">—</div></div>
+      </div>
+      <div class="status-banner" id="rcStatus"><span class="status-icon">▸</span><span class="status-text">拉動滑桿。n = 30 時 naive 要 10 億次呼叫，DP 只要 465 次轉移。</span></div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctRc">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctRc','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctRc','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctRc','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code">
+            <div class="cc-title"><span class="fn">BOTTOM-UP-CUT-ROD</span>(p, n)</div>
+            <span class="line"><span class="ln">1</span>r[0] = 0</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> j = 1 <span class="kw">to</span> n　<span class="com">// 由小到大解子問題</span></span>
+            <span class="line"><span class="ln">3</span>    q = −∞</span>
+            <span class="line"><span class="ln">4</span>    <span class="kw">for</span> i = 1 <span class="kw">to</span> j</span>
+            <span class="line"><span class="ln">5</span>        q = max(q, p[i] + r[j−i])</span>
+            <span class="line"><span class="ln">6</span>    r[j] = q</span>
+            <span class="line"><span class="ln">7</span><span class="kw">return</span> r[n]</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">1</span>; j &lt;= n; ++j) {</span><span class="line">    <span class="kw">int</span> q = -<span class="num">1</span>;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= j; ++i)</span><span class="line">        <span class="kw">if</span> (p[i] + r[j-i] &gt; q) {</span><span class="line">            q = p[i] + r[j-i]; s[j] = i;   <span class="com">// 記第一刀</span></span><span class="line">        }</span><span class="line">    r[j] = q;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（CLRS 圖 14.1 價目表，n = 10）</span><pre>naive = 30（遞迴呼叫 1024 次 = 2^n）
+bottom-up = 30，切法：10</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="com"># 官方 Chapter 14/cut_rod.py（MIT License）</span></span><span class="line"><span class="kw">def</span> <span class="fn">bottom_up_cut_rod</span>(p, n):</span><span class="line">    r = [<span class="num">0</span>] * (n + <span class="num">1</span>)</span><span class="line">    <span class="kw">for</span> j <span class="kw">in</span> range(<span class="num">1</span>, n + <span class="num">1</span>):</span><span class="line">        q = -float(<span class="str">'inf'</span>)</span><span class="line">        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, j + <span class="num">1</span>):</span><span class="line">            q = max(q, p[i] + r[j - i])</span><span class="line">        r[j] = q</span><span class="line">    <span class="kw">return</span> r[n]</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>bottom_up_cut_rod(10): 30</pre></div>
+          <div class="ct-note">官方檔另有 memoized_cut_rod 與 extended 版（含切法重建），對應課本全部四個版本。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 子問題計數</div>
+    <p>rod cutting 的 naive 遞迴是 Θ(2ⁿ)，但 DP 只要 Θ(n²)。指數差距被壓縮的根本原因是？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。相異子問題只有 r(0)…r(n) 共 n+1 個；naive 遞迴樹有 2ⁿ 個節點，代表同一子問題被重解指數次。記住每個子問題的答案 → 每個只解一次 × 每次 O(n) 轉移 = Θ(n²)。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 相異子問題只有 n+1 個，naive 把它們重解了指數次</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩者解的是同一個問題、同一條遞迴式——差別只在「有沒有記住算過的」。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> DP 用了更聰明的遞迴式</div>
+      <div class="quiz-opt" data-correct="false" data-fb="排序與此無關；rod cutting 從頭到尾沒有排序。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> DP 先排序了價目表</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="lcs">
+  <div class="section-number">P02 · LCS</div>
+  <h2>最長共同子序列：二維狀態的招牌題 <span class="sec-badge">§14.4</span></h2>
+  <p>X = ABCBDAB、Y = BDCABA，找最長的<strong>共同子序列</strong>（可跳字、不可換序）。
+  狀態 c[i][j] = X 前 i 個字與 Y 前 j 個字的 LCS 長度，看「最後一個字」分歧：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式（定理 14.1）</span>
+    c[i][j] = 0（i 或 j 為 0）；<br>
+    c[i][j] = c[i−1][j−1] + 1（xᵢ = yⱼ，↖ 配對）；<br>
+    c[i][j] = max(c[i−1][j], c[i][j−1])（xᵢ ≠ yⱼ，↑ 或 ← 取大）。
+  </div>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div style="overflow-x:auto;"><table class="adj-matrix" id="lcsTable" style="font-size:.72rem;"></table></div>
+      <div class="status-banner" id="lcsStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」逐格填表（row-major）。↖ = 配對成功。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="lcsPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="lcsPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="lcsPlayer.reset()">↺ 重來</button>
+        <div class="slider-row" style="flex:1;margin:0;">
+          <span class="slider-label">速度</span>
+          <input type="range" id="lcsDelay" min="80" max="900" value="260">
+        </div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctLcs">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctLcs','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctLcs','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctLcs','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">LCS-LENGTH</span>(X, Y, m, n) <span class="com">— 核心</span></div>
+            <span class="line"><span class="ln">1</span>首列首行清 0</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> m；<span class="kw">for</span> j = 1 <span class="kw">to</span> n</span>
+            <span class="line"><span class="ln">3</span>  <span class="kw">if</span> xᵢ == yⱼ：c[i][j] = c[i−1][j−1]+1　<span class="com">// ↖</span></span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">elseif</span> c[i−1][j] ≥ c[i][j−1]：↑</span>
+            <span class="line"><span class="ln">5</span>  <span class="kw">else</span>：←</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">for</span> (i = <span class="num">1</span>; i &lt;= m; ++i)</span><span class="line">  <span class="kw">for</span> (j = <span class="num">1</span>; j &lt;= n; ++j)</span><span class="line">    c[i][j] = (X[i-<span class="num">1</span>] == Y[j-<span class="num">1</span>])</span><span class="line">      ? c[i-<span class="num">1</span>][j-<span class="num">1</span>] + <span class="num">1</span></span><span class="line">      : std::max(c[i-<span class="num">1</span>][j], c[i][j-<span class="num">1</span>]);</span><span class="line"><span class="com">// 重建：從 c[m][n] 反向走，相等就收字、否則往大的走</span></span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>LCS 長度 = 4
+BCBA</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 14/longest_common_subsequence.py</span></span><span class="line">c, b = lcs_length(X, Y, len(X), len(Y))</span><span class="line">print_lcs(b, X, len(X), len(Y))</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出（X=ABCBDAB, Y=BDCABA）</span><pre>LCS 長度: 4
+BCBA</pre></div>
+          <div class="ct-note">官方版把方向表 b（↖↑←）分開存，print_lcs 遞迴回溯列印。</div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">成本</div>
+        <div class="ic-row"><span class="ic-label">狀態數</span><span class="ic-value">Θ(mn)</span></div>
+        <div class="ic-row"><span class="ic-label">每格轉移</span><span class="ic-value">O(1)</span></div>
+        <div class="ic-row"><span class="ic-label">總計</span><span class="ic-value highlight">Θ(mn)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 讀表回溯</div>
+    <p>填完 LCS 表後要重建答案字串，正確的方法是？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。從 c[m][n] 出發：xᵢ = yⱼ 就收下這個字、走 ↖；否則往 c[i−1][j] 與 c[i][j−1] 中較大的那格走。走到邊界為止，收到的字反轉就是 LCS——表格記的「值」加上「怎麼來的」＝完整的解。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 從 c[m][n] 反向走：相等收字走 ↖，否則往較大鄰格</div>
+      <div class="quiz-opt" data-correct="false" data-fb="c[m][n] 只是長度；最大值必在右下角（值沿路遞增），掃整張表找 max 沒有意義。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 掃整張表找最大值的位置</div>
+      <div class="quiz-opt" data-correct="false" data-fb="從 c[1][1] 正向走無法判斷「這格有沒有貢獻最終解」——只有從終點反推才知道哪條路徑被採用。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 從 c[1][1] 正向走，遇相等就收字</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="knapsack">
+  <div class="section-number">P03 · 0/1 KNAPSACK</div>
+  <h2>0/1 背包：狀態 = (前 i 件, 容量 c) <span class="sec-badge">練習 14.4 系列</span></h2>
+  <p>n 件物品（重量 wᵢ、價值 vᵢ）、背包容量 W，每件<strong>拿或不拿</strong>。最後一步看第 i 件：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式</span>
+    dp[i][c] = max( dp[i−1][c]，dp[i−1][c−wᵢ] + vᵢ )（後者需 c ≥ wᵢ）；dp[0][·] = 0。
+    <br>Θ(nW) ——注意這是<strong>擬多項式（pseudo-polynomial）</strong>：W 是數值不是輸入長度，W 用二進位表示只佔 lg W 位元（Ch 34 再回來談這件事）。
+  </div>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="font-size:.8rem;">
+    <thead><tr><th>物品 i</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead>
+    <tbody>
+      <tr><td>重量 wᵢ</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+      <tr><td>價值 vᵢ</td><td>3</td><td>4</td><td>5</td><td>8</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="code-tabs" id="ctKs">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctKs','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctKs','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctKs','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">KNAPSACK</span>(w, v, n, W)</div>
+        <span class="line"><span class="ln">1</span>dp[0][c] = 0 <span class="kw">for all</span> c</span>
+        <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> n</span>
+        <span class="line"><span class="ln">3</span>    <span class="kw">for</span> c = 0 <span class="kw">to</span> W</span>
+        <span class="line"><span class="ln">4</span>        dp[i][c] = dp[i−1][c]　<span class="com">// 不拿</span></span>
+        <span class="line"><span class="ln">5</span>        <span class="kw">if</span> c ≥ w[i]</span>
+        <span class="line"><span class="ln">6</span>            dp[i][c] = max(dp[i][c], dp[i−1][c−w[i]] + v[i])　<span class="com">// 拿</span></span>
+        <span class="line"><span class="ln">7</span><span class="kw">return</span> dp[n][W]</span>
+      </div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; ++i)</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> c = <span class="num">0</span>; c &lt;= W; ++c) {</span><span class="line">        dp[i][c] = dp[i-<span class="num">1</span>][c];                          <span class="com">// 不拿第 i 件</span></span><span class="line">        <span class="kw">if</span> (c &gt;= w[i-<span class="num">1</span>])</span><span class="line">            dp[i][c] = std::max(dp[i][c],</span><span class="line">                dp[i-<span class="num">1</span>][c - w[i-<span class="num">1</span>]] + v[i-<span class="num">1</span>]);          <span class="com">// 拿</span></span><span class="line">    }</span><span class="line"><span class="com">// 回溯：dp[i][c] ≠ dp[i-1][c] ⟺ 第 i 件被拿了</span></span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（W = 9）</span><pre>W = 9 最大價值 = 13，選物品：3 4</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="com"># 自寫簡例（官方 clrsPython 未附 knapsack）</span></span><span class="line"><span class="kw">def</span> <span class="fn">knapsack</span>(w, v, W):</span><span class="line">    n = len(w)</span><span class="line">    dp = [[<span class="num">0</span>] * (W + <span class="num">1</span>) <span class="kw">for</span> _ <span class="kw">in</span> range(n + <span class="num">1</span>)]</span><span class="line">    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, n + <span class="num">1</span>):</span><span class="line">        <span class="kw">for</span> c <span class="kw">in</span> range(W + <span class="num">1</span>):</span><span class="line">            dp[i][c] = dp[i-<span class="num">1</span>][c]</span><span class="line">            <span class="kw">if</span> c &gt;= w[i-<span class="num">1</span>]:</span><span class="line">                dp[i][c] = max(dp[i][c],</span><span class="line">                    dp[i-<span class="num">1</span>][c - w[i-<span class="num">1</span>]] + v[i-<span class="num">1</span>])</span><span class="line">    <span class="kw">return</span> dp[n][W]</span></div>
+      <div class="expected-out"><span class="eo-tag">輸出</span><pre>knapsack([2,3,4,5], [3,4,5,8], 9) = 13</pre></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 手算</div>
+    <p>上表（W = 9）的最佳解是 13（物品 3＋4）。若改成<strong>每件可拿無限個</strong>（unbounded），最佳值變成？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。unbounded 時轉移改為 dp[c] = max(dp[c], dp[c−wᵢ] + vᵢ)（同列可重複用）：物品 1 拿兩件＋物品 4 一件 = 重量 9、價值 3+3+8 = 14 > 13。一個條件改變（0/1 → 無限），遞迴式跟著變——狀態設計是 DP 的核心。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 14（物品 1×2＋物品 4）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="13 是 0/1 的答案；開放重複拿之後 2+2+5=9 的組合（3+3+8=14）更好。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 仍是 13</div>
+      <div class="quiz-opt" data-correct="false" data-fb="15 裝不下：湊 15 至少要 v=3 五件（重量 10）或其他超重組合。W=9 的上限是 14。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 15</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="obst">
+  <div class="section-number">P04 · OPTIMAL BST</div>
+  <h2>optimal BST：區間型 DP <span class="sec-badge">§14.5</span></h2>
+  <p>n 個鍵、已知每個鍵被查的機率 pᵢ（與查不到落在間隙的機率 qᵢ），建一棵<strong>期望搜尋成本最低</strong>的 BST。
+  高頻鍵不一定當根——重點是整棵樹的期望深度加權和。狀態是<strong>鍵的連續區間</strong>：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式（§14.5）</span>
+    e[i][j] = 區間 kᵢ..kⱼ 的最小期望成本
+    = min<sub>i≤r≤j</sub> ( e[i][r−1] + e[r+1][j] + w(i,j) )，
+    <br>其中 w(i,j) = Σp + Σq 是「整個區間深度 +1」的代價。
+    嘗試每個 r 當根 → Θ(n³)（n² 個區間 × 每區間 O(n) 個根）。
+  </div>
+  <p>與 rod cutting（一維）、LCS（二維前綴）不同，這是<strong>區間 DP</strong>：按「區間長度由小到大」填表。
+  同型的還有 matrix-chain multiplication（§14.2，官方 <code>matrix_chain_order</code>）——期中考最愛的手算題型之一。
+  用 CLRS 圖 14.9 的機率表驗證（官方實作）：</p>
+  <div class="expected-out"><span class="eo-tag">官方 optimal_BST 輸出（p = [.15,.10,.05,.10,.20]、q = [.05,.10,.05,.05,.05,.10]）</span><pre>期望搜尋成本 e[1][5] = 2.75
+整棵樹的根 root[1][5] = k2</pre></div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 區間 DP 的順序</div>
+    <p>optimal BST（或 matrix chain）填表時，為什麼要「按區間長度由小到大」而不是 row-major？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。e[i][j] 依賴 e[i][r−1] 與 e[r+1][j]——都是「嚴格更短」的區間。填表順序唯一的鐵律是：算一格之前它依賴的格子都要就緒；區間 DP 的依賴方向就是「短 → 長」。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 每格依賴的是所有更短的子區間，必須先算好</div>
+      <div class="quiz-opt" data-correct="false" data-fb="快慢相同（都是 Θ(n³)）；差別在正確性——row-major 會在子區間還沒算好時就要用它。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> 按長度填比較快</div>
+      <div class="quiz-opt" data-correct="false" data-fb="記憶體用量一樣是 Θ(n²) 整張表；順序不影響空間。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 可以省一半記憶體</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>自己設計狀態</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 狀態設計</div>
+    <p>「最長遞增子序列（LIS）」：a = ⟨10, 9, 2, 5, 3, 7, 101, 18⟩。O(n²) DP 的狀態定義哪個對？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。L[i] =「以 aᵢ 結尾的 LIS 長度」= 1 + max{L[j] : j < i 且 aⱼ < aᵢ}。「以 i 結尾」讓子問題可以拼接——這是序列 DP 最常用的狀態技巧。答案 = max L[i] = 4（2,3,7,18 或 2,5,7,18）。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> L[i] = 以 aᵢ 結尾的 LIS 長度</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「前 i 個元素的 LIS 長度」無法轉移：知道 L[i−1] = 3 不知道那條 LIS 結尾多大，無從判斷 aᵢ 能否接上——狀態資訊不足。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> L[i] = 前 i 個元素中 LIS 的長度</div>
+      <div class="quiz-opt" data-correct="false" data-fb="固定起點沒有幫助——LIS 不必從特定位置開始；「結尾在哪」才是拼接需要的資訊。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> L[i] = 從 a₁ 開始的 LIS 長度</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 空間優化</div>
+    <p>LCS 只需要「長度」不需要重建字串時，空間可以從 Θ(mn) 壓到多少？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。c[i][j] 只依賴上一列（i−1）與本列左邊——滾動兩列即可，Θ(min(m,n))。但要重建 LCS 字串就得留整張表（或用 Hirschberg 分治，進階）。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> Θ(min(m, n))：滾動陣列留兩列</div>
+      <div class="quiz-opt" data-correct="false" data-fb="O(1) 不夠——至少要一整列才能算下一列。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> O(1)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不需要整張表：轉移只看上一列與左鄰格，舊列可以覆蓋。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 壓不了，必須 Θ(mn)</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章 DP 題型速查</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.85rem;">
+    <thead><tr><th>問題</th><th>狀態</th><th>遞迴式核心</th><th>複雜度</th><th>型</th></tr></thead>
+    <tbody>
+      <tr><td>rod cutting</td><td>r[j]：長度 j</td><td>max(p[i] + r[j−i])</td><td>Θ(n²)</td><td>一維</td></tr>
+      <tr><td>LCS</td><td>c[i][j]：兩前綴</td><td>配對 ↖+1；否則 max(↑, ←)</td><td>Θ(mn)</td><td>二維前綴</td></tr>
+      <tr><td>0/1 knapsack</td><td>dp[i][c]：前 i 件、容量 c</td><td>max(不拿, 拿)</td><td>Θ(nW)＊</td><td>二維／擬多項式</td></tr>
+      <tr><td>matrix chain</td><td>m[i][j]：區間</td><td>min 切點 k</td><td>Θ(n³)</td><td>區間</td></tr>
+      <tr><td>optimal BST</td><td>e[i][j]：鍵區間</td><td>min 根 r + w(i,j)</td><td>Θ(n³)</td><td>區間</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① 兩大特徵：最佳子結構（剪貼論證）＋重疊子問題（相異子問題數是多項式）。<br>
+    ② 四步驟：結構 → 遞迴式 → 填表（bottom-up／memo）→ 回溯重建。<br>
+    ③ 狀態設計問三件事：子問題是什麼？最後一步在哪分歧？轉移需要哪些已算好的格子？<br>
+    ④ 填表順序 = 依賴方向：一維由小到大、二維 row-major、區間型按長度。<br>
+    ⑤ Θ(nW) 是擬多項式——對輸入「位元長度」而言仍是指數（Ch 34 的伏筆）。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch5.json · 12 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="structures.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">Hash、BST 與紅黑樹</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="greedy_amortized.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">貪婪與攤還分析</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 05 章 Dynamic Programming（CLRS 4e Ch 14）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"動態規劃（Dynamic Programming）","back":"把問題拆成重疊的子問題，每個子問題只解一次並存表，用空間換掉指數級的重複計算。適用條件：最佳子結構＋重疊子問題。"},
+  {"front":"最佳子結構（Optimal Substructure）","back":"問題的最佳解包含其子問題的最佳解。用「剪下貼上」論證：若子解非最佳，替換之會得到更好的總解，矛盾。"},
+  {"front":"重疊子問題（Overlapping Subproblems）","back":"naive 遞迴會重複解到同一批子問題：相異子問題總數是多項式，但遞迴樹是指數。DP 的加速空間全在這裡。"},
+  {"front":"記憶化（Memoization）","back":"top-down：保留原本的遞迴結構，第一次算完就把答案存進表，之後直接查。只計算真正用到的子問題。"},
+  {"front":"bottom-up 填表","back":"把子問題按依賴順序（小 → 大）逐一算完存表。無遞迴開銷、順序明確、方便回溯重建解。與 memoization 漸近成本相同。"},
+  {"front":"切桿問題（Rod Cutting）","back":"rₙ = max(pᵢ + r₍ₙ₋ᵢ₎)。naive 遞迴 2ⁿ 次呼叫；相異子問題僅 n+1 個 → bottom-up Θ(n²)。DP 入門的一維範例。"},
+  {"front":"最長共同子序列（LCS）","back":"c[i][j]：xᵢ=yⱼ 時 ↖+1，否則 max(↑,←)。Θ(mn) 填表；從 c[m][n] 反向回溯重建字串。二維前綴 DP 的招牌。"},
+  {"front":"0/1 背包（0/1 Knapsack）","back":"dp[i][c] = max(不拿 dp[i−1][c]，拿 dp[i−1][c−wᵢ]+vᵢ)。Θ(nW) 為擬多項式：W 是數值，位元長度意義下仍指數。"},
+  {"front":"擬多項式時間（Pseudo-polynomial）","back":"執行時間對輸入的「數值大小」是多項式，但對「輸入位元長度」是指數。0/1 背包的 Θ(nW) 是典型；與 NP-completeness 的弱 NP-hard 概念相關。"},
+  {"front":"區間 DP（Interval DP）","back":"狀態是連續區間 [i, j]，轉移枚舉分割點；填表按區間長度由小到大。matrix chain（Θ(n³)）與 optimal BST 都是此型。"},
+  {"front":"矩陣鏈乘法（Matrix-Chain Multiplication）","back":"m[i][j] = min over k of m[i][k] + m[k+1][j] + p₍ᵢ₋₁₎pₖpⱼ：括號化順序使乘法次數最少。Θ(n³) 區間 DP。"},
+  {"front":"回溯重建（Solution Reconstruction）","back":"DP 表存的是最佳「值」；重建解要嘛額外存決策表（s、b 表），要嘛從終點反推「這格是哪個選擇轉移來的」。"}
+];
+
+/* ---------- P01 rod cutting 計數 ---------- */
+function rcRender() {
+  const n = parseInt($('rcN').value, 10);
+  $('rcNVal').textContent = n;
+  const naive = Math.pow(2, n);
+  $('rcNaive').textContent = naive >= 1e9 ? naive.toExponential(2).replace('e+','×10^') : naive.toLocaleString('en-US');
+  $('rcDp').textContent = (n * (n + 1) / 2).toLocaleString('en-US');
+  setStatus('rcStatus', `n = ${n}：naive 呼叫 2^${n} 次；bottom-up 只有 n(n+1)/2 = ${n*(n+1)/2} 次轉移。相異子問題只有 ${n+1} 個。`);
+}
+rcRender();
+
+/* ---------- P02 LCS 填表動畫 ---------- */
+function lcsFrames() {
+  const X = 'ABCBDAB', Y = 'BDCABA';
+  const m = X.length, n = Y.length;
+  const c = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  const dir = Array.from({length: m+1}, () => new Array(n+1).fill(''));
+  const frames = [{c: c.map(r=>[...r]), dir: dir.map(r=>[...r]), cur: null,
+    msg: '首列首行 = 0（空字串的 LCS 長度）。開始 row-major 填表。'}];
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++) {
+      let msg;
+      if (X[i-1] === Y[j-1]) {
+        c[i][j] = c[i-1][j-1] + 1; dir[i][j] = '↖';
+        msg = `X[${i}]=${X[i-1]} = Y[${j}]=${Y[j-1]}：配對！c = c[↖] + 1 = ${c[i][j]}。`;
+      } else if (c[i-1][j] >= c[i][j-1]) {
+        c[i][j] = c[i-1][j]; dir[i][j] = '↑';
+        msg = `${X[i-1]} ≠ ${Y[j-1]}：取 max(↑ ${c[i-1][j]}, ← ${c[i][j-1]}) = ${c[i][j]}（↑）。`;
+      } else {
+        c[i][j] = c[i][j-1]; dir[i][j] = '←';
+        msg = `${X[i-1]} ≠ ${Y[j-1]}：取 max(↑ ${c[i-1][j]}, ← ${c[i][j-1]}) = ${c[i][j]}（←）。`;
+      }
+      frames.push({c: c.map(r=>[...r]), dir: dir.map(r=>[...r]), cur: [i, j], msg});
+    }
+  frames.push({c: c.map(r=>[...r]), dir: dir.map(r=>[...r]), cur: null,
+    msg: `完成：LCS 長度 = c[${m}][${n}] = ${c[m][n]}。沿 ↖ 反向回溯得 BCBA。`});
+  return frames;
+}
+function lcsApply(f) {
+  const X = 'ABCBDAB', Y = 'BDCABA';
+  const tbl = $('lcsTable');
+  let html = '<tr><th></th><th>j=0</th>' + [...Y].map(ch => `<th>${ch}</th>`).join('') + '</tr>';
+  for (let i = 0; i <= X.length; i++) {
+    html += `<tr><th>${i === 0 ? 'i=0' : X[i-1]}</th>`;
+    for (let j = 0; j <= Y.length; j++) {
+      const isCur = f.cur && f.cur[0] === i && f.cur[1] === j;
+      const filled = i === 0 || j === 0 || f.dir[i][j] !== '';
+      const cls = isCur ? 'highlight' : (filled && f.c[i][j] > 0 ? 'nonzero' : (filled ? 'zero' : ''));
+      html += `<td class="${cls}">${filled ? (f.dir[i][j] ? f.dir[i][j] + f.c[i][j] : f.c[i][j]) : ''}</td>`;
+    }
+    html += '</tr>';
+  }
+  tbl.innerHTML = html;
+  setStatus('lcsStatus', f.msg);
+}
+const lcsPlayer = new Player({frames: lcsFrames(), apply: lcsApply, delayInput: null});
+lcsPlayer.delayInput = $('lcsDelay');
+lcsPlayer.reset();
+</script>
