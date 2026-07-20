@@ -1,0 +1,443 @@
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#augment" data-target="augment"><span class="fn-num">P00</span><span class="fn-name">擴充資料結構</span></a>
+  <a href="#btree" data-target="btree"><span class="fn-num">P01</span><span class="fn-name">B-tree</span></a>
+  <a href="#fib" data-target="fib"><span class="fn-num">P02</span><span class="fn-name">Fibonacci heap</span></a>
+  <a href="#lp" data-target="lp"><span class="fn-num">P03</span><span class="fn-name">線性規劃</span></a>
+  <a href="#strmatch" data-target="strmatch"><span class="fn-num">P04</span><span class="fn-name">字串比對 KMP</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="purple">進階主題</span>：<span class="green">補充教材</span></h1>
+    <div class="subtitle">第 11 章（補充頁）— Augmenting、B-Trees、Fibonacci Heaps、LP、String Matching（CLRS 4e Ch 17–18、29、32）</div>
+    <div class="big-formula">size 欄位｜2t−1 鍵分裂｜O(1) decrease-key｜可行域頂點｜前綴函數 π</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（全頁補充教材）</div>
+  <p>① 本頁五個主題<strong>不在授課與考試範圍</strong>——它們是課堂主線的自然延伸，供進階自學、專題與面試準備。
+  ② 讀的時機：擴充資料結構接在紅黑樹之後；B-tree 是資料庫/檔案系統的必備常識；Fibonacci heap 解釋 Prim/Dijkstra 成本表裡「另一行更快的數字」哪裡來；LP 是最佳化的共同語言；KMP 是字串比對的經典。
+  ③ 每節獨立、可跳著讀；quiz 與<a href="#cards">詞彙卡</a>照舊。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#augment"><span class="toc-num">P00</span>擴充資料結構（OS-tree／區間樹）</a>
+    <a href="#btree"><span class="toc-num">P01</span>B-tree：為磁碟而生</a>
+    <a href="#fib"><span class="toc-num">P02</span>Fibonacci heap 概覽</a>
+    <a href="#lp"><span class="toc-num">P03</span>線性規劃概念</a>
+    <a href="#strmatch"><span class="toc-num">P04</span>字串比對：KMP</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="augment">
+  <div class="section-number">P00 · AUGMENTING</div>
+  <h2>擴充資料結構：舊樹掛新欄位 <span class="sec-badge">Ch 17 · 補充</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>不發明新結構，在紅黑樹的每個節點<strong>多掛一個欄位</strong>就解鎖新操作。
+      經典範例 <strong>order-statistic tree</strong>：掛 <code>size</code>（子樹節點數）→
+      <strong>OS-SELECT</strong>（第 i 小）與 <strong>OS-RANK</strong>（某鍵排第幾）都是 O(lg n)。</p>
+      <div class="thm-box">
+        <div class="thm-label">方法論（定理 17.1）</div>
+        <div style="font-size:.86rem;line-height:1.7;">
+        若欄位 f(x) 只需要 <strong>x、x.left、x.right 的資訊</strong>就能算出，
+        插入/刪除/旋轉時就能 O(1) 局部修復、整體維護仍 O(lg n)。
+        size = size(左) + size(右) + 1 ✓；反之「x 的全域名次」直接掛會壞——插入最小鍵時全部名次都要改。</div>
+      </div>
+      <p style="font-size:.9rem;color:var(--muted);">同框架的第二個範例<strong>區間樹</strong>：掛 max（子樹內最大右端點），INTERVAL-SEARCH 找「與 [lo, hi] 重疊的區間」O(lg n)——行程衝突偵測的核心。</p>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctOs">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctOs','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctOs','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctOs','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">OS-SELECT</span>(x, i) <span class="com">// 第 i 小</span></div>
+            <span class="line"><span class="ln">1</span>r = x.left.size + 1　<span class="com">// x 在子樹內的名次</span></span>
+            <span class="line"><span class="ln">2</span><span class="kw">if</span> i == r：<span class="kw">return</span> x</span>
+            <span class="line"><span class="ln">3</span><span class="kw">if</span> i &lt; r：<span class="kw">return</span> <span class="fn">OS-SELECT</span>(x.left, i)</span>
+            <span class="line"><span class="ln">4</span><span class="kw">else</span>：<span class="kw">return</span> <span class="fn">OS-SELECT</span>(x.right, i − r)</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">Node* <span class="fn">osSelect</span>(Node* x, <span class="kw">int</span> i) {</span><span class="line">    <span class="kw">int</span> r = sz(x-&gt;l) + <span class="num">1</span>;</span><span class="line">    <span class="kw">if</span> (i == r) <span class="kw">return</span> x;</span><span class="line">    <span class="kw">return</span> i &lt; r ? <span class="fn">osSelect</span>(x-&gt;l, i)</span><span class="line">                 : <span class="fn">osSelect</span>(x-&gt;r, i - r);</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/os_tree.cpp，18 個鍵）</span><pre>OS-SELECT(root, 10) = 21（第 10 小的鍵）
+OS-RANK(38) = 15
+root 的 size = 18（= 全部 18 個鍵）</pre></div>
+          <div class="ct-note">示範版掛在未平衡 BST 上聚焦 size 欄位；課本掛紅黑樹保證 O(lg n)。</div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 17/order_statistic_tree.py（MIT License，掛在紅黑樹上）</span></span><span class="line">T = OrderStatisticTree()</span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> keys: T.tree_insert(k)</span><span class="line">T.OS_select(T.get_root(), <span class="num">10</span>).data</span><span class="line">T.OS_Rank(T.search(T.get_root(), <span class="num">38</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出（同一組 18 鍵）</span><pre>OS-SELECT(root, 10) = 21
+OS-RANK(38) = 15</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · 哪個欄位掛得動</div>
+    <p>想在紅黑樹每個節點多掛一個欄位，下列哪個<strong>能</strong>以 O(lg n) 插入維護？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。子樹鍵總和 = 左總和 + 右總和 + 自己的鍵——只依賴 x 與兩個孩子，符合定理 17.1，旋轉時 O(1) 修復。順帶解鎖「前 i 小的總和」這類查詢。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> 子樹內所有鍵的總和</div>
+      <div class="quiz-opt" data-correct="false" data-fb="全域名次不滿足「只看自己與孩子」：插入一個最小鍵，全樹每個節點的名次都 +1——O(n) 欄位要改。正解是掛 size、名次用 OS-RANK 現場算。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 該節點在全樹的名次</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「距離根的深度」依賴祖先而非子樹：旋轉會讓整棵子樹的深度整批改變，違反定理 17.1 的局部性。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 該節點的深度</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="btree">
+  <div class="section-number">P01 · B-TREE</div>
+  <h2>B-tree：為磁碟而生的矮胖樹 <span class="sec-badge">Ch 18 · 補充</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>記憶體的樹在乎比較次數；磁碟的樹在乎 <strong>I/O 次數</strong>——讀一個節點 = 一次磁碟讀取（毫秒級，比 CPU 慢百萬倍）。
+      B-tree 把節點撐大：<strong>最小分支度 t</strong>，每節點 t−1 ~ 2t−1 個鍵、t ~ 2t 個孩子，一個節點塞滿一個磁碟頁。</p>
+      <div class="thm-box">
+        <div class="thm-label">高度定理（定理 18.1）</div>
+        <div style="font-size:.86rem;line-height:1.7;">
+        n 個鍵的 B-tree 高度 h ≤ log<sub>t</sub>((n+1)/2)。
+        資料庫等級 t = 1000：<strong>10 億個鍵高度 ≤ 3</strong>——三次磁碟讀取碰到任何資料。
+        紅黑樹同樣資料高度約 30，磁碟上是 10 倍的 I/O。</div>
+      </div>
+      <p>插入的靈魂是 <strong>split-child</strong>：路過全滿節點（2t−1 鍵）先分裂——中位鍵上浮、剩下對半拆；
+      根分裂是 B-tree <strong>唯一長高</strong>的方式（往上長，永遠全葉同深）。</p>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctBt">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctBt','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctBt','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctBt','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">B-TREE-SPLIT-CHILD</span>(x, i)</div>
+            <span class="line"><span class="ln">1</span>y = x.c<sub>i</sub>（滿：2t−1 鍵）；新節點 z</span>
+            <span class="line"><span class="ln">2</span>z 接收 y 的後 t−1 個鍵（與後 t 個孩子）</span>
+            <span class="line"><span class="ln">3</span>y 剩前 t−1 個鍵</span>
+            <span class="line"><span class="ln">4</span>y 的中位鍵上浮插入 x；z 成為 x 的新孩子</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// t = 2（2-3-4 樹），插入 F S Q K C L H T V W M R N</span></span><span class="line"><span class="kw">char</span> mid = y-&gt;keys[T - <span class="num">1</span>];</span><span class="line">z-&gt;keys.assign(y-&gt;keys.begin() + T, y-&gt;keys.end());</span><span class="line">y-&gt;keys.resize(T - <span class="num">1</span>);</span><span class="line">x-&gt;keys.insert(x-&gt;keys.begin() + i, mid);  <span class="com">// 上浮</span></span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/btree.cpp）</span><pre>split：Q 上浮
+split：F 上浮
+split：T 上浮
+split：Q 上浮
+split：K 上浮
+第 0 層：[Q]
+第 1 層：[F K] [T]
+第 2 層：[C] [H] [L M N] [R S] [V W]</pre></div>
+          <div class="ct-note">逐層讀：C F H K L M N Q R S T V W——中序展開正是 13 個鍵的排序。</div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 18/b_tree.py（MIT License）</span></span><span class="line">B = BTree(<span class="num">2</span>)　<span class="com"># t = 2</span></span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> <span class="str">"FSQKCLHTVWMRN"</span>: B.insert(k)</span><span class="line">B.search(B.root, <span class="str">"R"</span>)</span></div>
+          <div class="expected-out"><span class="eo-tag">說明</span><pre>官方版含 disk_read/disk_write 掛勾——
+點出「每個節點一次 I/O」的成本模型</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 數量級直覺</div>
+    <p>t = 501 的 B-tree（每節點最多 1000 個鍵），存 10⁹ 個鍵大約要讀幾個節點才能找到目標？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。h ≤ log₅₀₁((10⁹+1)/2) ≈ 3.2 → 樹高 3 上下；每層一次磁碟讀取，3~4 次 I/O 定位任何鍵。這就是所有資料庫索引（B+tree 變體）的立身之本。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 3~4 個</div>
+      <div class="quiz-opt" data-correct="false" data-fb="30 是「二元」平衡樹的高度（lg 10⁹ ≈ 30）——B-tree 撐大分支度正是為了砍掉這 10 倍 I/O。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 約 30 個</div>
+      <div class="quiz-opt" data-correct="false" data-fb="1000 是單一節點內的鍵數上限——節點內的搜尋在記憶體裡做（甚至可二分），不花磁碟 I/O。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 約 1000 個</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="fib">
+  <div class="section-number">P02 · FIBONACCI HEAP</div>
+  <h2>Fibonacci heap：把 decrease-key 壓到 O(1) <span class="sec-badge">4e 線上章節 · 補充</span></h2>
+  <p>binary heap 的 DECREASE-KEY 要 O(lg n)；Prim/Dijkstra 各要做 E 次——瓶頸就在這。
+  Fibonacci heap 用「懶惰」哲學改寫成本表（攤還分析的極致，工具全來自 Ch16）：</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>操作</th><th>binary heap（最壞）</th><th>Fibonacci heap（攤還）</th></tr></thead>
+    <tbody>
+      <tr><td>INSERT</td><td>O(lg n)</td><td class="best">O(1)</td></tr>
+      <tr><td>MINIMUM</td><td>O(1)</td><td class="best">O(1)</td></tr>
+      <tr><td>UNION（合併兩堆）</td><td>O(n)</td><td class="best">O(1)</td></tr>
+      <tr><td>DECREASE-KEY</td><td>O(lg n)</td><td class="best">O(1)</td></tr>
+      <tr><td>EXTRACT-MIN</td><td>O(lg n)</td><td>O(lg n)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box purple" style="margin-top:1rem;">
+    <span class="info-label">機制速寫＋它買到什麼</span>
+    根串列想塞就塞（insert/union 只是接串列）；EXTRACT-MIN 時才一次「整理」（同度數樹合併），
+    把欠的工作攤還掉。DECREASE-KEY 直接把節點剪下丟回根串列（cut＋cascading cut），勢能付帳。<br>
+    效果：Prim/Dijkstra 從 O(E lg V) 降到 <strong>O(E + V lg V)</strong>——稠密圖（E ≈ V²）時是 lg V 倍加速。
+    實務上常數大、指標繁複，多數場景 binary heap 就夠；它的價值一半在理論界標、一半在攤還分析教科書級示範。
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 值不值得換</div>
+    <p>什麼情況下把 Dijkstra 的 binary heap 換成 Fibonacci heap 收益最大？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。O(E + V lg V) vs O(E lg V)：差距全在 E 項——稠密圖 E ≈ V² 時省下 lg V 倍。稀疏圖（E ≈ V）兩者同為 O(V lg V)，換了只賺到大常數與複雜實作。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 稠密圖（E 接近 V²）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="稀疏圖時 E lg V ≈ V lg V，與 E + V lg V 同級——理論上打平，實務上 Fibonacci 的常數反而輸。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 稀疏圖（E 接近 V）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="負權時 Dijkstra 本身就不能用（回graphs2 那章）——換哪種 heap 都救不了正確性。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 圖有負權邊時</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="lp">
+  <div class="section-number">P03 · LINEAR PROGRAMMING</div>
+  <h2>線性規劃：最佳化的共同語言 <span class="sec-badge">Ch 29 · 補充</span></h2>
+  <p>標準型：在線性限制 Ax ≤ b、x ≥ 0 之下最大化線性目標 c<sup>T</sup>x。
+  幾何圖像是一切直覺的來源：</p>
+  <div class="info-box green">
+    <span class="info-label">三個核心事實</span>
+    ① 可行域是<strong>凸多面體</strong>（半平面的交集）。<br>
+    ② 線性目標的最佳值若存在，必可在<strong>頂點</strong>達成——找最佳解 = 逛頂點。<br>
+    ③ <strong>單體法（simplex）</strong>沿邊從頂點走向更好的鄰頂點，實務飛快（最壞指數）；
+    橢球法／內點法給了多項式保證——<strong>LP ∈ P</strong>。
+  </div>
+  <p>它是「共同語言」：最大流、最短路徑、二人零和賽局都能寫成 LP；
+  上一章 vertex cover 的近似還能走「LP 鬆弛 → 解實數版 → 捨入」的路線（x ≥ ½ 就選，另一個 2-近似）。
+  <strong>整數規劃（ILP）則是 NP-hard</strong>——「整數」二字就是 P 與 NP-hard 的分界線。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 分界線</div>
+    <p>LP 在 P 裡，但把變數限制成整數（ILP）就 NP-hard。直覺原因是？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。連續 LP 的可行域是凸的——局部最佳即全域最佳，沿邊爬就到頂。整數限制把可行域炸成離散點陣，凸性沒了，「逛頂點」失效；0/1 變數還能直接編碼 SAT/vertex cover 這類 NPC 問題。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 整數限制破壞凸性，且 0/1 變數能編碼 NPC 問題</div>
+      <div class="quiz-opt" data-correct="false" data-fb="變數多寡不是關鍵——LP 幾百萬變數照樣多項式時間解；難的是「離散」不是「大」。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 整數版的變數比較多</div>
+      <div class="quiz-opt" data-correct="false" data-fb="四捨五入不是有效解法——捨入後可能不可行或離最佳任意遠（除非有特殊結構如 LP 鬆弛＋捨入的近似證明）。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 其實把 LP 解四捨五入就是 ILP 最佳解</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="strmatch">
+  <div class="section-number">P04 · STRING MATCHING</div>
+  <h2>KMP：失配也不回頭 <span class="sec-badge">§32.4 · 補充</span></h2>
+  <p>在長度 n 的文字裡找長度 m 的 pattern。暴力法每個位移比到底：O((n−m+1)m)。
+  KMP 的觀察：失配時，<strong>已匹配的前綴自己就告訴你能滑多遠</strong>——
+  預算 <strong>前綴函數 π[q]</strong> =「P₁..q 的最長真前綴兼後綴長度」，失配時 q 退到 π[q]，
+  文字指標 <strong>i 永不回頭</strong> → O(n + m)。按單步看 P = ababaca 掃 T = abababacaba：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="token-out" id="kmpText" style="min-height:40px;"></div>
+      <div class="token-out" id="kmpPat" style="min-height:40px;"></div>
+      <div class="status-banner" id="kmpStatus"><span class="status-icon">▸</span><span class="status-text">π(ababaca) = [0 0 1 2 3 0 1]。按「單步」逐字元比對。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="kmpPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="kmpPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="kmpPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctKmp">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctKmp','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctKmp','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctKmp','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">KMP-MATCHER</span>(T, P) <span class="com">— 核心</span></div>
+            <span class="line"><span class="ln">1</span>q = 0　<span class="com">// 已匹配字元數</span></span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> n</span>
+            <span class="line"><span class="ln">3</span>  <span class="kw">while</span> q &gt; 0 <span class="kw">and</span> P[q+1] ≠ T[i]：q = π[q]</span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">if</span> P[q+1] == T[i]：q = q + 1</span>
+            <span class="line"><span class="ln">5</span>  <span class="kw">if</span> q == m：回報位移 i − m；q = π[q]</span>
+          </div>
+          <div class="ct-note">攤還論證：q 每輪最多 +1、while 只會把 q 減小且 q ≥ 0 ⟹ 總下修次數 ≤ 總上修次數 ≤ n → O(n)。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">int</span> q = <span class="num">0</span>;</span><span class="line"><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; ++i) {</span><span class="line">    <span class="kw">while</span> (q &gt; <span class="num">0</span> &amp;&amp; P[q] != T[i]) q = pi[q];</span><span class="line">    <span class="kw">if</span> (P[q] == T[i]) ++q;</span><span class="line">    <span class="kw">if</span> (q == m) { <span class="com">/* shift = i-m+1 */</span> q = pi[q]; }</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/kmp.cpp）</span><pre>π(ababaca) = [0 0 1 2 3 0 1]
+在 shift 2 找到 pattern</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 32/kmp_matcher.py（MIT License）</span></span><span class="line">compute_prefix_function(<span class="str">"ababaca"</span>, <span class="num">7</span>)</span><span class="line">kmp_matcher(<span class="str">"abababacaba"</span>, <span class="str">"ababaca"</span>, <span class="num">11</span>, <span class="num">7</span>)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[-1, -1, 0, 1, 2, -1, 0]
+Pattern occurs with shift 2</pre></div>
+          <div class="ct-note">官方用 0-indexed 慣例（−1 = 無真前綴），書中 1-indexed π = [0 0 1 2 3 0 1]——同一張表兩種座標。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · π 在說什麼</div>
+    <p>KMP 掃描中已匹配 q = 5（ababa）、下一字元失配。q 退到 π[5] = 3 的意義是？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。ababa 的最長「真前綴＝後綴」是 aba（長 3）：文字裡剛讀過的尾巴 aba 正好又是 pattern 的開頭——所以 pattern 可以滑到讓前 3 字元對齊的位置繼續比，中間的位移全部安全跳過，且文字指標 i 完全不回頭。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 已讀尾巴 aba 兼任 pattern 開頭，滑過去接著比第 4 字元</div>
+      <div class="quiz-opt" data-correct="false" data-fb="i 不回頭正是 KMP 的賣點——回頭重讀的是暴力法。退的是 q（pattern 端的進度），不是 i。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> 文字指標 i 要倒退 3 格重新比對</div>
+      <div class="quiz-opt" data-correct="false" data-fb="π 與「還剩幾個字元」無關——它是 pattern 對自己的結構分析（最長真前綴兼後綴），預處理時就算好了。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 表示 pattern 還剩 3 個字元沒比</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>組合拳</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 選型</div>
+    <p>設計資料庫的索引結構，資料 10⁸ 筆、放在 SSD 上，要支援等值查詢與範圍掃描。選什麼？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。磁碟/SSD 成本模型下 B-tree（實務是 B+tree：資料全在葉、葉串成鏈）3~4 次 I/O 定位＋葉層順序掃範圍。紅黑樹是記憶體結構（高度 27 = 27 次 I/O）；hash 等值快但做不了範圍掃描。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> B-tree／B+tree</div>
+      <div class="quiz-opt" data-correct="false" data-fb="紅黑樹高度 lg 10⁸ ≈ 27——放到磁碟上就是 27 次 I/O 一次查詢，B-tree 只要 3~4 次。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> 紅黑樹</div>
+      <div class="quiz-opt" data-correct="false" data-fb="hash table 等值查詢 O(1) 很香，但「範圍掃描」需要有序性——hash 把順序打散了，這是資料庫索引選 B+tree 不選 hash 的標準理由。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> hash table</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 排行榜</div>
+    <p>遊戲排行榜：分數即時增刪改，要隨時答「玩家 X 排第幾」與「第 k 名是誰」。選什麼？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。這正是 order-statistic tree 的原生介面：OS-RANK（排第幾）與 OS-SELECT（第 k 名）都 O(lg n)，增刪改也 O(lg n) 順帶維護 size。用陣列排序每次更新 O(n)；heap 只能回答最值。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> order-statistic tree（紅黑樹＋size）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="排序陣列查詢 O(lg n) 沒錯，但每次分數變動要搬 O(n)——百萬玩家的即時榜承受不起。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 排序陣列＋二分搜尋</div>
+      <div class="quiz-opt" data-correct="false" data-fb="heap 只保證頂端最值，中間是弱序——答不了「第 k 名」與「X 排第幾」（都要 O(n) 掃）。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> binary max-heap</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章速查表</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>主題</th><th>核心操作／事實</th><th>成本</th><th>典型戰場</th></tr></thead>
+    <tbody>
+      <tr><td>OS-tree（Ch17）</td><td>OS-SELECT／OS-RANK</td><td class="best">O(lg n)</td><td>排行榜、順位查詢</td></tr>
+      <tr><td>區間樹（Ch17）</td><td>INTERVAL-SEARCH（找重疊）</td><td class="best">O(lg n)</td><td>行程衝突、區間查詢</td></tr>
+      <tr><td>B-tree（Ch18）</td><td>搜尋／插入（split-child）</td><td class="best">O(t·log_t n)，I/O 次數 O(log_t n)</td><td>資料庫、檔案系統索引</td></tr>
+      <tr><td>Fibonacci heap（線上）</td><td>INSERT/UNION/DECREASE-KEY</td><td class="best">O(1) 攤還</td><td>稠密圖 Prim/Dijkstra 理論加速</td></tr>
+      <tr><td>LP（Ch29）</td><td>simplex／內點法</td><td>LP ∈ P（ILP 是 NP-hard）</td><td>資源配置、鬆弛近似</td></tr>
+      <tr><td>KMP（Ch32）</td><td>前綴函數 π＋不回頭掃描</td><td class="best">O(n + m)</td><td>文字搜尋、模式比對</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① 擴充方法論：欄位只依 x 與孩子（定理 17.1）→ 旋轉 O(1) 修復。<br>
+    ② B-tree：一節點一次 I/O；t 大 → 樹矮；根分裂是唯一長高。<br>
+    ③ Fibonacci heap：懶惰＋攤還 → decrease-key O(1)，稠密圖 Dijkstra O(E + V lg V)。<br>
+    ④ LP：凸可行域＋頂點最佳；加整數限制立刻 NP-hard。<br>
+    ⑤ KMP：π = 最長真前綴兼後綴；q 退 π[q]、i 不回頭，攤還 O(n)。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch11.json · 14 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="modern.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">現代主題概覽</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="index.html"><div class="nav-dir">回總覽 ▸</div><div class="nav-title">全課程完結</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 11 章（補充）Augmenting、B-Trees、Fib Heaps、LP、String Matching（CLRS 4e Ch 17–18、29、32）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"擴充資料結構（Augmenting）","back":"在現成結構（常為紅黑樹）每節點多掛欄位以解鎖新操作。四步驟：選底層結構→定欄位→證可維護→實作新操作。"},
+  {"front":"定理 17.1（欄位可維護性）","back":"若欄位 f(x) 只由 x、x.left、x.right 的資訊決定，插入/刪除/旋轉時可 O(1) 局部修復、總維護 O(lg n)。size ✓；全域名次、深度 ✗。"},
+  {"front":"order-statistic tree","back":"紅黑樹＋size（子樹節點數）：OS-SELECT（第 i 小）與 OS-RANK（排第幾）皆 O(lg n)。排行榜的標準解。"},
+  {"front":"區間樹（Interval Tree）","back":"紅黑樹（鍵=左端點）＋max（子樹最大右端點）：INTERVAL-SEARCH 找與給定區間重疊者 O(lg n)。行程衝突偵測。"},
+  {"front":"B-tree 與最小分支度 t","back":"每節點 t−1~2t−1 鍵、t~2t 孩子、全葉同深。為磁碟設計：一節點=一頁=一次 I/O。資料庫索引（B+tree）的原型。"},
+  {"front":"B-tree 高度定理","back":"h ≤ log_t((n+1)/2)。t=1000 時 10 億鍵高度 ≤ 3——三次 I/O 觸及任何資料；二元樹同量級要 ~30 次。"},
+  {"front":"B-TREE-SPLIT-CHILD","back":"下行路過全滿節點（2t−1 鍵）先分裂：中位鍵上浮、其餘對半拆。根分裂是 B-tree 唯一長高方式（往上長，保全葉同深）。"},
+  {"front":"Fibonacci heap","back":"懶惰的可合併堆：INSERT/UNION/DECREASE-KEY 攤還 O(1)、EXTRACT-MIN O(lg n)。整理工作全推遲到 extract 時一次還——勢能法分析的代表作。"},
+  {"front":"Fibonacci heap 對圖演算法的意義","back":"Prim/Dijkstra 的 E 次 decrease-key 從 O(lg V) 降為 O(1) 攤還 → O(E + V lg V)。稠密圖賺 lg V 倍；實務常數大，稀疏圖用 binary heap 就好。"},
+  {"front":"線性規劃（LP）標準型","back":"max c^T x s.t. Ax ≤ b、x ≥ 0。可行域=凸多面體、最佳值在頂點達成；simplex 實務快，內點法給多項式保證——LP ∈ P。"},
+  {"front":"整數規劃（ILP）","back":"變數限整數的 LP——NP-hard。整數限制毀掉凸性，0/1 變數可編碼 SAT 等 NPC 問題；「連續 vs 離散」正是 P 與 NP-hard 的分界。"},
+  {"front":"LP 鬆弛與捨入","back":"把 NPC 問題的 0/1 變數放寬成 [0,1] 解 LP，再按規則捨入（如 x ≥ ½ 取 1）。vertex cover 由此得另一個 2-近似。"},
+  {"front":"前綴函數 π","back":"π[q] = P₁..q 的最長「真前綴兼後綴」長度——pattern 對自己的結構分析，預處理 O(m)。失配時 q 退到 π[q]。"},
+  {"front":"KMP 演算法","back":"π 表＋逐字元掃描：失配退 q（不回頭讀文字）→ O(n+m)。攤還論證：q 每輪最多+1，總下修 ≤ 總上修 ≤ n。"}
+];
+
+/* ---------- P04 KMP 動畫 ---------- */
+const KMP_T = "abababacaba", KMP_P = "ababaca";
+function kmpFrames() {
+  const pi = [0, 0, 0, 1, 2, 3, 0, 1];             // 1-indexed：pi[q]
+  const n = KMP_T.length, m = KMP_P.length;
+  let q = 0;
+  const frames = [{i: -1, q: 0, msg: 'q = 0（尚未匹配）。逐字元讀 T，i 永不回頭。'}];
+  for (let i = 0; i < n; i++) {
+    while (q > 0 && KMP_P[q] !== KMP_T[i]) {
+      const old = q;
+      q = pi[q];
+      frames.push({i, q, msg: `T[${i}]=${KMP_T[i]} 與 P[${old}]=${KMP_P[old]} 失配：q 由 ${old} 退到 π[${old}] = ${q}（pattern 右滑，i 不動）。`});
+    }
+    if (KMP_P[q] === KMP_T[i]) {
+      q++;
+      frames.push({i, q, msg: `T[${i}]=${KMP_T[i]} 與 P[${q - 1}] 匹配：q → ${q}。`});
+    } else {
+      frames.push({i, q, msg: `T[${i}]=${KMP_T[i]} 連 P[0] 都不合：q 停在 0，繼續讀下一字元。`});
+    }
+    if (q === m) {
+      frames.push({i, q, found: true, msg: `q = m = 7：在 shift ${i - m + 1} 找到完整 pattern！之後 q 退到 π[7] = ${pi[7]} 繼續找下一個。`});
+      q = pi[q];
+    }
+  }
+  frames.push({i: n - 1, q, msg: '掃描完成：全文只讀一遍（i 從未回頭），總成本 O(n)。'});
+  return frames;
+}
+function kmpApply(f) {
+  const shift = f.i + 1 - f.q;                     // pattern 目前對齊的位移
+  const elT = $('kmpText'); elT.innerHTML = '';
+  for (let j = 0; j < KMP_T.length; j++) {
+    const d = document.createElement('div');
+    d.className = 'tok' + (j === f.i ? ' tok-new' : '');
+    d.textContent = KMP_T[j];
+    elT.appendChild(d);
+  }
+  const elP = $('kmpPat'); elP.innerHTML = '';
+  for (let j = 0; j < shift; j++) {
+    const d = document.createElement('div');
+    d.className = 'tok'; d.style.visibility = 'hidden'; d.textContent = '·';
+    elP.appendChild(d);
+  }
+  for (let j = 0; j < KMP_P.length; j++) {
+    const d = document.createElement('div');
+    d.className = 'tok' + (j < f.q ? '' : ' tok-op');
+    if (f.found) d.className = 'tok tok-new';
+    d.textContent = KMP_P[j];
+    elP.appendChild(d);
+  }
+  setStatus('kmpStatus', f.msg);
+}
+const kmpPlayer = new Player({frames: kmpFrames(), apply: kmpApply, delayInput: null});
+kmpPlayer.reset();
+</script>

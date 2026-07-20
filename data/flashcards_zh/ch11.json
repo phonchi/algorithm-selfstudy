@@ -1,0 +1,58 @@
+[
+ {
+  "front": "擴充資料結構（Augmenting）",
+  "back": "在現成結構（常為紅黑樹）每節點多掛欄位以解鎖新操作。四步驟：選底層結構→定欄位→證可維護→實作新操作。"
+ },
+ {
+  "front": "定理 17.1（欄位可維護性）",
+  "back": "若欄位 f(x) 只由 x、x.left、x.right 的資訊決定，插入/刪除/旋轉時可 O(1) 局部修復、總維護 O(lg n)。size ✓；全域名次、深度 ✗。"
+ },
+ {
+  "front": "order-statistic tree",
+  "back": "紅黑樹＋size（子樹節點數）：OS-SELECT（第 i 小）與 OS-RANK（排第幾）皆 O(lg n)。排行榜的標準解。"
+ },
+ {
+  "front": "區間樹（Interval Tree）",
+  "back": "紅黑樹（鍵=左端點）＋max（子樹最大右端點）：INTERVAL-SEARCH 找與給定區間重疊者 O(lg n)。行程衝突偵測。"
+ },
+ {
+  "front": "B-tree 與最小分支度 t",
+  "back": "每節點 t−1~2t−1 鍵、t~2t 孩子、全葉同深。為磁碟設計：一節點=一頁=一次 I/O。資料庫索引（B+tree）的原型。"
+ },
+ {
+  "front": "B-tree 高度定理",
+  "back": "h ≤ log_t((n+1)/2)。t=1000 時 10 億鍵高度 ≤ 3——三次 I/O 觸及任何資料；二元樹同量級要 ~30 次。"
+ },
+ {
+  "front": "B-TREE-SPLIT-CHILD",
+  "back": "下行路過全滿節點（2t−1 鍵）先分裂：中位鍵上浮、其餘對半拆。根分裂是 B-tree 唯一長高方式（往上長，保全葉同深）。"
+ },
+ {
+  "front": "Fibonacci heap",
+  "back": "懶惰的可合併堆：INSERT/UNION/DECREASE-KEY 攤還 O(1)、EXTRACT-MIN O(lg n)。整理工作全推遲到 extract 時一次還——勢能法分析的代表作。"
+ },
+ {
+  "front": "Fibonacci heap 對圖演算法的意義",
+  "back": "Prim/Dijkstra 的 E 次 decrease-key 從 O(lg V) 降為 O(1) 攤還 → O(E + V lg V)。稠密圖賺 lg V 倍；實務常數大，稀疏圖用 binary heap 就好。"
+ },
+ {
+  "front": "線性規劃（LP）標準型",
+  "back": "max c^T x s.t. Ax ≤ b、x ≥ 0。可行域=凸多面體、最佳值在頂點達成；simplex 實務快，內點法給多項式保證——LP ∈ P。"
+ },
+ {
+  "front": "整數規劃（ILP）",
+  "back": "變數限整數的 LP——NP-hard。整數限制毀掉凸性，0/1 變數可編碼 SAT 等 NPC 問題；「連續 vs 離散」正是 P 與 NP-hard 的分界。"
+ },
+ {
+  "front": "LP 鬆弛與捨入",
+  "back": "把 NPC 問題的 0/1 變數放寬成 [0,1] 解 LP，再按規則捨入（如 x ≥ ½ 取 1）。vertex cover 由此得另一個 2-近似。"
+ },
+ {
+  "front": "前綴函數 π",
+  "back": "π[q] = P₁..q 的最長「真前綴兼後綴」長度——pattern 對自己的結構分析，預處理 O(m)。失配時 q 退到 π[q]。"
+ },
+ {
+  "front": "KMP 演算法",
+  "back": "π 表＋逐字元掃描：失配退 q（不回頭讀文字）→ O(n+m)。攤還論證：q 每輪最多+1，總下修 ≤ 總上修 ≤ n。"
+ }
+]
