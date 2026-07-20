@@ -1,0 +1,58 @@
+[
+ {
+  "front": "決策問題（Decision Problem）",
+  "back": "答案是 yes/no 的問題。最佳化問題加門檻 k 就有決策版（「存在成本 ≤ k 的解嗎」）；NP 理論全部架在決策問題上。"
+ },
+ {
+  "front": "P（複雜度類別）",
+  "back": "存在多項式時間演算法可「解出」的決策問題集合：排序、MST、最短路徑、2-SAT、Euler 迴路都在其中。"
+ },
+ {
+  "front": "NP 與證書（Certificate）",
+  "back": "yes 實例存在多項式長度證書、可在多項式時間「驗證」的問題。NP = nondeterministic polynomial，不是 non-polynomial。P ⊆ NP。"
+ },
+ {
+  "front": "P vs NP 問題",
+  "back": "「會驗證是否等於會求解」——計算機科學最著名的未解問題（千禧年大獎難題之一）。多數學者相信 P ≠ NP，但無人能證。"
+ },
+ {
+  "front": "多項式時間化約（≤p）",
+  "back": "A ≤p B：多項式函數 f 把 A 的實例轉成 B 的實例且保 yes/no。「B 至少跟 A 一樣難」。方向：拿已知難的 A 化約到新問題 B。"
+ },
+ {
+  "front": "NP-complete",
+  "back": "① ∈ NP 且 ② NP 中所有問題 ≤p 它。NP 裡最難的一群；任何一個有多項式解法 ⟹ P = NP。"
+ },
+ {
+  "front": "NP-hard",
+  "back": "只滿足 NPC 定義的條件 ②（所有 NP 問題 ≤p 它），不要求自己在 NP。最佳化版問題（如 TSP 求最短導覽）通常說 NP-hard。"
+ },
+ {
+  "front": "Cook–Levin 定理",
+  "back": "CIRCUIT-SAT 是 NP-complete——第一張骨牌。證法：任何多項式時間驗證器的運算都能編成多項式大小的布林電路。"
+ },
+ {
+  "front": "NPC 家族樹",
+  "back": "CIRCUIT-SAT → SAT → 3-CNF-SAT → {CLIQUE → VERTEX-COVER → HAM-CYCLE → TSP；SUBSET-SUM}。每個箭頭一次化約，遞移性讓新證明只需接上任一節點。"
+ },
+ {
+  "front": "CLIQUE ⟷ VERTEX-COVER",
+  "back": "G 有 k-clique ⟺ 補圖 Ḡ 有大小 |V|−k 的 vertex cover（clique 的補集蓋住補圖所有邊）。五分鐘級的經典化約。"
+ },
+ {
+  "front": "近似比 ρ(n)",
+  "back": "ρ(n)-近似演算法：多項式時間且保證 max(C/C*, C*/C) ≤ ρ(n)。證明套路：找一個 OPT 的下界（匹配、MST），把自己的成本綁在下界的常數倍內。"
+ },
+ {
+  "front": "APPROX-VERTEX-COVER",
+  "back": "重複「任取活邊、收兩端、刪鄰邊」。挑中的邊是匹配 M：OPT ≥ |M| 而 |C| = 2|M| ⟹ 2-近似。貪婪挑大度數反而只有 Θ(lg n)。"
+ },
+ {
+  "front": "APPROX-TSP-TOUR",
+  "back": "metric TSP（三角不等式）：MST＋前序走訪 = 2-近似。鏈：c(H) ≤ 完整走訪 = 2·c(MST) ≤ 2·OPT；抄捷徑那步靠三角不等式。"
+ },
+ {
+  "front": "一般 TSP 的不可近似性",
+  "back": "無三角不等式時，任何常數 ρ 近似演算法 ⟹ P = NP。證法：HAM-CYCLE 嵌入完全圖（有邊權 1、缺邊權 ρ|V|+1），近似解可判定 HAM-CYCLE。"
+ }
+]

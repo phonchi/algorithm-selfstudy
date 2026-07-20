@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NP-Completeness 與近似演算法 — NP <title>陣列與稀疏矩陣 — Arrays Interactive（C++）</title> Approximation（CLRS Ch34–35）</title>
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+  --node-white:#ffffff;--node-gray:#bdc3c7;--node-black:#34495e;
+  --node-current:#f39c12;--node-found:#16a085;--node-start:#9b59b6;
+  --edge-default:#95a5a6;--edge-tree:#27ae60;--edge-explore:#f39c12;--edge-mst:#1a6b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+
+/* Hero */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden;background:linear-gradient(170deg,#1a1a2e 0%,#2c3e7a 40%,#1a6b4a 100%);}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0%,transparent 40%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);}
+.hero-content{position:relative;z-index:1;max-width:860px;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#fff;letter-spacing:.04em;line-height:1.3;margin-bottom:1rem;}
+.hero h1 .green{color:#2ecc71;}
+.hero h1 .blue{color:#5dade2;}
+.hero h1 .orange{color:#f39c12;}
+.hero h1 .purple{color:#bb8fce;}
+.hero .subtitle{font-size:clamp(.95rem,2.2vw,1.2rem);color:rgba(255,255,255,.65);font-weight:300;margin-bottom:2rem;}
+.hero .big-formula{color:#2ecc71;background:rgba(0,0,0,.3);padding:.8rem 2rem;border-radius:12px;display:inline-block;border:1px solid rgba(255,255,255,.1);margin-bottom:2rem;backdrop-filter:blur(4px);font-size:1.05rem;}
+.scroll-hint{color:rgba(255,255,255,.4);font-size:.9rem;animation:bounce 2s infinite;}
+.scroll-hint span{display:block;font-size:1.4rem;margin-top:.3rem;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+
+/* Hero mini-graph illustration */
+.hero-graph{position:absolute;right:5%;top:50%;transform:translateY(-50%);opacity:.18;pointer-events:none;}
+@media(max-width:900px){.hero-graph{display:none;}}
+
+/* Layout */
+.container{max-width:1180px;margin:0 auto;padding:3rem 1.5rem;}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;line-height:1.4;}
+h3{font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:var(--accent2);margin:1.4rem 0 .8rem;}
+section{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--card-border);}
+section:last-of-type{border-bottom:none;}
+p{margin-bottom:1rem;}
+code{font-family:'JetBrains Mono',monospace;font-size:.92em;background:rgba(44,62,122,.08);padding:1px 6px;border-radius:4px;color:var(--accent2);}
+strong{color:var(--ink);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0 2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.toc-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.7rem;}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem .8rem;}
+.toc-grid a{color:var(--accent2);text-decoration:none;font-size:.9rem;padding:.3rem 0;display:flex;align-items:center;gap:.4rem;transition:color .2s;}
+.toc-grid a:hover{color:var(--accent);}
+.toc-grid a .toc-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);min-width:34px;}
+
+/* Viz layout */
+.viz-layout{display:grid;grid-template-columns:1fr 320px;gap:1.3rem;margin:1.2rem 0;align-items:start;}
+@media(max-width:900px){.viz-layout{grid-template-columns:1fr;}}
+
+.viz-panel{background:linear-gradient(160deg,#fffdf7 0%,#f4efe3 100%);border:1px solid var(--card-border);border-radius:12px;padding:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06);position:relative;}
+
+/* Graph SVG canvas */
+.graph-canvas{position:relative;width:100%;height:380px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #ececec;}
+.graph-canvas svg{width:100%;height:100%;display:block;}
+
+/* SVG elements styles */
+.graph-edge{stroke:var(--edge-default);stroke-width:2;fill:none;transition:stroke .25s, stroke-width .25s;}
+.graph-edge.tree{stroke:var(--edge-tree);stroke-width:3.5;}
+.graph-edge.exploring{stroke:var(--edge-explore);stroke-width:3.5;stroke-dasharray:5 4;animation:dash 1s linear infinite;}
+.graph-edge.mst{stroke:var(--edge-mst);stroke-width:4;}
+.graph-edge.path{stroke:var(--accent);stroke-width:4;}
+.graph-edge.dotted{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+.edge-label{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;fill:var(--ink);pointer-events:none;}
+.edge-label-bg{fill:#fafafa;stroke:#ececec;stroke-width:1;}
+
+.graph-node{cursor:pointer;}
+.graph-node circle{fill:var(--node-white);stroke:var(--ink);stroke-width:2;transition:fill .25s, stroke .25s, r .2s;}
+.graph-node.gray circle{fill:var(--node-gray);}
+.graph-node.black circle{fill:var(--node-black);stroke:var(--node-black);}
+.graph-node.current circle{fill:var(--node-current);stroke:#d68910;stroke-width:3;}
+.graph-node.start circle{fill:var(--node-start);stroke:#7d3c98;stroke-width:3;}
+.graph-node.found circle{fill:var(--node-found);stroke:#117a65;stroke-width:3;}
+.graph-node.in-mst circle{fill:#82e0aa;stroke:var(--accent3);stroke-width:3;}
+.graph-node text.node-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.graph-node.black text.node-key{fill:#fff;}
+.graph-node.current text.node-key{fill:#fff;}
+.graph-node.start text.node-key{fill:#fff;}
+.graph-node.found text.node-key{fill:#fff;}
+.graph-node text.node-meta{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;fill:var(--accent);text-anchor:middle;pointer-events:none;}
+
+/* Status banner */
+.status-banner{margin-top:.8rem;padding:.7rem 1rem;background:var(--code-bg);color:#fff;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;min-height:42px;display:flex;align-items:center;gap:.6rem;}
+.status-banner .status-icon{color:#2ecc71;font-weight:700;}
+.status-banner .status-text{flex:1;}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--card-border);}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-play{background:var(--accent3);color:#fff;}
+.btn-play:hover{background:#22845c;}
+.btn-play.active{background:var(--accent);}
+.btn-step{background:var(--accent2);color:#fff;}
+.btn-step:hover{background:#1f2e5f;}
+.btn-step:disabled{background:#ccc;cursor:not-allowed;}
+.btn-reset{background:var(--card-border);color:var(--ink);}
+.btn-reset:hover{background:#ccc;}
+.btn-toggle{background:var(--accent2);color:#fff;}
+.btn-toggle:hover{background:#1f2e5f;}
+.btn-toggle.off{background:#bbb;color:#555;}
+.btn-shuffle{background:#8e44ad;color:#fff;}
+.btn-shuffle:hover{background:#6c3485;}
+
+/* Slider row */
+.slider-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:var(--paper);border-radius:8px;margin-bottom:.5rem;}
+.slider-row .slider-label{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent2);font-weight:600;min-width:60px;}
+.slider-row input[type="range"]{flex:1;accent-color:var(--accent3);height:5px;cursor:pointer;}
+.slider-row .slider-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:600;min-width:60px;text-align:right;}
+
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:.85rem;}
+.info-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:.85rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.info-card .ic-title{font-size:.72rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;border-bottom:1px solid var(--card-border);padding-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;}
+.info-card .ic-title .ic-badge{font-size:.7rem;color:#fff;background:var(--accent3);padding:1px 7px;border-radius:3px;letter-spacing:.05em;font-weight:700;}
+.info-card .ic-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.83rem;padding:.2rem 0;}
+.info-card .ic-label{color:var(--muted);}
+.info-card .ic-value{color:var(--ink);font-weight:600;}
+.info-card .ic-value.highlight{color:var(--accent);}
+.info-card .ic-value.big{font-size:1.4rem;color:var(--accent2);}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.4rem;}
+.stat-tile{background:var(--paper);border-radius:8px;padding:.5rem .7rem;text-align:center;}
+.stat-tile .stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.stat-tile .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent2);}
+
+/* Queue / Stack / PQ visualization */
+.ds-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--paper);border-radius:6px;padding:.5rem .7rem;min-height:36px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px dashed var(--card-border);}
+.ds-display .ds-empty{color:var(--muted);font-style:italic;}
+.ds-item{background:var(--accent2);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+.ds-item.front{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.top{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.pq{background:var(--accent3);}
+.ds-item.pq.min{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-arrow{color:var(--muted);}
+
+/* Pseudo code */
+.pseudo-code{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;overflow-x:auto;}
+.pseudo-code .line{padding:1px 4px;border-radius:3px;display:block;white-space:pre;}
+.pseudo-code .line.active{background:rgba(243,156,18,.3);color:#fff;border-left:3px solid var(--node-current);padding-left:6px;}
+.pseudo-code .kw{color:#ff79c6;}
+.pseudo-code .fn{color:#50fa7b;}
+.pseudo-code .num{color:#bd93f9;}
+.pseudo-code .com{color:#6272a4;font-style:italic;}
+.pseudo-code .str{color:#f1fa8c;}
+
+/* Adjacency table */
+.adj-display{margin:.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.adj-matrix{border-collapse:collapse;margin:.5rem auto;}
+.adj-matrix td,.adj-matrix th{border:1px solid var(--card-border);padding:6px 10px;text-align:center;min-width:34px;background:#fff;}
+.adj-matrix th{background:var(--accent2);color:#fff;font-weight:700;}
+.adj-matrix td.zero{color:#ccc;}
+.adj-matrix td.nonzero{background:#eafaf1;color:var(--accent3);font-weight:700;}
+.adj-matrix td.highlight{background:#fff3cd;}
+.adj-list{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:.7rem 1rem;}
+.adj-list .adj-row{padding:3px 0;border-bottom:1px dashed var(--card-border);}
+.adj-list .adj-row:last-child{border-bottom:none;}
+.adj-list .adj-key{color:var(--accent);font-weight:700;display:inline-block;min-width:32px;}
+.adj-list .adj-arrow{color:var(--muted);margin:0 6px;}
+.adj-list .adj-neighbor{background:#eef2ff;color:var(--accent2);padding:1px 8px;border-radius:4px;margin:1px 3px;display:inline-block;font-weight:600;}
+
+/* Chess board for Knight's tour */
+.chess-board{display:grid;background:#fff;border:2px solid var(--ink);border-radius:6px;overflow:hidden;margin:.5rem auto;width:fit-content;}
+.chess-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:700;position:relative;transition:background .2s;}
+.chess-cell.light{background:#f0d9b5;color:#666;}
+.chess-cell.dark{background:#b58863;color:#fff;}
+.chess-cell.visited{background:#27ae60 !important;color:#fff;}
+.chess-cell.current{background:#f39c12 !important;color:#fff;box-shadow:inset 0 0 0 3px #d68910;}
+.chess-cell.start{background:#9b59b6 !important;color:#fff;}
+.chess-cell .knight{font-size:1.4em;line-height:1;}
+.chess-cell .step-num{font-size:.7em;}
+
+/* Info box */
+.info-box{background:#eef2ff;border:2px solid var(--accent2);border-radius:10px;padding:1.1rem 1.4rem;margin:1.3rem 0;position:relative;}
+.info-box .info-label{position:absolute;top:-11px;left:14px;background:var(--accent2);color:#fff;font-size:.74rem;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em;}
+.info-box.warm{background:#fef5e7;border-color:#d68910;}
+.info-box.warm .info-label{background:#d68910;}
+.info-box.green{background:#eafaf1;border-color:var(--accent3);}
+.info-box.green .info-label{background:var(--accent3);}
+.info-box.purple{background:#f4ecf7;border-color:#8e44ad;}
+.info-box.purple .info-label{background:#8e44ad;}
+
+/* Pill labels */
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:4px;margin:0 .15rem;vertical-align:1px;}
+.pill-blue{background:rgba(41,128,185,.12);color:#2980b9;border:1px solid rgba(41,128,185,.3);}
+.pill-red{background:rgba(192,57,43,.12);color:var(--accent);border:1px solid rgba(192,57,43,.3);}
+.pill-green{background:rgba(39,174,96,.12);color:var(--accent3);border:1px solid rgba(39,174,96,.3);}
+.pill-orange{background:rgba(243,156,18,.12);color:#d68910;border:1px solid rgba(243,156,18,.3);}
+.pill-purple{background:rgba(142,68,173,.12);color:#8e44ad;border:1px solid rgba(142,68,173,.3);}
+.pill-gray{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid rgba(0,0,0,.12);}
+
+/* Comparison table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.86rem;margin:.8rem 0;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.cmp-table th{background:var(--accent2);color:#fff;padding:.6rem .8rem;text-align:center;font-weight:600;font-size:.82rem;}
+.cmp-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--card-border);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.cmp-table td:first-child{font-family:'Noto Sans TC',sans-serif;color:var(--accent2);font-weight:600;text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:nth-child(even){background:rgba(0,0,0,.015);}
+.cmp-table .best{color:var(--accent3);font-weight:700;}
+.cmp-table .worst{color:var(--accent);font-weight:700;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+.legend-item{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;background:var(--paper);border-radius:5px;}
+.legend-item .lg-swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink);}
+.legend-item .lg-edge{width:18px;height:3px;border-radius:2px;}
+
+/* Quiz */
+.quiz-box{background:var(--card);border:2px solid var(--accent2);border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0;}
+.quiz-box .quiz-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0;}
+.quiz-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;background:var(--paper);border:2px solid var(--card-border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+.quiz-opt:hover{border-color:var(--accent2);}
+.quiz-opt .opt-letter{font-weight:700;color:var(--accent2);min-width:22px;}
+.quiz-opt.correct{background:#eafaf1;border-color:var(--accent3);}
+.quiz-opt.correct .opt-letter{color:var(--accent3);}
+.quiz-opt.wrong{background:#fef5e7;border-color:var(--accent);}
+.quiz-opt.wrong .opt-letter{color:var(--accent);}
+.quiz-feedback{margin-top:.7rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.correct{background:#eafaf1;color:var(--accent3);border-left:4px solid var(--accent3);}
+.quiz-feedback.wrong{background:#fef5e7;color:var(--accent);border-left:4px solid var(--accent);}
+
+/* Floating sidebar navigation */
+.float-nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px;background:rgba(255,253,250,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--card-border);border-radius:12px;padding:10px 7px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-family:'JetBrains Mono',monospace;max-height:88vh;overflow-y:auto;transition:padding .25s ease;}
+.float-nav .fn-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.68rem;color:var(--accent2);text-align:center;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--card-border);max-width:0;overflow:hidden;transition:max-width .25s ease;}
+.float-nav:hover .fn-title{max-width:220px;}
+.float-nav a{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;white-space:nowrap;transition:all .2s ease;border-left:3px solid transparent;}
+.float-nav a .fn-num{font-weight:700;font-size:.66rem;color:var(--muted);letter-spacing:.4px;flex-shrink:0;width:30px;text-align:left;}
+.float-nav a .fn-name{font-family:'Noto Sans TC',sans-serif;font-size:.76rem;font-weight:500;max-width:0;overflow:hidden;transition:max-width .25s ease,padding .25s ease;padding:0;}
+.float-nav:hover a .fn-name{max-width:220px;padding-left:2px;}
+.float-nav a:hover{background:var(--card);}
+.float-nav a.active{background:var(--accent2);color:#fff;border-left-color:var(--accent);box-shadow:0 2px 6px rgba(192,57,43,.25);}
+.float-nav a.active .fn-num{color:rgba(255,255,255,.85);}
+.float-nav a.active .fn-name{color:#fff;}
+.float-nav .fn-top{margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);justify-content:center;}
+.float-nav .fn-top .fn-num{width:auto;color:var(--accent2);font-size:.78rem;}
+@media(max-width:768px){
+  .float-nav{right:8px;top:auto;bottom:14px;transform:none;padding:6px 5px;max-height:70vh;}
+  .float-nav .fn-title{display:none;}
+  .float-nav a{padding:4px 7px;}
+  .float-nav a .fn-num{width:26px;font-size:.62rem;}
+}
+
+footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+
+/* Distance / table inside graph viz */
+.vert-table{margin-top:.6rem;width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.vert-table th,.vert-table td{padding:4px 6px;text-align:center;border:1px solid var(--card-border);}
+.vert-table th{background:var(--accent2);color:#fff;font-weight:600;font-size:.74rem;}
+.vert-table td.tcell-current{background:#fff3cd;font-weight:700;color:var(--accent);}
+.vert-table td.tcell-done{background:#eafaf1;color:var(--accent3);}
+.vert-table td.tcell-inf{color:#ccc;}
+.sec-badge{font-size:.6em;color:var(--muted);border:1px solid var(--card-border);background:var(--card);padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:.6rem;font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.02em;white-space:nowrap;}
+
+/* Phase 8 shared widgets */
+.bs-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:4px;min-height:180px;justify-content:flex-start;padding:.6rem;}
+.bs-item{width:110px;text-align:center;padding:.4rem .6rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.bs-hl{background:#f39c12;}
+.bs-toplabel,.bq-label{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bq-row{display:flex;align-items:center;gap:6px;min-height:64px;flex-wrap:wrap;padding:.4rem;}
+.bq-item{min-width:52px;text-align:center;padding:.45rem .5rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.char-strip{display:flex;gap:3px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;padding:.4rem 0;}
+.char-cell{min-width:30px;text-align:center;padding:.35rem .25rem;border:1px solid var(--card-border);border-radius:5px;background:var(--card);}
+.char-cur{background:#f39c12;color:#fff;border-color:#f39c12;}
+.char-done{background:#e8f5ec;color:#1a6b4a;border-color:#bfe3cd;}
+.char-bad{background:#c0392b;color:#fff;border-color:#c0392b;}
+.token-out{display:flex;gap:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;min-height:40px;padding:.3rem 0;}
+.tok{padding:.3rem .55rem;border-radius:5px;background:#2c3e7a;color:#fff;font-weight:600;}
+.tok-op{background:#8e44ad;}
+.tok-new{outline:3px solid #f39c12;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+<style>
+/* ===== 網站化附加樣式（study-guide / flashcards / chapter-nav）===== */
+.study-guide{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.2rem 1.4rem;margin:0 0 2.2rem;}
+.study-guide .sg-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.5rem;}
+.study-guide p{font-size:.92rem;margin-bottom:.5rem;}
+.study-guide .sg-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.study-guide .sg-links a{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;color:var(--accent2);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .85rem;text-decoration:none;transition:all .2s;}
+.study-guide .sg-links a:hover{background:var(--accent2);color:#fff;}
+.fc-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0 1.2rem;}
+.fc-controls button{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:1px solid var(--card-border);cursor:pointer;background:var(--card);color:var(--ink);transition:all .2s;}
+.fc-controls button:hover{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:.9rem;}
+.fc-card{perspective:900px;height:170px;cursor:pointer;}
+.fc-card .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+.fc-card .fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.9rem;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.fc-card .fc-front{background:linear-gradient(150deg,var(--accent2),var(--ink));color:#fff;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;letter-spacing:.02em;flex-direction:column;gap:.4rem;}
+.fc-card .fc-front .fc-hint{font-size:.62rem;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.1em;}
+.fc-card .fc-back{background:var(--card);border:2px solid var(--accent3);color:var(--ink);font-size:.78rem;line-height:1.55;transform:rotateY(180deg);overflow-y:auto;}
+.chapter-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:stretch;margin:2.5rem 0 1rem;}
+.chapter-nav a{display:block;border:1px solid var(--card-border);border-radius:12px;padding:.8rem 1.1rem;text-decoration:none;color:var(--ink);background:var(--card);transition:all .2s;}
+.chapter-nav a:hover{border-color:var(--accent2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.chapter-nav .nav-dir{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.2rem;}
+.chapter-nav .nav-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.95rem;color:var(--accent2);}
+.chapter-nav a.next{text-align:right;}
+.chapter-nav a.home{display:flex;flex-direction:column;justify-content:center;text-align:center;}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr;}}
+</style>
+<style>
+/* ===== 講義範例卡 ===== */
+.deck-extra{margin:1.2rem 0;}
+.deck-extra .dx-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:.4rem;}
+.deck-extra .dx-note{font-size:.9rem;margin-top:.6rem;}
+.expected-out{background:var(--card);border:1px solid var(--card-border);border-left:4px solid var(--accent3);border-radius:0 8px 8px 0;padding:.5rem .9rem;margin-top:.5rem;}
+.expected-out .eo-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--accent3);display:block;margin-bottom:.2rem;}
+.expected-out pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre-wrap;margin:0;}
+.warn-box{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.25);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem 1rem;margin:.8rem 0;font-size:.9rem;}
+.warn-box b{color:var(--accent);}
+</style>
+<style>
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
+</style>
+</head>
+<body>
+<script>
+/* ============ shared utilities ============ */
+const $ = id => document.getElementById(id);
+
+function quizCheck(quizId, optEl) {
+  const isCorrect = optEl.dataset.correct === 'true';
+  optEl.parentElement.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct','wrong'));
+  optEl.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = $(quizId + 'Feedback');
+  fb.classList.remove('correct','wrong');
+  fb.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  fb.innerHTML = (isCorrect ? '<strong>正確 ✓</strong> ' : '<strong>不對 ✗</strong> ') + (optEl.dataset.fb || '');
+}
+
+function hlLine(rootId, n) {
+  const root = $(rootId);
+  if (!root) return;
+  root.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+  if (n != null) {
+    const line = root.querySelector(`.line[data-l="${n}"]`);
+    if (line) line.classList.add('active');
+  }
+}
+
+/* step player: frames = [{...}], apply(frame) renders */
+class Player {
+  constructor({frames, apply, delayInput, onDone}) {
+    this.frames = frames; this.apply = apply;
+    this.delayInput = delayInput; this.i = -1; this.timer = null;
+    this.onDone = onDone || (()=>{});
+  }
+  step() {
+    if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+    this.i += 1; this.apply(this.frames[this.i]);
+  }
+  play() {
+    this.stop();
+    const tick = () => {
+      if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+      this.step();
+      this.timer = setTimeout(tick, this.delayInput ? parseInt(this.delayInput.value,10) : 700);
+    };
+    tick();
+  }
+  stop() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  reset() { this.stop(); this.i = -1; if (this.frames.length) this.apply(this.frames[0]); }
+}
+
+function setStatus(id, html) {
+  const el = $(id); if (el) el.querySelector('.status-text').innerHTML = html;
+}
+
+/* vertical box stack renderer (DOM) */
+function renderBoxStack(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  const hl = opts.highlight ?? -1;   // index from top (0 = top)
+  el.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bs-toplabel';
+  label.textContent = items.length ? 'top ↓' : '(empty)';
+  el.appendChild(label);
+  items.slice().reverse().forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bs-item' + (idx === hl ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+
+/* horizontal queue renderer: front at left */
+function renderBoxQueue(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  el.innerHTML = '';
+  const front = document.createElement('div');
+  front.className = 'bq-label'; front.textContent = items.length ? 'front →' : '(empty)';
+  el.appendChild(front);
+  items.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item' + (idx === (opts.highlight ?? -1) ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  const rear = document.createElement('div');
+  rear.className = 'bq-label'; rear.textContent = items.length ? '← rear' : '';
+  el.appendChild(rear);
+}
+
+/* floating nav scroll spy（共用 JS 先於 body 載入，等 DOM 齊了再抓元素） */
+document.addEventListener('DOMContentLoaded', function setupNav() {
+  const nav = $('floatNav');
+  if (!nav) return;
+  const links = nav.querySelectorAll('a[data-target]');
+  const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
+  function update() {
+    const y = window.scrollY + window.innerHeight * 0.3;
+    let active = sections[0]?.id;
+    for (const s of sections) if (s.offsetTop <= y) active = s.id;
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+});
+</script>
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#pnp" data-target="pnp"><span class="fn-num">P00</span><span class="fn-name">P、NP 與驗證</span></a>
+  <a href="#reduce" data-target="reduce"><span class="fn-num">P01</span><span class="fn-name">化約</span></a>
+  <a href="#npc" data-target="npc"><span class="fn-num">P02</span><span class="fn-name">NP-complete</span></a>
+  <a href="#cliquevc" data-target="cliquevc"><span class="fn-num">P03</span><span class="fn-name">化約實例</span></a>
+  <a href="#vc" data-target="vc"><span class="fn-num">P04</span><span class="fn-name">2-近似 VC</span></a>
+  <a href="#tsp" data-target="tsp"><span class="fn-num">P05</span><span class="fn-name">TSP 近似</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="purple">NP-Completeness</span> 與<span class="green">近似演算法</span></h1>
+    <div class="subtitle">第 09 章 — NP-Completeness &amp; Approximation Algorithms（CLRS 4e Ch 34–35）</div>
+    <div class="big-formula">P vs NP｜證書與驗證器｜多項式時間化約｜Cook–Levin｜近似比｜2-近似</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 34–35）</div>
+  <p>① 前面十幾週都在問「怎麼解得快」；本章問的是「<strong>哪些問題大概快不了</strong>」——這是理論課的高潮，也是面試與考試的常客。
+  ② 三個層次要分清楚：NP 是「驗證快」、NP-hard 是「至少跟 NPC 一樣難」、NP-complete 是兩者兼具——P01/P02 的定義題務必拿下。
+  ③ <strong>化約方向</strong>是最常見的錯：拿已知難的問題去化約成你的新問題，不是反過來。
+  ④ 遇到 NPC 問題不是躺平：Ch35 給出「多項式時間＋有品質保證」的近似路線，兩個 2-近似的證明都要會。
+  ⑤ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#pnp"><span class="toc-num">P00</span>P、NP 與驗證器</a>
+    <a href="#reduce"><span class="toc-num">P01</span>多項式時間化約</a>
+    <a href="#npc"><span class="toc-num">P02</span>NP-complete 與 Cook–Levin</a>
+    <a href="#cliquevc"><span class="toc-num">P03</span>化約實例：CLIQUE ⟷ VC</a>
+    <a href="#vc"><span class="toc-num">P04</span>2-近似 vertex cover</a>
+    <a href="#tsp"><span class="toc-num">P05</span>metric TSP 的 2-近似</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="pnp">
+  <div class="section-number">P00 · P vs NP</div>
+  <h2>P、NP 與驗證器：解得快 vs 對答案快 <span class="sec-badge">§34.1–34.2</span></h2>
+  <p>先把問題統一成<strong>決策問題</strong>（答 yes/no；最佳化問題都能加門檻 k 變決策版）。兩個類別：</p>
+  <div class="info-box purple">
+    <span class="info-label">兩個類別</span>
+    <strong>P</strong>：存在多項式時間演算法「解出」答案的問題——排序、最短路徑、MST 全都在這。<br>
+    <strong>NP</strong>：給一張<strong>證書（certificate）</strong>就能在多項式時間「驗證」yes 答案的問題。
+    例：TSP 的證書是一條導覽，驗證只要加總邊權比門檻；3-CNF 的證書是一組賦值，掃一遍公式就好。<br>
+    顯然 P ⊆ NP（會解就會驗）；<strong>P ≟ NP</strong>——「會驗是否代表會解」——是計算機科學最著名的未解問題。
+  </div>
+  <div class="viz-layout">
+    <div>
+      <p>「NP」是 <em>nondeterministic polynomial</em> 的縮寫：非決定性機器猜一張證書、再多項式驗證——
+      <strong>不是「non-polynomial」</strong>，這是最常見的誤讀。右邊的程式示範「驗證」有多便宜：
+      給定賦值，檢查 3-CNF 只要線性掃描。難的是在 2ⁿ 種賦值裡<strong>找到</strong>它。</p>
+      <div class="warn-box">
+        <div class="wb-title">⚠ 直覺校正</div>
+        NP 問題不是「無解」也不是「必然要指數時間」——沒有人證明過下界；只是三十年來最聰明的人都沒找到多項式解法。
+        NPC 理論給的是<strong>證據</strong>：你的問題和上千個著名難題同生共死。
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctVerify">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctVerify','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctVerify','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctVerify','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">VERIFY-3CNF</span>(φ, 證書 x)</div>
+            <span class="line"><span class="ln">1</span><span class="kw">for</span> φ 的每個子句 C</span>
+            <span class="line"><span class="ln">2</span>  <span class="kw">if</span> C 的三個文字在 x 下全為假：<span class="kw">return</span> <span class="kw">NO</span></span>
+            <span class="line"><span class="ln">3</span><span class="kw">return</span> <span class="kw">YES</span>　<span class="com">// O(公式長度)</span></span>
+          </div>
+          <div class="ct-note">NP 的定義只要求「驗證器」跑多項式時間——找證書的難度不在定義裡。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// (x1 ∨ ¬x2 ∨ x3) ∧ (¬x1 ∨ x2 ∨ x4) ∧ (¬x3 ∨ ¬x4 ∨ x2)</span></span><span class="line">std::vector&lt;std::vector&lt;<span class="kw">int</span>&gt;&gt; clauses = {{<span class="num">1</span>,-<span class="num">2</span>,<span class="num">3</span>}, {-<span class="num">1</span>,<span class="num">2</span>,<span class="num">4</span>}, {-<span class="num">3</span>,-<span class="num">4</span>,<span class="num">2</span>}};</span><span class="line"><span class="kw">bool</span> all = <span class="kw">true</span>;</span><span class="line"><span class="kw">for</span> (<span class="kw">const</span> <span class="kw">auto</span>&amp; cl : clauses) {</span><span class="line">    <span class="kw">bool</span> sat = <span class="kw">false</span>;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> lit : cl) {</span><span class="line">        <span class="kw">int</span> v = lit &gt; <span class="num">0</span> ? lit : -lit;</span><span class="line">        <span class="kw">if</span> ((lit &gt; <span class="num">0</span>) == cert[v]) sat = <span class="kw">true</span>;</span><span class="line">    }</span><span class="line">    all = all &amp;&amp; sat;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/np_approx/sat_verify.cpp）</span><pre>子句 (x1 | !x2 | x3) = true
+子句 (!x1 | x2 | x4) = true
+子句 (!x3 | !x4 | x2) = true
+證書 x1=T, x2=T, x3=F, x4=F 驗證結果：滿足（掃一遍公式，線性時間）</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 自寫簡例（Ch34 理論章，官方 clrsPython 無程式）</span></span><span class="line">clauses = [(<span class="num">1</span>,-<span class="num">2</span>,<span class="num">3</span>), (-<span class="num">1</span>,<span class="num">2</span>,<span class="num">4</span>), (-<span class="num">3</span>,-<span class="num">4</span>,<span class="num">2</span>)]</span><span class="line">x = {<span class="num">1</span>: <span class="kw">True</span>, <span class="num">2</span>: <span class="kw">True</span>, <span class="num">3</span>: <span class="kw">False</span>, <span class="num">4</span>: <span class="kw">False</span>}</span><span class="line">all(any((lit &gt; <span class="num">0</span>) == x[abs(lit)] <span class="kw">for</span> lit <span class="kw">in</span> cl)</span><span class="line">    <span class="kw">for</span> cl <span class="kw">in</span> clauses)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>True</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · NP 的正解</div>
+    <p>「NP」的正確意思是？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="false" data-fb="這是最流行的誤讀。沒有人證明 NP 問題需要非多項式時間——P = NP 仍是懸案。N 是 nondeterministic 的 N。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> non-polynomial：需要超多項式時間的問題</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。nondeterministic polynomial：非決定性機器「猜」一張證書、再用多項式時間驗證——等價說法是「yes 實例有多項式時間可驗證的證書」。排序也在 NP 裡（P ⊆ NP）。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> nondeterministic polynomial：yes 答案有可快速驗證的證書</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「不可解」是另一回事（如停機問題，Ch34 開頭提的 undecidable）；NP 問題全部都可解，只是可能慢。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> no-polynomial-solution：已證明無多項式解的問題</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="reduce">
+  <div class="section-number">P01 · REDUCTION</div>
+  <h2>多項式時間化約：難度的搬運工 <span class="sec-badge">§34.3</span></h2>
+  <p>A ≤<sub>p</sub> B（A 化約到 B）：存在多項式時間函數 f，把 A 的每個實例 x 轉成 B 的實例 f(x)，
+  且 <strong>x 是 yes ⟺ f(x) 是 yes</strong>。意義：有 B 的快演算法，就能解 A——「<strong>B 至少跟 A 一樣難</strong>」。</p>
+  <div class="thm-box proof">
+    <div class="thm-label">方向感（考試最容易反）</div>
+    <div style="font-size:.86rem;line-height:1.7;">
+    要證明你的新問題 B 很難：拿一個<strong>已知 NPC 的問題 A</strong>，做 <strong>A ≤<sub>p</sub> B</strong>
+    ——把「公認的難題」偽裝成你的問題的特例。<br>
+    寫反（B ≤<sub>p</sub> A）只證明「B 不比 A 難」，什麼難度都沒建立。
+    口訣：<strong>難的在左邊、新的在右邊；箭頭指向你要抹黑的對象</strong>。</div>
+  </div>
+  <p>化約還要證兩個方向的正確性：yes ⟹ yes（構造證書）與 yes ⟸ yes（從 f(x) 的解還原 x 的解）——少一半就不算完成。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 方向</div>
+    <p>要證明新問題 SCHEDULING 是 NP-hard，正確的做法是？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="false" data-fb="方向反了。SCHEDULING ≤p 3-CNF-SAT 只說明「SCHEDULING 不比 SAT 難」——連 P 裡的問題都能化約到 SAT，這什麼也沒證明。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 做 SCHEDULING ≤p 3-CNF-SAT</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。把已知 NPC 的 3-CNF-SAT 化約到 SCHEDULING（3-CNF-SAT ≤p SCHEDULING）：若 SCHEDULING 有多項式解法，SAT 也有 → P = NP。所以 SCHEDULING 至少跟 SAT 一樣難。另需 SCHEDULING ∈ NP 才能說它 NP-complete。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 做 3-CNF-SAT ≤p SCHEDULING</div>
+      <div class="quiz-opt" data-correct="false" data-fb="實測跑得慢不構成證明——可能只是你的演算法爛。難度下界要靠化約，不靠 benchmark。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 實作後測量它跑很慢</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="npc">
+  <div class="section-number">P02 · NP-COMPLETE</div>
+  <h2>NP-complete：NP 裡最難的一群 <span class="sec-badge">§34.4–34.5</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>B 是 <strong>NP-complete</strong> ⟺ ① B ∈ NP，且 ② NP 裡<strong>每個</strong>問題都 ≤<sub>p</sub> B（此條件單獨叫 NP-hard）。
+      第一張骨牌是 <strong>Cook–Levin 定理</strong>：CIRCUIT-SAT 是 NPC——證法是「任何多項式驗證器都能編成電路」。
+      之後不用再苦證「每個 NP 問題」：化約有遞移性，<strong>從家族樹上任何一個成員接出去就好</strong>。</p>
+      <div class="info-box green">
+        <span class="info-label">為什麼一個倒、全部倒</span>
+        若任何一個 NPC 問題有多項式演算法：NP 中每個問題都 ≤<sub>p</sub> 它 → 全部變多項式 → <strong>P = NP</strong>。
+        反過來，只要證明任何一個 NPC 問題沒有多項式解法，就證明了 P ≠ NP。這就是「同生共死」。
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.78rem;">
+        <div class="cc-title">NPC 家族樹（CLRS 圖 34.13 的化約鏈）</div>
+        <span class="line">CIRCUIT-SAT　<span class="com">// Cook–Levin：第一個 NPC</span></span>
+        <span class="line">　└→ SAT</span>
+        <span class="line">　　　└→ 3-CNF-SAT</span>
+        <span class="line">　　　　　├→ CLIQUE</span>
+        <span class="line">　　　　　│　　└→ VERTEX-COVER</span>
+        <span class="line">　　　　　│　　　　　└→ HAM-CYCLE</span>
+        <span class="line">　　　　　│　　　　　　　　└→ TSP</span>
+        <span class="line">　　　　　└→ SUBSET-SUM</span>
+      </div>
+      <div class="ct-note" style="margin-top:.5rem;">每個箭頭都是一次「A ≤p B」的化約證明；樹根靠 Cook–Levin 撐住全世界。</div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 骨牌效應</div>
+    <p>假設有人明天發表 CLIQUE 的多項式時間演算法。下列何者成立？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。CLIQUE 是 NPC：NP 中任何問題 ≤p CLIQUE，化約本身是多項式 → 串起來全是多項式 → P = NP。排序當然也在 NP 裡，但它本來就在 P。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> P = NP，SAT、TSP、SUBSET-SUM 全部有多項式解法</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不只 CLIQUE 得救——NPC 的定義讓整個 NP 一起得救：所有 NP 問題都能多項式化約到 CLIQUE 再用新演算法解。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 只有 CLIQUE 變快，其他 NPC 問題不受影響</div>
+      <div class="quiz-opt" data-correct="false" data-fb="NPC 問題之間互相 ≤p（遞移＋Cook–Levin 的普遍性），沒有「更難的 NPC」——它們在多項式意義下等難。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 不影響 SAT，因為 SAT 比 CLIQUE 難</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="cliquevc">
+  <div class="section-number">P03 · 化約實例</div>
+  <h2>五分鐘化約：CLIQUE ⟷ VERTEX-COVER <span class="sec-badge">§34.5.1–34.5.2</span></h2>
+  <p>家族樹上「CLIQUE → VERTEX-COVER」這步是最漂亮的入門化約，只要一個<strong>補圖</strong>觀察：</p>
+  <div class="thm-box proof">
+    <div class="thm-label">G 有 k-clique ⟺ 補圖 Ḡ 有大小 |V|−k 的 vertex cover</div>
+    <div style="font-size:.86rem;line-height:1.7;">
+    設 V′ ⊆ V 是 G 的 k-clique。看補圖 Ḡ 的任一條邊 (u,v)：它在 G 裡<strong>不存在</strong>
+    ⟹ u、v 不會同時在 clique 裡 ⟹ 至少一端落在 V − V′。
+    所以 <strong>V − V′（大小 |V|−k）蓋住 Ḡ 的每條邊</strong>——是 vertex cover。
+    反方向同理（cover 的補集在 G 裡兩兩相鄰 = clique）。∎<br>
+    化約函數 f：⟨G, k⟩ ↦ ⟨Ḡ, |V|−k⟩，多項式時間可算——完工。</div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">小例：G 是 5 頂點、其中 {a,b,c,d} 兩兩相連的圖（4-clique），e 只連 a。
+  補圖 Ḡ 的邊只剩 e 的缺邊（e-b、e-c、e-d）——單顆 {e} 就蓋住全部，正是 |V|−k = 5−4 = 1。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 用補圖思考</div>
+    <p>G 有 6 個頂點，已知 Ḡ 的最小 vertex cover 是 2 顆。G 的最大 clique 是幾顆？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。最大 clique = |V| − (Ḡ 的最小 cover) = 6 − 2 = 4。這條等式讓兩個問題的難度綁在一起：解得了其中一個就解得了另一個。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 4</div>
+      <div class="quiz-opt" data-correct="false" data-fb="2 是 cover 的大小——clique 是它的補集那邊：|V| − 2 = 4。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 2</div>
+      <div class="quiz-opt" data-correct="false" data-fb="差一個補集：cover 蓋 Ḡ 的邊，clique 是 V 減去 cover，6 − 2 = 4 不是 6。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 6</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="vc">
+  <div class="section-number">P04 · APPROX-VC</div>
+  <h2>2-近似 vertex cover：認難之後的出路 <span class="sec-badge">§35.1</span></h2>
+  <p>ρ(n)-<strong>近似演算法</strong>：多項式時間，保證解的成本在最佳解的 ρ(n) 倍以內。
+  VERTEX-COVER 是 NPC，但下面這個笨到不可思議的演算法保證 <strong>ρ = 2</strong>：
+  隨便挑一條還沒被蓋住的邊、<strong>兩個端點都收</strong>、刪掉被蓋住的邊，重複。按單步看 CLRS 圖 35.1：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="token-out" id="vcEdges" style="min-height:56px;"></div>
+      <div class="adj-list" id="vcCover" style="font-family:'JetBrains Mono',monospace;"></div>
+      <div class="status-banner" id="vcStatus"><span class="status-icon">▸</span><span class="status-text">8 條邊待蓋。按「單步」：挑最前面還活著的邊，收兩端。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="vcPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="vcPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="vcPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctVc">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctVc','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctVc','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctVc','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">APPROX-VERTEX-COVER</span>(G)</div>
+            <span class="line"><span class="ln">1</span>C = ∅；E′ = G.E</span>
+            <span class="line"><span class="ln">2</span><span class="kw">while</span> E′ ≠ ∅</span>
+            <span class="line"><span class="ln">3</span>  任取 (u, v) ∈ E′</span>
+            <span class="line"><span class="ln">4</span>  C = C ∪ {u, v}　<span class="com">// 兩端都收！</span></span>
+            <span class="line"><span class="ln">5</span>  從 E′ 刪掉所有碰到 u 或 v 的邊</span>
+            <span class="line"><span class="ln">6</span><span class="kw">return</span> C</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">for</span> (<span class="kw">size_t</span> i = <span class="num">0</span>; i &lt; E.size(); ++i) {</span><span class="line">    <span class="kw">if</span> (dead[i]) <span class="kw">continue</span>;</span><span class="line">    <span class="kw">auto</span> [u, v] = E[i];       <span class="com">// 任取一條活邊</span></span><span class="line">    C.insert(u); C.insert(v); <span class="com">// 兩端點都收</span></span><span class="line">    <span class="kw">for</span> (<span class="kw">size_t</span> j = <span class="num">0</span>; j &lt; E.size(); ++j)  <span class="com">// 蓋掉鄰邊</span></span><span class="line">        <span class="kw">if</span> (touches(E[j], u, v)) dead[j] = <span class="kw">true</span>;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/np_approx/approx_vertex_cover.cpp，CLRS 圖 35.1）</span><pre>選邊 (a, b)，蓋掉：a-b b-c
+選邊 (c, d)，蓋掉：c-d c-e d-e d-f d-g
+選邊 (e, f)，蓋掉：e-f
+cover = { a b c d e f }，|C| = 6（最佳解 {b, d, e} 只要 3——比值 2 以內）</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 35/approx_vertex_cover.py（MIT License）</span></span><span class="line">G = AdjacencyListGraph(<span class="num">7</span>, <span class="kw">False</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 35.1 …</span></span><span class="line">C = approx_vertex_cover(G)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>{'a', 'b', 'c', 'd', 'e', 'f'}（6 顆）</pre></div>
+          <div class="ct-note">課本圖例選的邊是 (b,c)、(e,f)、(d,g)，得 {b,c,d,e,f,g}——「任取」的自由讓答案不唯一，但大小同為 6、保證同樣成立。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="thm-box proof">
+    <div class="thm-label">為什麼 ≤ 2·OPT（定理 35.1）</div>
+    <div style="font-size:.86rem;line-height:1.7;">
+    演算法挑中的邊集 A 是一個<strong>匹配</strong>（兩兩不共端點——挑中後鄰邊全刪）。
+    任何 cover（包括最佳解 C*）都得為 A 中<strong>每條邊</strong>付出至少一個端點，且這些端點互不重複
+    ⟹ |C*| ≥ |A|。而 |C| = 2|A| ⟹ |C| ≤ 2|C*|。∎
+    妙處：<strong>不知道 OPT 是多少，也能證明離它不超過 2 倍</strong>——用「匹配」當 OPT 的下界。</div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 聰明反被聰明誤</div>
+    <p>改成「每次只收<strong>度數最大</strong>的一個頂點」（貪婪），聽起來更聰明。結果是？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。greedy 度數法的近似比是 Θ(lg n)——會隨規模惡化（CLRS 習題 35.1-3 的反例構造）；「笨」的收兩端反而鎖住常數 2。近似演算法的世界裡，可證明的保證勝過直覺的聰明。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 更差：近似比劣化到 Θ(lg n)，沒有常數保證</div>
+      <div class="quiz-opt" data-correct="false" data-fb="直覺如此，但可以構造反例讓貪婪一路選錯，成本達 Ω(lg n) 倍——它沒有 2-近似證明裡「匹配當下界」的結構。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> 更好：至少也是 2-近似</div>
+      <div class="quiz-opt" data-correct="false" data-fb="VERTEX-COVER 是 NPC——任何多項式演算法（含貪婪）都不可能保證永遠最佳，除非 P = NP。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 直接得到最佳解</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="tsp">
+  <div class="section-number">P05 · APPROX-TSP</div>
+  <h2>metric TSP 的 2-近似：MST＋前序走訪 <span class="sec-badge">§35.2</span></h2>
+  <p>TSP 是 NPC；但若成本滿足<strong>三角不等式</strong>（繞路不會更近，c(u,w) ≤ c(u,v)+c(v,w)——歐氏距離天然滿足），
+  兩步就有 2-近似：<strong>① 建 MST；② 前序走訪輸出頂點序</strong>。按單步看 CLRS 圖 35.2 的 8 個城市：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <svg id="tspSvg" viewBox="0 0 320 260" style="width:100%;max-width:420px;background:rgba(255,255,255,.03);border-radius:10px;"></svg>
+      <div class="status-banner" id="tspStatus"><span class="status-icon">▸</span><span class="status-text">8 個城市（完全圖、歐氏距離）。按「單步」先長 MST。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="tspPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="tspPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="tspPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctTsp">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctTsp','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctTsp','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctTsp','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">APPROX-TSP-TOUR</span>(G, c)</div>
+            <span class="line"><span class="ln">1</span>選任意根 r；T = <span class="fn">MST-PRIM</span>(G, c, r)</span>
+            <span class="line"><span class="ln">2</span>H = T 的前序走訪頂點序</span>
+            <span class="line"><span class="ln">3</span><span class="kw">return</span> H（首尾相接成環）</span>
+          </div>
+          <div class="ct-note">證明：c(MST) ≤ c(最佳導覽)（拿掉一條邊就是生成樹）；完整走訪 = 2·c(MST)；三角不等式讓「跳過重複點」不變貴 ⟹ c(H) ≤ 2·OPT。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// ① Prim MST → parent[]　② 前序走訪（子節點按編號序）</span></span><span class="line">std::vector&lt;<span class="kw">int</span>&gt; tour;</span><span class="line"><span class="kw">auto</span> preorder = [&amp;](<span class="kw">auto</span>&amp;&amp; self, <span class="kw">int</span> u) -&gt; <span class="kw">void</span> {</span><span class="line">    tour.push_back(u);</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> c : child[u]) self(self, c);</span><span class="line">};</span><span class="line">preorder(preorder, <span class="num">0</span>);</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/np_approx/tsp_approx.cpp，CLRS 圖 35.2——與課本導覽相同）</span><pre>前序導覽：a→b→c→h→d→e→f→g→a
+近似導覽成本 = 19.074
+暴力最佳成本 = 14.7148，比值 = 1.29624（≤ 2 ✓）</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 35/approx_tsp_tour.py（MIT License）</span></span><span class="line">tour = approx_tsp_tour(G)　<span class="com"># 內部：prim + 前序</span></span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>['a','b','c','f','e','d','g','h']，成本 19.96</pre></div>
+          <div class="ct-note">官方版前序時子節點順序不同，導覽與 C++ 版不同（19.96 vs 19.07）——兩者都 ≤ 2·OPT = 29.43，保證只管上界，不挑路線。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <div class="wb-title">⚠ 一般 TSP：連近似都免談（定理 35.3）</div>
+    沒有三角不等式時，若存在任何常數 ρ 的多項式近似演算法 ⟹ P = NP。
+    證法又是化約：把 HAM-CYCLE 的圖嵌進完全圖，原有的邊權 1、缺的邊權 ρ|V|+1——
+    近似演算法若回傳 ≤ ρ|V| 的導覽，就等於判定了 HAM-CYCLE。<strong>近似難度也能用化約證明</strong>。
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05 · 三角不等式的角色</div>
+    <p>2-近似證明鏈「c(H) ≤ 完整走訪 = 2·c(MST) ≤ 2·OPT」中，三角不等式用在哪一步？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。完整走訪會重複經過內部頂點；前序序列把「已看過的點」跳過改走直線——每次抄捷徑靠三角不等式保證不變貴。沒有它，抄捷徑可能反而爆貴，整條證明鏈斷在這裡。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 「c(H) ≤ 完整走訪」：跳過重複頂點抄捷徑不會變貴</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「完整走訪 = 2·c(MST)」是純計數：每條樹邊恰走兩次（下去＋回來），與三角不等式無關。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 「完整走訪 = 2·c(MST)」這一步</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「c(MST) ≤ OPT」只用了「導覽刪一條邊是生成樹、MST 是最便宜的生成樹」，也與三角不等式無關。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 「c(MST) ≤ OPT」這一步</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>組合拳</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 實戰姿勢</div>
+    <p>老闆丟來一個新的最佳化問題，你花三天想不出多項式演算法。專業的下一步是？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。這正是 Ch34 的實用價值：證出 NP-hard（挑個像的 NPC 問題化約過來）就能停止「找不到快演算法是我不夠聰明」的自責，轉去近似／啟發式／特例／指數但可行的精確法——Ch35 與下一章的主場。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> 試著從已知 NPC 問題化約過來證明它 NP-hard，再轉攻近似或特例</div>
+      <div class="quiz-opt" data-correct="false" data-fb="也許再想三天就有了——但沒有難度證據前，時間可能全部沉沒。先花半天試化約是期望值更高的投資。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> 繼續想，直到想出多項式演算法</div>
+      <div class="quiz-opt" data-correct="false" data-fb="沒證明就宣稱無解是不負責任的——說不定它其實在 P（很多問題長得難其實不難，如 2-SAT、Euler 迴路）。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 直接宣布問題無解</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 選近似工具</div>
+    <p>外送平台要規劃一位外送員跑 30 個地址的路線（實際路網距離，滿足三角不等式），要求「快、且離最佳不能太離譜」。選什麼？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。metric TSP：MST＋前序 = 2-近似，O(n²) 就能跑；實務常再加 2-opt 局部改善。30 點的暴力是 29! ≈ 10³⁰ 種，Held-Karp DP 也要 2³⁰·30² 級——保證型近似是正解。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> APPROX-TSP-TOUR（MST＋前序走訪，2-近似）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="30! 級的暴力枚舉宇宙毀滅前跑不完；「精確」在 NPC 問題上是奢侈品，除非 n 很小（Held-Karp 撐到 n≈20）。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 暴力枚舉所有路線求精確最佳</div>
+      <div class="quiz-opt" data-correct="false" data-fb="最近鄰貪婪常見但沒有常數近似保證（可以構造反例任意差）；題目要求「離最佳不能太離譜」——要拿有證明的工具。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 每次走最近的下一站（最近鄰貪婪）</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章速查表</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>問題</th><th>狀態</th><th>面對它的姿勢</th></tr></thead>
+    <tbody>
+      <tr><td>排序、MST、最短路徑（無負環）、2-SAT</td><td class="best">P</td><td>直接上多項式演算法</td></tr>
+      <tr><td>SAT、3-CNF-SAT、CLIQUE、VERTEX-COVER</td><td>NPC</td><td>近似／特例／啟發式</td></tr>
+      <tr><td>HAM-CYCLE、TSP（決策版）、SUBSET-SUM</td><td>NPC</td><td>近似（TSP 需三角不等式）／pseudo-poly DP（子集和）</td></tr>
+      <tr><td>VERTEX-COVER 最佳化</td><td>NP-hard</td><td class="best">2-近似（收邊兩端）</td></tr>
+      <tr><td>metric TSP 最佳化</td><td>NP-hard</td><td class="best">2-近似（MST＋前序）；Christofides 可到 1.5</td></tr>
+      <tr><td>一般 TSP 最佳化</td><td>NP-hard</td><td>任何常數近似 ⟹ P = NP</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① NP =「有快驗證器」；P ⊆ NP；P ≟ NP 未解。<br>
+    ② 化約方向：<strong>已知難的 ≤p 新問題</strong>；證 NPC = 證 ∈ NP ＋ 證 NP-hard。<br>
+    ③ Cook–Levin 給第一張骨牌；之後靠遞移性接家族樹。<br>
+    ④ 近似比 ρ：解 ≤ ρ·OPT；證明技巧 =「找 OPT 的下界」（匹配、MST）。<br>
+    ⑤ 三角不等式是 TSP 近似的生命線；沒有它，常數近似 ⟹ P = NP。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch9.json · 14 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="graphs2.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">MST 與最短路徑</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="modern.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">現代主題概覽</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 09 章 NP-Completeness &amp; Approximation Algorithms（CLRS 4e Ch 34–35）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"決策問題（Decision Problem）","back":"答案是 yes/no 的問題。最佳化問題加門檻 k 就有決策版（「存在成本 ≤ k 的解嗎」）；NP 理論全部架在決策問題上。"},
+  {"front":"P（複雜度類別）","back":"存在多項式時間演算法可「解出」的決策問題集合：排序、MST、最短路徑、2-SAT、Euler 迴路都在其中。"},
+  {"front":"NP 與證書（Certificate）","back":"yes 實例存在多項式長度證書、可在多項式時間「驗證」的問題。NP = nondeterministic polynomial，不是 non-polynomial。P ⊆ NP。"},
+  {"front":"P vs NP 問題","back":"「會驗證是否等於會求解」——計算機科學最著名的未解問題（千禧年大獎難題之一）。多數學者相信 P ≠ NP，但無人能證。"},
+  {"front":"多項式時間化約（≤p）","back":"A ≤p B：多項式函數 f 把 A 的實例轉成 B 的實例且保 yes/no。「B 至少跟 A 一樣難」。方向：拿已知難的 A 化約到新問題 B。"},
+  {"front":"NP-complete","back":"① ∈ NP 且 ② NP 中所有問題 ≤p 它。NP 裡最難的一群；任何一個有多項式解法 ⟹ P = NP。"},
+  {"front":"NP-hard","back":"只滿足 NPC 定義的條件 ②（所有 NP 問題 ≤p 它），不要求自己在 NP。最佳化版問題（如 TSP 求最短導覽）通常說 NP-hard。"},
+  {"front":"Cook–Levin 定理","back":"CIRCUIT-SAT 是 NP-complete——第一張骨牌。證法：任何多項式時間驗證器的運算都能編成多項式大小的布林電路。"},
+  {"front":"NPC 家族樹","back":"CIRCUIT-SAT → SAT → 3-CNF-SAT → {CLIQUE → VERTEX-COVER → HAM-CYCLE → TSP；SUBSET-SUM}。每個箭頭一次化約，遞移性讓新證明只需接上任一節點。"},
+  {"front":"CLIQUE ⟷ VERTEX-COVER","back":"G 有 k-clique ⟺ 補圖 Ḡ 有大小 |V|−k 的 vertex cover（clique 的補集蓋住補圖所有邊）。五分鐘級的經典化約。"},
+  {"front":"近似比 ρ(n)","back":"ρ(n)-近似演算法：多項式時間且保證 max(C/C*, C*/C) ≤ ρ(n)。證明套路：找一個 OPT 的下界（匹配、MST），把自己的成本綁在下界的常數倍內。"},
+  {"front":"APPROX-VERTEX-COVER","back":"重複「任取活邊、收兩端、刪鄰邊」。挑中的邊是匹配 M：OPT ≥ |M| 而 |C| = 2|M| ⟹ 2-近似。貪婪挑大度數反而只有 Θ(lg n)。"},
+  {"front":"APPROX-TSP-TOUR","back":"metric TSP（三角不等式）：MST＋前序走訪 = 2-近似。鏈：c(H) ≤ 完整走訪 = 2·c(MST) ≤ 2·OPT；抄捷徑那步靠三角不等式。"},
+  {"front":"一般 TSP 的不可近似性","back":"無三角不等式時，任何常數 ρ 近似演算法 ⟹ P = NP。證法：HAM-CYCLE 嵌入完全圖（有邊權 1、缺邊權 ρ|V|+1），近似解可判定 HAM-CYCLE。"}
+];
+
+/* ---------- P04 vertex cover 動畫 ---------- */
+function vcFrames() {
+  const name = 'abcdefg';
+  const E = [[0,1],[1,2],[2,3],[2,4],[3,4],[3,5],[3,6],[4,5]];
+  const dead = new Array(E.length).fill(false);
+  const C = [];
+  const frames = [{dead: [...dead], C: [], pick: -1,
+    msg: 'C = ∅。邊序：a-b b-c c-d c-e d-e d-f d-g e-f。按「單步」。'}];
+  for (let i = 0; i < E.length; i++) {
+    if (dead[i]) continue;
+    const [u, v] = E[i];
+    C.push(u, v);
+    const covered = [];
+    for (let j = 0; j < E.length; j++)
+      if (!dead[j] && (E[j][0] === u || E[j][0] === v || E[j][1] === u || E[j][1] === v)) {
+        dead[j] = true;
+        covered.push(`${name[E[j][0]]}-${name[E[j][1]]}`);
+      }
+    frames.push({dead: [...dead], C: [...C], pick: i,
+      msg: `選 (${name[u]}, ${name[v]})：C 收兩端 {${name[u]}, ${name[v]}}，蓋掉 ${covered.join('、')}。`});
+  }
+  frames.push({dead: [...dead], C: [...C], pick: -1,
+    msg: `完成：|C| = ${C.length}。最佳解 {b, d, e} 只要 3 顆——挑中的 3 條邊是匹配，OPT ≥ 3，6 ≤ 2×3 ✓。`});
+  return frames;
+}
+function vcApply(f) {
+  const name = 'abcdefg';
+  const E = [[0,1],[1,2],[2,3],[2,4],[3,4],[3,5],[3,6],[4,5]];
+  const el = $('vcEdges'); el.innerHTML = '';
+  E.forEach(([u, v], j) => {
+    const d = document.createElement('div');
+    d.className = 'tok' + (f.dead[j] ? ' tok-op' : '') + (j === f.pick ? ' tok-new' : '');
+    d.textContent = `${name[u]}-${name[v]}`;
+    el.appendChild(d);
+  });
+  const cv = $('vcCover'); cv.innerHTML = '';
+  const row = document.createElement('div'); row.className = 'adj-row';
+  row.innerHTML = `<span class="adj-key">C</span><span class="adj-arrow">=</span>` +
+    (f.C.length ? f.C.map(v => `<span class="adj-neighbor">${name[v]}</span>`).join('') : '<span class="adj-neighbor">∅</span>');
+  cv.appendChild(row);
+  setStatus('vcStatus', f.msg);
+}
+const vcPlayer = new Player({frames: vcFrames(), apply: vcApply, delayInput: null});
+vcPlayer.reset();
+
+/* ---------- P05 TSP 動畫（MST → 前序導覽）---------- */
+const TSP_P = [[1,4],[1,2],[0,1],[3,4],[4,3],[3,2],[5,2],[2,0]];
+const TSP_N = 'abcdefgh';
+function tspXY(i) { return [30 + TSP_P[i][0] * 52, 230 - TSP_P[i][1] * 50]; }
+function tspFrames() {
+  const n = 8;
+  const dist = (i, j) => Math.hypot(TSP_P[i][0] - TSP_P[j][0], TSP_P[i][1] - TSP_P[j][1]);
+  // Prim（根 a），記邊的加入順序
+  const parent = new Array(n).fill(-1), key = new Array(n).fill(1e18), used = new Array(n).fill(false);
+  key[0] = 0;
+  const mstEdges = [];
+  for (let it = 0; it < n; it++) {
+    let u = -1;
+    for (let v = 0; v < n; v++) if (!used[v] && (u < 0 || key[v] < key[u])) u = v;
+    used[u] = true;
+    if (parent[u] >= 0) mstEdges.push([parent[u], u]);
+    for (let v = 0; v < n; v++)
+      if (!used[v] && dist(u, v) < key[v]) { key[v] = dist(u, v); parent[v] = u; }
+  }
+  const child = Array.from({length: n}, () => []);
+  for (let v = 1; v < n; v++) child[parent[v]].push(v);
+  child.forEach(c => c.sort((a, b) => a - b));
+  const tour = [];
+  (function pre(u) { tour.push(u); child[u].forEach(pre); })(0);
+  let cost = 0;
+  for (let i = 0; i < n; i++) cost += dist(tour[i], tour[(i + 1) % n]);
+
+  const frames = [{mst: [], tour: [], msg: '8 個城市。先長 MST：每步收「離樹最近」的城市（Prim）。'}];
+  mstEdges.forEach((e, i) => frames.push({mst: mstEdges.slice(0, i + 1), tour: [],
+    msg: `MST 邊 ${i + 1}/7：${TSP_N[e[0]]}-${TSP_N[e[1]]}（權 ${dist(e[0], e[1]).toFixed(2)}）。`}));
+  for (let i = 1; i <= n; i++) {
+    const seg = [];
+    for (let j = 0; j < i; j++) seg.push([tour[j], tour[(j + 1) % n]]);
+    frames.push({mst: mstEdges, tour: i < n ? seg.slice(0, i) : seg,
+      msg: i < n ? `前序走訪：${tour.slice(0, i + 1).map(v => TSP_N[v]).join('→')}（跳過重複點抄捷徑——三角不等式保證不變貴）。`
+                 : `收尾回 a：導覽 ${tour.map(v => TSP_N[v]).join('→')}→a，成本 ${cost.toFixed(2)}；暴力最佳 14.71，比值 ${(cost / 14.7148).toFixed(2)} ≤ 2 ✓`});
+  }
+  return frames;
+}
+function tspApply(f) {
+  const svg = $('tspSvg');
+  let s = '';
+  f.mst.forEach(([u, v]) => {
+    const [x1, y1] = tspXY(u), [x2, y2] = tspXY(v);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#5a5a7a" stroke-width="1.6" stroke-dasharray="4 3"/>`;
+  });
+  f.tour.forEach(([u, v], i) => {
+    const [x1, y1] = tspXY(u), [x2, y2] = tspXY(v);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e5c07b" stroke-width="2.4" opacity="${i === f.tour.length - 1 ? 1 : .75}"/>`;
+  });
+  for (let i = 0; i < 8; i++) {
+    const [x, y] = tspXY(i);
+    s += `<circle cx="${x}" cy="${y}" r="9" fill="#282c34" stroke="#61afef" stroke-width="2"/>` +
+         `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="11" fill="#e6e6e6" font-family="JetBrains Mono,monospace">${TSP_N[i]}</text>`;
+  }
+  svg.innerHTML = s;
+  setStatus('tspStatus', f.msg);
+}
+const tspPlayer = new Player({frames: tspFrames(), apply: tspApply, delayInput: null});
+tspPlayer.reset();
+</script>
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>
