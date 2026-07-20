@@ -6,6 +6,7 @@
   <a href="#master" data-target="master"><span class="fn-num">P03</span><span class="fn-name">Master Theorem</span></a>
   <a href="#strassen" data-target="strassen"><span class="fn-num">P04</span><span class="fn-name">Strassen</span></a>
   <a href="#randomized" data-target="randomized"><span class="fn-num">P05</span><span class="fn-name">機率分析與隨機化</span></a>
+  <a href="#birthday" data-target="birthday"><span class="fn-num">P06</span><span class="fn-name">生日悖論</span></a>
   <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
   <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
   <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
@@ -41,6 +42,7 @@
     <a href="#master"><span class="toc-num">P03</span>Master Theorem</a>
     <a href="#strassen"><span class="toc-num">P04</span>Strassen 矩陣乘法</a>
     <a href="#randomized"><span class="toc-num">P05</span>機率分析與隨機化</a>
+    <a href="#birthday"><span class="toc-num">P06</span>生日悖論</a>
     <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
     <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
     <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
@@ -88,6 +90,35 @@
     </div>
   </div>
 
+  <h3>極限判別法：五個符號一次分清楚</h3>
+  <p>手上有 f、g 兩個函數，怎麼快速判斷關係？算 <strong>lim<sub>n→∞</sub> f(n)/g(n)</strong>（若極限存在）：</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>lim f/g</th><th>結論</th><th>白話</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td class="best">f = o(g)（因此也是 O(g)）</td><td>f 嚴格慢於 g</td><td>n / n² → 0：n = o(n²)</td></tr>
+      <tr><td>常數 c &gt; 0</td><td class="best">f = Θ(g)</td><td>同速率</td><td>3n²+n / n² → 3：Θ(n²)</td></tr>
+      <tr><td>∞</td><td class="best">f = ω(g)（因此也是 Ω(g)）</td><td>f 嚴格快（大）於 g</td><td>2ⁿ / n¹⁰⁰ → ∞</td></tr>
+      <tr><td>不存在（震盪）</td><td>回定義硬算</td><td>極限法失效 ≠ 無關係</td><td>n(1+sin n) vs n：是 O(n) 但非 Θ(n)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">要背的階梯（左慢右快）：
+  <span class="mono">1 ≺ lg lg n ≺ lg n ≺ lgᵏn ≺ n^ε ≺ n ≺ n lg n ≺ n² ≺ n³ ≺ 2ⁿ ≺ n! ≺ nⁿ</span>——
+  任何多項式打敗任何多項對數（lgᵏn = o(n^ε) 對任意 k、ε &gt; 0）；任何指數打敗任何多項式。
+  面對陌生比較先取 lg 再比也常常有效（如 n^lg 4 vs 2^(2 lg n)：取 lg 得 2 lg n = 2 lg n，同級）。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00b · 極限判別</div>
+    <p>f(n) = n lg n、g(n) = n^1.01。兩者關係是？</p>
+    <div class="quiz-options" id="q08Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。lim (n lg n)/n^1.01 = lim lg n / n^0.01 = 0（任何多項對數輸給任何正次方）→ n lg n = o(n^1.01)。所以 Θ(n lg n) 的演算法漸近上永遠贏 Θ(n^1.01)——即使 0.01 小到看起來人畜無害。" onclick="quizCheck('q08', this)"><span class="opt-letter">(A)</span> n lg n = o(n^1.01)：n lg n 嚴格較慢</div>
+      <div class="quiz-opt" data-correct="false" data-fb="lg n 成長比 n^0.01 慢——lg n = o(n^ε) 對任何 ε > 0 成立，比值趨向 0 不是常數。" onclick="quizCheck('q08', this)"><span class="opt-letter">(B)</span> 兩者 Θ 同級</div>
+      <div class="quiz-opt" data-correct="false" data-fb="方向反了：n^1.01 = n·n^0.01，而 n^0.01 終究會超過 lg n（在 n 非常大時）——多項式次方 > 對數，永遠。" onclick="quizCheck('q08', this)"><span class="opt-letter">(C)</span> n lg n = ω(n^1.01)：n lg n 嚴格較快</div>
+    </div>
+    <div class="quiz-feedback" id="q08Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P00 · 定義操作</div>
     <p>下列哪個敘述<strong>錯誤</strong>？</p>
@@ -113,7 +144,37 @@
   <div class="warn-box"><b>經典陷阱：</b>證 T(n) = O(n) 時寫出 T(n) ≤ 2(c⌊n/2⌋) + n = cn + n = <b>O(n)</b>——這是<b>錯的</b>！
   歸納法必須證出「T(n) ≤ cn」<em>一字不差</em>的形式；「≤ cn + n」不是「≤ cn」，多出來的 +n 沒有被吸收掉。
   漸近符號不能在歸納中途偷換——歸納假設是含常數的精確不等式。</div>
+  <h3>兩個救場技巧：卡住時的標準動作</h3>
+  <div class="thm-box proof">
+    <div class="thm-label">技巧 ①：減去低階項（猜「更強」的敘述反而好證）</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    T(n) = 2T(⌊n/2⌋) + 1，猜 T(n) = O(n)。直接猜 T(n) ≤ cn：<br>
+    T(n) ≤ 2·c⌊n/2⌋ + 1 ≤ cn + 1——<strong>卡住</strong>（多了 +1，不是 ≤ cn）。<br>
+    改猜<strong>更強的 T(n) ≤ cn − d</strong>（d ≥ 0 常數）：<br>
+    T(n) ≤ 2(c⌊n/2⌋ − d) + 1 ≤ cn − 2d + 1 = (cn − d) − (d − 1) ≤ cn − d，只要 <strong>d ≥ 1</strong> ✓。<br>
+    直覺：減去低階項讓歸納假設「留了一點餘裕」，正好吸收掉遞迴帶進來的常數。反直覺但常用——猜太鬆反而證不動。</div>
+  </div>
+  <div class="thm-box proof">
+    <div class="thm-label">技巧 ②：換變數（把奇形怪狀變回標準形）</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    T(n) = 2T(√n) + lg n——√n 不是「除以常數」，三把刀都咬不動。<br>
+    令 <strong>m = lg n</strong>（即 n = 2ᵐ）：T(2ᵐ) = 2T(2^(m/2)) + m。<br>
+    再令 <strong>S(m) = T(2ᵐ)</strong>：S(m) = 2S(m/2) + m——正是 merge sort 的遞迴式！<br>
+    S(m) = O(m lg m)，換回來：T(n) = S(lg n) = <strong>O(lg n · lg lg n)</strong>。<br>
+    口訣：看到 √n 想 lg 代換；換完解標準形、最後記得換回去。</div>
+  </div>
   <p>猜不準怎麼辦？先用下一節的 recursion tree 畫圖得到猜測，再回來用 substitution 補嚴謹證明——兩把刀本來就是搭配使用的。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01b · 減低階項</div>
+    <p>技巧 ① 中，為什麼「T(n) ≤ cn − d」這個<strong>比 O(n) 更強</strong>的猜測反而證得動？</p>
+    <div class="quiz-options" id="q09Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。歸納假設變強，代入遞迴式時每個子項都多貢獻一個 −d，兩個子項共 −2d，足夠吸收遞迴自付的 +1 之後還剩 −d 維持形式。歸納法的弔詭：假設越強、可用的「本錢」越多。" onclick="quizCheck('q09', this)"><span class="opt-letter">(A)</span> 更強的歸納假設提供了 −2d 的餘裕來吸收 +1</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不是形式偏好——cn 版真的證不出來（cn + 1 ≰ cn），cn − d 版真的證得出來。差別在歸納本錢。" onclick="quizCheck('q09', this)"><span class="opt-letter">(B)</span> 只是習慣寫法，其實 cn 也證得動</div>
+      <div class="quiz-opt" data-correct="false" data-fb="結論沒變強錯了——cn − d ≤ cn，所以證出 T(n) ≤ cn − d 依然推得 T(n) = O(n)，答案相同、只是路走得通。" onclick="quizCheck('q09', this)"><span class="opt-letter">(C)</span> 因為這樣證出的結論是 O(n − d)，比 O(n) 快</div>
+    </div>
+    <div class="quiz-feedback" id="q09Feedback"></div>
+  </div>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P01 · 歸納紀律</div>
@@ -212,6 +273,43 @@
     </div>
   </div>
 
+  <h3>三個 case 各來一題完整示範</h3>
+  <div class="thm-box">
+    <div class="thm-label">例 1（Case 1・葉子主導）：T(n) = 9T(n/3) + n</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    a = 9、b = 3 → n^(log₃9) = n²。f(n) = n = O(n^(2−ε))（取 ε = 1）——f 比分水嶺小一個多項式級距。<br>
+    <strong>Case 1 → T(n) = Θ(n²)</strong>。
+    直覺：每往下一層，節點數 ×9、每節點工作 ÷3 → 層成本 ×3 逐層放大，81 個大小 n/9 的葉子群最終主導。</div>
+  </div>
+  <div class="thm-box">
+    <div class="thm-label">例 2（Case 2・打平）：T(n) = T(2n/3) + 1</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    a = 1、b = 3/2 → n^(log₃⸝₂1) = n⁰ = 1。f(n) = 1 = Θ(1·lg⁰n)——與分水嶺打平（k = 0）。<br>
+    <strong>Case 2 → T(n) = Θ(lg n)</strong>。
+    這正是 binary search 的形狀：每層做常數工作、走 log₃⸝₂ n 層。</div>
+  </div>
+  <div class="thm-box">
+    <div class="thm-label">例 3（Case 3・根部主導）：T(n) = 3T(n/4) + n lg n</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    a = 3、b = 4 → n^(log₄3) ≈ n⁰·⁷⁹³。f(n) = n lg n = Ω(n^(0.793+ε))（取 ε ≈ 0.2）——f 大一個多項式級距。<br>
+    還要驗<strong>正則性條件</strong>：a·f(n/b) = 3·(n/4)lg(n/4) ≤ (3/4)·n lg n = c·f(n)，c = 3/4 &lt; 1 ✓。<br>
+    <strong>Case 3 → T(n) = Θ(n lg n)</strong>。根部一次的工作就蓋過整棵子樹。</div>
+  </div>
+  <div class="warn-box"><b>掉進縫隙的反例：</b>T(n) = 2T(n/2) + n/lg n。分水嶺 n¹，f(n) = n/lg n 比 n 小——但只小一個 lg 因子，
+  <b>不是多項式級距</b>（n/lg n ≠ O(n^(1−ε))，因為 lg n 擠不出 n^ε），Case 1 不適用；它也不是 Θ(n lgᵏn) 形（k ≥ 0，而它是 k = −1），Case 2 也不適用。
+  Master theorem 對它<b>無話可說</b>——recursion tree 加總 Σ n/lg(n/2ⁱ) 可得真解 Θ(n lg lg n)。查表機失靈時，兩把手動刀永遠在。</div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03b · 誰主導</div>
+    <p>T(n) = 4T(n/2) + n³。用 master theorem 判是？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。分水嶺 n^(log₂4) = n²；f(n) = n³ = Ω(n^(2+ε))（ε=1），正則性 4·(n/2)³ = n³/2 ≤ c·n³（c=1/2 < 1）✓ → Case 3，T(n) = Θ(n³)。根部一次 n³ 就比全部遞迴加起來還大。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> Case 3 → Θ(n³)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Θ(n²) 是「f 不存在或很小」時葉子主導的答案；這裡 f(n) = n³ 比 n² 大一個多項式級距，是根部說了算。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> Case 1 → Θ(n²)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Case 2 要 f 與 n² 打平（頂多差 lgᵏ）；n³ 大了整整一個 n，不是打平。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> Case 2 → Θ(n² lg n)</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P03 · 查表</div>
     <p>merge sort 的 T(n) = 2T(n/2) + Θ(n) 用 master theorem 判是？</p>
@@ -265,9 +363,50 @@
 1354 1412 1470 1528</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 4/matrix_multiply.py（MIT License）— strassen 進入點</span></span><span class="line"><span class="kw">def</span> <span class="fn">strassen</span>(A, B, C, n):</span><span class="line">    <span class="com">"""Strassen's method: C = C + (A * B). n must be an exact power of 2."""</span></span><span class="line">    <span class="kw">return</span> strassen_aux(A, B, C, n, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>)</span><span class="line"></span><span class="line"><span class="com"># strassen_aux 以 (row, col) 起點＋大小 n 表示子矩陣（避免整塊複製），</span></span><span class="line"><span class="com"># 遞迴計算 P1..P7 後組合，結構與 pseudocode 相同。</span></span></div>
-      <div class="expected-out"><span class="eo-tag">執行輸出（4×4 隨機矩陣，對照 numpy A @ B）</span><pre>Strassen 與 numpy 相符: True</pre></div>
-      <div class="ct-note">小提醒：官方檔把 <code>import numpy as np</code> 放在測試區塊，單獨 import 模組呼叫 strassen 前需自行補上（<code>mm.np = np</code>）。</div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 4/matrix_multiply.py（MIT License）：純 list 的完整 Strassen</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">mat_add</span>(A, B, sign=<span class="num">1</span>):</span>
+<span class="line">    <span class="kw">return</span> [[a + sign * b <span class="kw">for</span> a, b in <span class="fn">zip</span>(ra, rb)] <span class="kw">for</span> ra, rb in <span class="fn">zip</span>(A, B)]</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">split</span>(M):</span>
+<span class="line">    n = <span class="fn">len</span>(M) // <span class="num">2</span></span>
+<span class="line">    <span class="kw">return</span> ([row[:n] <span class="kw">for</span> row in M[:n]], [row[n:] <span class="kw">for</span> row in M[:n]],</span>
+<span class="line">            [row[:n] <span class="kw">for</span> row in M[n:]], [row[n:] <span class="kw">for</span> row in M[n:]])</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">strassen</span>(A, B):</span>
+<span class="line">    n = <span class="fn">len</span>(A)</span>
+<span class="line">    <span class="kw">if</span> n == <span class="num">1</span>:                                   <span class="com"># 基底：1x1 直接乘</span></span>
+<span class="line">        <span class="kw">return</span> [[A[<span class="num">0</span>][<span class="num">0</span>] * B[<span class="num">0</span>][<span class="num">0</span>]]]</span>
+<span class="line">    A11, A12, A21, A22 = split(A)</span>
+<span class="line">    B11, B12, B21, B22 = split(B)</span>
+<span class="line">    P1 = strassen(A11, mat_add(B12, B22, -<span class="num">1</span>))    <span class="com"># 7 次 n/2 規模的乘法</span></span>
+<span class="line">    P2 = strassen(mat_add(A11, A12), B22)</span>
+<span class="line">    P3 = strassen(mat_add(A21, A22), B11)</span>
+<span class="line">    P4 = strassen(A22, mat_add(B21, B11, -<span class="num">1</span>))</span>
+<span class="line">    P5 = strassen(mat_add(A11, A22), mat_add(B11, B22))</span>
+<span class="line">    P6 = strassen(mat_add(A12, A22, -<span class="num">1</span>), mat_add(B21, B22))</span>
+<span class="line">    P7 = strassen(mat_add(A11, A21, -<span class="num">1</span>), mat_add(B11, B12))</span>
+<span class="line">    C11 = mat_add(mat_add(P5, P4), mat_add(P6, P2, -<span class="num">1</span>))   <span class="com"># 加減法拼回四象限</span></span>
+<span class="line">    C12 = mat_add(P1, P2)</span>
+<span class="line">    C21 = mat_add(P3, P4)</span>
+<span class="line">    C22 = mat_add(mat_add(P5, P1), mat_add(P3, P7), -<span class="num">1</span>)</span>
+<span class="line">    top = [r1 + r2 <span class="kw">for</span> r1, r2 in <span class="fn">zip</span>(C11, C12)]</span>
+<span class="line">    bot = [r1 + r2 <span class="kw">for</span> r1, r2 in <span class="fn">zip</span>(C21, C22)]</span>
+<span class="line">    <span class="kw">return</span> top + bot</span>
+<span class="line"> </span>
+<span class="line">A = [[<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>], [<span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>], [<span class="num">9</span>, <span class="num">10</span>, <span class="num">11</span>, <span class="num">12</span>], [<span class="num">13</span>, <span class="num">14</span>, <span class="num">15</span>, <span class="num">16</span>]]</span>
+<span class="line">B = [[<span class="num">17</span>, <span class="num">18</span>, <span class="num">19</span>, <span class="num">20</span>], [<span class="num">21</span>, <span class="num">22</span>, <span class="num">23</span>, <span class="num">24</span>], [<span class="num">25</span>, <span class="num">26</span>, <span class="num">27</span>, <span class="num">28</span>], [<span class="num">29</span>, <span class="num">30</span>, <span class="num">31</span>, <span class="num">32</span>]]</span>
+<span class="line">C = strassen(A, B)</span>
+<span class="line">naive = [[<span class="fn">sum</span>(A[i][k] * B[k][j] <span class="kw">for</span> k in <span class="fn">range</span>(<span class="num">4</span>)) <span class="kw">for</span> j in <span class="fn">range</span>(<span class="num">4</span>)]</span>
+<span class="line">         <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">4</span>)]</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"Strassen 與傳統三重迴圈相符:"</span>, C == naive)</span>
+<span class="line"><span class="kw">for</span> row in C:</span>
+<span class="line">    <span class="fn">print</span>(row)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/analysis/strassen.py）</span><pre>Strassen 與傳統三重迴圈相符: True
+[250, 260, 270, 280]
+[618, 644, 670, 696]
+[986, 1028, 1070, 1112]
+[1354, 1412, 1470, 1528]</pre></div>
+      <div class="ct-note">完整可跑：split 切象限、mat_add 做加減、strassen 遞迴七乘——輸出與左邊 C++ 版完全相同的 4×4 結果，交叉驗證。</div>
     </div>
   </div>
 
@@ -332,8 +471,29 @@
           <div class="expected-out"><span class="eo-tag">10 萬次試驗輸出</span><pre>模擬平均雇用次數 = 5.19131（理論值 H_100 = 5.18738）</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code"><span class="line"><span class="com"># 洗牌用官方 randomly_permute（Ch 5，MIT License）</span></span><span class="line">A = list(range(<span class="num">1</span>, n + <span class="num">1</span>))</span><span class="line">randomly_permute(A, n)</span><span class="line">best, hires = <span class="num">0</span>, <span class="num">0</span></span><span class="line"><span class="kw">for</span> r <span class="kw">in</span> A:</span><span class="line">    <span class="kw">if</span> r &gt; best:</span><span class="line">        best, hires = r, hires + <span class="num">1</span></span></div>
-          <div class="expected-out"><span class="eo-tag">2 萬次試驗輸出</span><pre>模擬平均雇用次數 = 5.1773（理論值 H_100 = 5.1874）</pre></div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># RANDOMLY-PERMUTE（Fisher–Yates，同官方 Ch5 版）＋雇用計數</span></span>
+<span class="line"><span class="kw">import</span> random</span>
+<span class="line">random.seed(<span class="num">42</span>)                        <span class="com"># 固定 seed 讓輸出可重現</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">randomly_permute</span>(A, n):</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(n):</span>
+<span class="line">        j = random.randint(i, n - <span class="num">1</span>)   <span class="com"># 從 A[i..n-1] 均勻挑一個交換</span></span>
+<span class="line">        A[i], A[j] = A[j], A[i]</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">hire_count</span>(n):</span>
+<span class="line">    A = <span class="fn">list</span>(<span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">1</span>))          <span class="com"># rank 1..n</span></span>
+<span class="line">    randomly_permute(A, n)</span>
+<span class="line">    best = hires = <span class="num">0</span></span>
+<span class="line">    <span class="kw">for</span> r in A:</span>
+<span class="line">        <span class="kw">if</span> r &gt; best:                   <span class="com"># 比目前最佳好 → 雇用</span></span>
+<span class="line">            best, hires = r, hires + <span class="num">1</span></span>
+<span class="line">    <span class="kw">return</span> hires</span>
+<span class="line"> </span>
+<span class="line">n, trials = <span class="num">100</span>, <span class="num">20000</span></span>
+<span class="line">avg = <span class="fn">sum</span>(hire_count(n) <span class="kw">for</span> _ in <span class="fn">range</span>(trials)) / trials</span>
+<span class="line">H = <span class="fn">sum</span>(<span class="num">1</span> / i <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">1</span>))</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"模擬平均雇用次數 = %.4f（理論值 H_100 = %.4f）"</span> % (avg, H))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/analysis/hiring.py，seed=42）</span><pre>模擬平均雇用次數 = 5.2068（理論值 H_100 = 5.1874）</pre></div>
         </div>
       </div>
     </div>
@@ -348,6 +508,59 @@
       <div class="quiz-opt" data-correct="false" data-fb="Hₙ ≈ ln n 是最後一步的級數估計，不是 E[Xᵢ] = 1/i 的依據。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 調和級數發散</div>
     </div>
     <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+</section>
+
+<section id="birthday">
+  <div class="section-number">P06 · 生日悖論</div>
+  <h2>生日悖論：indicator RV 的第二戰 <span class="sec-badge">§5.4.1</span></h2>
+  <p>一間教室要幾個人，才有一半以上的機率「至少兩人同一天生日」？直覺說要上百人，答案是 <strong>23</strong>。
+  indicator random variable 讓「期望的撞期配對數」一行算完：</p>
+  <div class="thm-box proof">
+    <div class="thm-label">期望配對數的推導（indicator 標準流程）</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    對每一<strong>對</strong>人 (i, j) 定義 X<sub>ij</sub> = I{i 與 j 同天生日}。
+    兩人生日獨立均勻 ⟹ Pr{同天} = 1/365 ⟹ <strong>E[X<sub>ij</sub>] = 1/365</strong>（引理 5.1）。<br>
+    撞期配對總數 X = Σ<sub>i&lt;j</sub> X<sub>ij</sub>，由期望值線性（不需要各對獨立！）：<br>
+    <strong>E[X] = C(n, 2)·(1/365) = n(n−1)/730</strong>。<br>
+    令 E[X] ≥ 1 解出 n ≥ 28——期望至少一對撞期。而「機率 ≥ 1/2」要用精確計算：
+    P(全不同天) = Π<sub>i=0</sub><sup>n−1</sup>(1 − i/365)，n = 23 時首度跌破 1/2（P(撞期) ≈ 0.507）。∎</div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">兩個門檻不同（28 vs 23）是因為「期望 ≥ 1」與「機率 ≥ 1/2」本來就是不同的問題——
+  期望值好算（線性），機率要乘積硬算。實測對照：</p>
+  <div class="deck-extra">
+    <div class="dx-label">理論 vs 蒙地卡羅（src/analysis/birthday.cpp，mt19937 seed=42、每列 10 萬次試驗）</div>
+    <div class="pseudo-code" style="font-size:.76rem;"><span class="line"><span class="kw">double</span> pNo = <span class="num">1.0</span>;                                  <span class="com">// 全不同天的機率</span></span>
+<span class="line"><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; ++i) pNo *= (<span class="num">365.0</span> - i) / <span class="num">365.0</span>;</span>
+<span class="line"> </span>
+<span class="line"><span class="com">// 模擬：逐人抽生日，查 seen[] 撞到就記一次 collision</span></span>
+<span class="line"><span class="kw">for</span> (<span class="kw">int</span> t = <span class="num">0</span>; t &lt; <span class="num">100000</span>; ++t) {</span>
+<span class="line">    std::vector&lt;<span class="kw">bool</span>&gt; seen(<span class="num">365</span>, <span class="kw">false</span>);</span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n &amp;&amp; !coll; ++i) {</span>
+<span class="line">        <span class="kw">int</span> d = day(rng);</span>
+<span class="line">        <span class="kw">if</span> (seen[d]) coll = <span class="kw">true</span>;</span>
+<span class="line">        seen[d] = <span class="kw">true</span>;</span>
+<span class="line">    }</span>
+<span class="line">}</span></div>
+    <div class="expected-out"><span class="eo-tag">執行輸出</span><pre> n   理論 P(撞期)   模擬(10萬次)   期望撞期配對數 C(n,2)/365
+10      0.117          0.118          0.123
+23      0.507          0.506          0.693
+41      0.903          0.902          2.247
+60      0.994          0.994          4.849</pre></div>
+    <p class="dx-note">n = 23 恰好跨過 1/2；n = 60 幾乎必撞。第四欄的期望配對數在 n = 28 附近跨過 1
+    （28×27/730 = 1.036）——兩個門檻各自對應自己的問題。這張表也是 hashing 的預告：
+    把「生日」換成「雜湊值」，同一套數學就是 Ch11 碰撞分析的地基。</p>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P06 · 遷移應用</div>
+    <p>雜湊表有 m 個 slot、雜湊值均勻隨機。照生日悖論的算法，插入大約幾個鍵時「期望出現第一次碰撞」？</p>
+    <div class="quiz-options" id="q07Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。期望碰撞對數 C(n,2)/m ≈ n²/2m ≥ 1 ⟹ n ≈ √(2m)——Θ(√m) 個鍵就期望撞一次（m=365 時 √730 ≈ 27，正是生日問題）。這就是為什麼雜湊表撞得比直覺早、也是 birthday attack 攻擊雜湊函數的原理。" onclick="quizCheck('q07', this)"><span class="opt-letter">(A)</span> 約 √(2m) 個（Θ(√m)）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="m/2 是「填滿一半」——碰撞遠早於此：期望配對數是二次成長的 n²/2m，n 到 √m 級就夠。" onclick="quizCheck('q07', this)"><span class="opt-letter">(B)</span> 約 m/2 個</div>
+      <div class="quiz-opt" data-correct="false" data-fb="lg m 太樂觀（太早）——期望配對數 n²/2m 在 n = lg m 時只有 lg²m/2m ≪ 1，幾乎不可能撞。" onclick="quizCheck('q07', this)"><span class="opt-letter">(C)</span> 約 lg m 個</div>
+    </div>
+    <div class="quiz-feedback" id="q07Feedback"></div>
   </div>
 </section>
 
@@ -403,7 +616,7 @@
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch2.json · 13 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch2.json · 18 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -433,7 +646,12 @@ const FLASHCARDS = [
   {"front":"Strassen 演算法","back":"矩陣乘法分治：用 7 次（而非 8 次）n/2 規模乘法完成 2×2 區塊乘法，T(n) = 7T(n/2) + Θ(n²) = Θ(n^log₂7) ≈ Θ(n²·⁸¹)。"},
   {"front":"機率分析（Probabilistic Analysis）","back":"假設輸入服從某個分布（如隨機排列），計算執行時間的期望值。hiring problem 的期望雇用次數 Hₙ ≈ ln n 是代表例。"},
   {"front":"指示隨機變數（Indicator Random Variable）","back":"Xᵢ = I{事件 A} ∈ {0,1}，且 E[Xᵢ] = Pr{A}（引理 5.1）。配合期望值線性（不需獨立性）可把複雜的期望拆成機率相加。"},
-  {"front":"隨機化演算法（Randomized Algorithm）","back":"行為由輸入與亂數共同決定的演算法：先隨機排列輸入再處理，使期望保證對任何輸入成立——沒有天生的最壞輸入。"}
+  {"front":"隨機化演算法（Randomized Algorithm）","back":"行為由輸入與亂數共同決定的演算法：先隨機排列輸入再處理，使期望保證對任何輸入成立——沒有天生的最壞輸入。"},
+  {"front":"極限判別法","back":"算 lim f/g：0 → f = o(g)；正常數 → Θ；∞ → ω。極限不存在時退回 (c, n₀) 定義硬算。快速比大小的第一招。"},
+  {"front":"減去低階項（Subtracting a Lower-Order Term）","back":"substitution 卡在殘餘常數時，改猜更強的 T(n) ≤ cn − d：歸納假設多出 −2d 的餘裕吸收殘項。「猜更強反而好證」。"},
+  {"front":"換變數（Change of Variables）","back":"T(n) = 2T(√n) + lg n 這類非標準形：令 m = lg n、S(m) = T(2ᵐ) 化成 S(m) = 2S(m/2) + m，解完換回 Θ(lg n · lg lg n)。"},
+  {"front":"正則性條件（Regularity Condition）","back":"master theorem Case 3 的附帶檢查：a·f(n/b) ≤ c·f(n)（c < 1），確保成本真的逐層遞減。f 為多項式時自動成立。"},
+  {"front":"生日悖論（Birthday Paradox）","back":"23 人就有過半機率兩人同天生日。期望撞期配對 C(n,2)/365；n ≈ √(2m) 就期望碰撞——雜湊碰撞與 birthday attack 的數學原型。"}
 ];
 
 /* ---------- P00 成長競賽 ---------- */

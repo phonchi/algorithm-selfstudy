@@ -50,5 +50,25 @@
  {
   "front": "隨機化演算法（Randomized Algorithm）",
   "back": "行為由輸入與亂數共同決定的演算法：先隨機排列輸入再處理，使期望保證對任何輸入成立——沒有天生的最壞輸入。"
+ },
+ {
+  "front": "極限判別法",
+  "back": "算 lim f/g：0 → f = o(g)；正常數 → Θ；∞ → ω。極限不存在時退回 (c, n₀) 定義硬算。快速比大小的第一招。"
+ },
+ {
+  "front": "減去低階項（Subtracting a Lower-Order Term）",
+  "back": "substitution 卡在殘餘常數時，改猜更強的 T(n) ≤ cn − d：歸納假設多出 −2d 的餘裕吸收殘項。「猜更強反而好證」。"
+ },
+ {
+  "front": "換變數（Change of Variables）",
+  "back": "T(n) = 2T(√n) + lg n 這類非標準形：令 m = lg n、S(m) = T(2ᵐ) 化成 S(m) = 2S(m/2) + m，解完換回 Θ(lg n · lg lg n)。"
+ },
+ {
+  "front": "正則性條件（Regularity Condition）",
+  "back": "master theorem Case 3 的附帶檢查：a·f(n/b) ≤ c·f(n)（c < 1），確保成本真的逐層遞減。f 為多項式時自動成立。"
+ },
+ {
+  "front": "生日悖論（Birthday Paradox）",
+  "back": "23 人就有過半機率兩人同天生日。期望撞期配對 C(n,2)/365；n ≈ √(2m) 就期望碰撞——雜湊碰撞與 birthday attack 的數學原型。"
  }
 ]
