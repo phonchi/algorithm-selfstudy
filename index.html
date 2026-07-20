@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>演算法 × CLRS 互動自學網站</title>
+<meta name="description" content="NSYSU 演算法課程互動自學網站：11 章互動教材對應 CLRS 4e，每個演算法附 pseudocode／C++／Python 三版對照，每節 quiz、關鍵詞彙卡與速查表。">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+a{color:var(--accent2);}
+
+.hero{position:relative;background:linear-gradient(135deg,#1a6b4a 0%,var(--ink) 100%);color:#fff;padding:5rem 2rem 4.5rem;text-align:center;overflow:hidden;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;letter-spacing:.02em;margin-bottom:1rem;}
+.hero h1 .clrs{color:#f5b82e;}
+.hero .subtitle{font-size:1.05rem;color:rgba(255,255,255,.85);max-width:760px;margin:0 auto 1.4rem;}
+.hero .big-formula{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:rgba(255,255,255,.65);letter-spacing:.05em;}
+.hero-code{position:absolute;inset:0;opacity:.07;font-family:'JetBrains Mono',monospace;font-size:.8rem;white-space:pre;text-align:left;padding:1rem;pointer-events:none;}
+
+.container{max-width:1080px;margin:0 auto;padding:3rem 1.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;margin-bottom:1.2rem;}
+section{margin-bottom:3.2rem;}
+
+.loop-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.3rem 1.5rem;}
+.loop-box .lb-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.6rem;}
+.loop-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.9rem;margin-top:.8rem;}
+.loop-steps .step{background:var(--paper);border:1px solid var(--card-border);border-radius:10px;padding:.8rem 1rem;font-size:.9rem;}
+.loop-steps .step b{display:block;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--accent);letter-spacing:1px;margin-bottom:.3rem;}
+
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem;}
+.ch-card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--card-border);border-radius:14px;padding:1.3rem 1.4rem;text-decoration:none;color:var(--ink);transition:all .2s;position:relative;}
+.ch-card:hover{border-color:var(--accent2);box-shadow:0 8px 24px rgba(0,0,0,.10);transform:translateY(-3px);}
+.ch-card .ch-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:1.5px;}
+.ch-card h3{font-family:'Noto Serif TC',serif;font-size:1.25rem;font-weight:700;color:var(--accent2);margin:.2rem 0 .4rem;}
+.ch-card .ch-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;color:var(--accent3);border:1px solid var(--accent3);border-radius:999px;padding:.05rem .6rem;margin-bottom:.6rem;align-self:flex-start;}
+.ch-card .ch-badge.supp{color:#8e44ad;border-color:#8e44ad;}
+.ch-card p{font-size:.88rem;line-height:1.75;margin-bottom:.7rem;flex:1;}
+.ch-card .ch-meta{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);border-top:1px dashed var(--card-border);padding-top:.6rem;}
+
+.wk-table{width:100%;border-collapse:collapse;font-size:.88rem;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.wk-table th{background:var(--accent3);color:#fff;padding:.55rem .8rem;text-align:left;font-weight:600;font-size:.82rem;}
+.wk-table td{padding:.5rem .8rem;border-bottom:1px solid var(--card-border);vertical-align:top;}
+.wk-table td:first-child{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent3);white-space:nowrap;width:3.2rem;}
+.wk-table td:last-child{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);white-space:nowrap;}
+.wk-table tr:last-child td{border-bottom:none;}
+.wk-table tr.exam td{background:rgba(192,57,43,.06);color:var(--accent);font-weight:600;}
+.wk-table a{text-decoration:none;font-weight:500;}
+
+.res-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;}
+.res-card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.1rem 1.3rem;font-size:.9rem;}
+.res-card b{font-family:'Noto Serif TC',serif;display:block;margin-bottom:.3rem;}
+
+footer{text-align:center;padding:2.5rem 1rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+</style>
+</head>
+<body>
+
+<div class="hero">
+<div class="hero-code">MERGE-SORT(A, p, r)
+  if p >= r
+      return
+  q = floor((p + r) / 2)
+  MERGE-SORT(A, p, q)
+  MERGE-SORT(A, q + 1, r)
+  MERGE(A, p, q, r)
+
+RELAX(u, v, w)
+  if v.d > u.d + w(u, v)
+      v.d = u.d + w(u, v)
+      v.pi = u</div>
+  <h1>演算法 <span class="clrs">× CLRS</span> 互動自學網站</h1>
+  <div class="subtitle">11 章互動教材對應《Introduction to Algorithms》第四版：每個演算法附 pseudocode／C++／Python 三版對照，動手玩逐步動畫、預測、驗證，配上每節 quiz、關鍵詞彙卡與速查表。銜接資料結構課，把演算法從「看得懂」練到「證得出來、寫得出來」。</div>
+  <div class="big-formula">recurrence｜divide &amp; conquer｜sorting｜red-black｜DP｜greedy｜amortized｜graph｜NP</div>
+</div>
+
+<div class="container">
+
+<section>
+  <div class="loop-box">
+    <div class="lb-title">📌 建議學習迴圈（每一章都照這個節奏）</div>
+    <p>這個網站是課程的互動版配套：教科書給完整證明與推導，這裡給你「動手驗證直覺」的空間。每頁的 §徽章對應 CLRS 4e 章節號，方便左右對照；每個演算法先讀 pseudocode，再看 C++／Python 對照實作。</p>
+    <div class="loop-steps">
+      <div class="step"><b>① READ &amp; PLAY</b>逐節閱讀，動手操作互動元件：先預測結果，再按按鈕驗證。</div>
+      <div class="step"><b>② TRACE</b>拿紙筆手跑一次演算法（作業與考試都考追蹤），再對照動畫檢查。</div>
+      <div class="step"><b>③ CODE</b>切到 C++／Python 分頁把實作看懂、抄一遍、跑一遍。</div>
+      <div class="step"><b>④ QUIZ &amp; CARDS</b>每節 quiz 立刻自測，最後翻詞彙卡：答錯就回頭重讀，不要往下跳。</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>16 週課程地圖</h2>
+  <div style="overflow-x:auto;">
+  <table class="wk-table">
+    <thead><tr><th>週</th><th>主題</th><th>CLRS</th></tr></thead>
+    <tbody>
+      <tr><td>W1</td><td><a href="foundations.html">演算法基礎：insertion sort、loop invariant、RAM model</a></td><td>Ch 1–2</td></tr>
+      <tr><td>W2</td><td><a href="analysis.html">漸近符號、遞迴式（substitution／recursion tree／Master Theorem）</a></td><td>Ch 3–4</td></tr>
+      <tr><td>W3</td><td><a href="analysis.html">Divide &amp; Conquer（Strassen）、機率分析與隨機化</a></td><td>Ch 4–5</td></tr>
+      <tr><td>W4</td><td><a href="sorting.html">Heapsort、Quicksort</a></td><td>Ch 6–7</td></tr>
+      <tr><td>W5</td><td><a href="sorting.html">線性時間排序、Order Statistics</a></td><td>Ch 8–9</td></tr>
+      <tr><td>W6</td><td><a href="structures.html">Hash 深化、BST 複習、Red-Black Trees</a></td><td>Ch 11–13</td></tr>
+      <tr><td>W7</td><td><a href="dp.html">動態規劃 I：rod cutting、LCS</a></td><td>Ch 14</td></tr>
+      <tr><td>W8</td><td><a href="dp.html">動態規劃 II：0/1 knapsack、optimal BST</a>＋期中複習</td><td>Ch 14</td></tr>
+      <tr class="exam"><td>W9</td><td>期中考</td><td></td></tr>
+      <tr><td>W10</td><td><a href="greedy_amortized.html">Greedy（activity selection、Huffman）、Amortized 分析</a></td><td>Ch 15–16</td></tr>
+      <tr><td>W11</td><td><a href="graphs1.html">Disjoint Set、BFS/DFS 深化、topological sort、SCC</a></td><td>Ch 19–20</td></tr>
+      <tr><td>W12</td><td><a href="graphs2.html">MST（Kruskal／Prim）、SSSP（Bellman-Ford／Dijkstra）</a></td><td>Ch 21–22</td></tr>
+      <tr><td>W13</td><td><a href="graphs2.html">APSP（Floyd-Warshall）、Max Flow 概覽</a></td><td>Ch 23–24</td></tr>
+      <tr><td>W14</td><td><a href="np_approx.html">NP-Completeness：reduction 與經典 NPC 問題</a></td><td>Ch 34</td></tr>
+      <tr><td>W15</td><td><a href="np_approx.html">近似演算法</a>＋<a href="modern.html">現代主題概覽（ML、metaheuristics）</a></td><td>Ch 35、33</td></tr>
+      <tr class="exam"><td>W16</td><td>期末考</td><td></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:.88rem;color:var(--muted);margin-top:.6rem;">進階資料結構（B-tree、Fibonacci heap）、string matching 與線性規劃不排入授課週次，整理在 <a href="advanced.html">補充主題</a> 供自學。</p>
+</section>
+
+<section>
+  <h2>章節（依授課順序）</h2>
+  <div class="ch-grid">
+    <a class="ch-card" href="foundations.html">
+      <div class="ch-num">01 · FOUNDATIONS</div><h3>演算法基礎與 loop invariant</h3>
+      <div class="ch-badge">CLRS Ch 1–2</div>
+      <p>演算法是什麼、RAM model 怎麼算成本；insertion sort 逐步追蹤與 loop invariant 三段式證明；selection sort 練習；merge sort 與 divide-and-conquer 的第一次相遇。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="analysis.html">
+      <div class="ch-num">02 · ANALYSIS</div><h3>漸近分析、遞迴式與隨機化</h3>
+      <div class="ch-badge">CLRS Ch 3–5</div>
+      <p>O／Ω／Θ 正式定義與極限判別；解遞迴式三把刀：substitution、recursion tree、Master Theorem；Strassen 矩陣乘法；hiring problem 與指示隨機變數。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="sorting.html">
+      <div class="ch-num">03 · SORTING</div><h3>Heapsort、Quicksort 與線性時間排序</h3>
+      <div class="ch-badge">CLRS Ch 6–9</div>
+      <p>binary heap 複習接 heapsort；quicksort 的 Lomuto partition 與隨機化分析；比較排序的 Ω(n lg n) 下界；counting／radix／bucket sort；randomized select 找中位數。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="structures.html">
+      <div class="ch-num">04 · STRUCTURES</div><h3>Hash 深化、BST 與 Red-Black Trees</h3>
+      <div class="ch-badge">CLRS Ch 11–13</div>
+      <p>從資結課的 hashing 往下鑽：universal hashing 與期望分析；BST 操作複習與高度問題；red-black tree 五性質、旋轉、插入修復逐步動畫。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="dp.html">
+      <div class="ch-num">05 · DYNAMIC PROGRAMMING</div><h3>動態規劃</h3>
+      <div class="ch-badge">CLRS Ch 14</div>
+      <p>optimal substructure 與 overlapping subproblems；DP 四步驟框架；rod cutting 從 naive 到 bottom-up；LCS 填表動畫與回溯；0/1 knapsack 與 optimal BST。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="greedy_amortized.html">
+      <div class="ch-num">06 · GREEDY &amp; AMORTIZED</div><h3>貪婪演算法與攤還分析</h3>
+      <div class="ch-badge">CLRS Ch 15–16</div>
+      <p>greedy-choice property 與 exchange argument；activity selection、Huffman coding 建樹動畫；0/1 vs 分數背包的反例論證；aggregate／accounting／potential 三種攤還法。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="graphs1.html">
+      <div class="ch-num">07 · GRAPHS I</div><h3>Disjoint Set 與圖的走訪深化</h3>
+      <div class="ch-badge">CLRS Ch 19–20</div>
+      <p>union by rank 與 path compression 逐步動畫；BFS/DFS 從「會用」到「會證」：白灰黑三色、括號定理、邊的分類；topological sort 與 SCC（Kosaraju）。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="graphs2.html">
+      <div class="ch-num">08 · GRAPHS II</div><h3>MST、最短路徑與 Max Flow</h3>
+      <div class="ch-badge">CLRS Ch 21–24</div>
+      <p>cut property 與安全邊；Kruskal（用 disjoint set）與 Prim 對照；relaxation 框架：Bellman-Ford、DAG 最短路、Dijkstra 正確性；Floyd-Warshall 與 max flow 概覽。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="np_approx.html">
+      <div class="ch-num">09 · NP &amp; APPROXIMATION</div><h3>NP-Completeness 與近似演算法</h3>
+      <div class="ch-badge">CLRS Ch 34–35</div>
+      <p>P、NP、NP-complete 的正確定義；polynomial-time reduction 的方向感；SAT→3-CNF→Clique→Vertex Cover 歸約鏈；2-approximation：vertex cover 與 TSP。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="modern.html">
+      <div class="ch-num">10 · MODERN TOPICS</div><h3>機器學習與 Metaheuristics 概覽</h3>
+      <div class="ch-badge">CLRS Ch 33＋延伸</div>
+      <p>當精確演算法不可行時：k-means clustering 與 gradient descent 的演算法視角；metaheuristics 家族與 Ant Colony Optimization，銜接課程 TSP 四連作業。</p>
+      <div class="ch-meta">互動追蹤 · 每節 quiz · 詞彙卡</div>
+    </a>
+    <a class="ch-card" href="advanced.html">
+      <div class="ch-num">11 · ADVANCED</div><h3>補充主題：進階資料結構與字串比對</h3>
+      <div class="ch-badge supp">補充 · Ch 17–18、29、32</div>
+      <p>課堂不授、行有餘力再讀：augmenting data structures、B-tree（資料庫索引的心臟）、Fibonacci heap 為何理論漂亮、KMP 與 Rabin-Karp、線性規劃概念。</p>
+      <div class="ch-meta">全頁掛「補充」徽章 · quiz · 詞彙卡</div>
+    </a>
+  </div>
+</section>
+
+<section>
+  <h2>配套資源</h2>
+  <div class="res-list">
+    <div class="res-card"><b>📖 教科書 CLRS 4e</b>Introduction to Algorithms, 4th ed.（Cormen、Leiserson、Rivest、Stein，MIT Press 2022）。頁上 §章節號皆對應此書。<br><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">MIT Press 書頁</a></div>
+    <div class="res-card"><b>🐍 官方 Python 實作</b>本站 Python 程式碼取自 CLRS 4e 官方實作（Linda Xiao &amp; Tom Cormen，MIT License），可整包下載對照。<br><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">下載頁（Resources）</a></div>
+    <div class="res-card"><b>🗺 TSP 四連作業</b>學期作業用同一個 TSP 問題練四種策略：窮舉 → greedy 最近鄰 → Held-Karp DP → Ant Colony Optimization，作業說明見課程公告。</div>
+    <div class="res-card"><b>🔬 線上追蹤工具</b>想逐行看變數與記憶體變化，把 C++／Python 程式碼貼進 Tutor 一步步執行。<br><a href="https://pythontutor.com/" target="_blank" rel="noopener">Python / C++ Tutor</a></div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  演算法 × CLRS 互動自學網站 · 依 CLRS 4e 教科書與 NSYSU 課程規劃編寫<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+
+</body>
+</html>

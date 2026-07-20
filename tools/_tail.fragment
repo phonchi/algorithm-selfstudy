@@ -1,0 +1,37 @@
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>

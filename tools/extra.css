@@ -1,0 +1,32 @@
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
