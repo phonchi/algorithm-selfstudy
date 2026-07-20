@@ -1,0 +1,50 @@
+[
+ {
+  "front": "演算法（Algorithm）",
+  "back": "一個定義明確的計算程序：接受某些值作為輸入，經過有限步驟產生輸出。可以視為解決一個計算問題的工具。"
+ },
+ {
+  "front": "問題實例（Instance）",
+  "back": "計算問題的一組具體輸入。例如排序問題的一個實例是 ⟨5, 2, 4, 6, 1, 3⟩。正確性是對「所有」實例的要求。"
+ },
+ {
+  "front": "正確性（Correctness）",
+  "back": "演算法對每一個輸入實例都會停機（halt）並輸出正確答案。只要存在一個實例失敗，演算法就不正確。"
+ },
+ {
+  "front": "RAM 模型（Random-Access Machine）",
+  "back": "分析用的抽象單處理器機器：算術、資料搬移、控制等基本指令各花常數時間，指令依序執行。執行時間＝執行的指令條數。"
+ },
+ {
+  "front": "迴圈不變量（Loop Invariant）",
+  "back": "在迴圈每一輪開始前都成立的狀態敘述。用初始化（initialization）、維持（maintenance）、終止（termination）三段式論證迴圈的正確性。"
+ },
+ {
+  "front": "漸增法（Incremental Method）",
+  "back": "逐步擴大「已解決部分」的設計方法：insertion sort 每輪把一個新元素插入已排序前綴，維持前綴有序。"
+ },
+ {
+  "front": "插入排序（Insertion Sort）",
+  "back": "像整理撲克牌：取出 key，把左邊比它大的元素逐一右移後插入。最壞 Θ(n²)、已排序輸入 Θ(n)、就地且穩定。"
+ },
+ {
+  "front": "最壞情況分析（Worst-Case Analysis）",
+  "back": "報告演算法在最不利輸入下的執行時間。它是對任何輸入的保證上限，是本課程預設的分析對象。"
+ },
+ {
+  "front": "分治法（Divide-and-Conquer）",
+  "back": "遞迴設計典範三步驟：Divide 把問題切成子問題、Conquer 遞迴解子問題、Combine 把子解合併成原問題的解。"
+ },
+ {
+  "front": "合併排序（Merge Sort）",
+  "back": "分治排序：對半切到單一元素，再逐層用 MERGE 合併兩段已排序子陣列。任何輸入都是 Θ(n lg n)，但需要 Θ(n) 額外空間。"
+ },
+ {
+  "front": "遞迴式（Recurrence）",
+  "back": "用「自己在較小輸入上的值」描述函數的等式，例如 merge sort 的 T(n) = 2T(n/2) + Θ(n)。解遞迴式的三種方法見下一章。"
+ },
+ {
+  "front": "就地排序（Sorted in Place）",
+  "back": "排序過程中任何時刻只有常數個元素存放在陣列之外。insertion sort 是就地排序；教科書版 merge sort 不是。"
+ }
+]

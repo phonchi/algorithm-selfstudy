@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>演算法基礎：insertion sort 與 loop invariant — Foundations（CLRS Ch1–2）</title>
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+  --node-white:#ffffff;--node-gray:#bdc3c7;--node-black:#34495e;
+  --node-current:#f39c12;--node-found:#16a085;--node-start:#9b59b6;
+  --edge-default:#95a5a6;--edge-tree:#27ae60;--edge-explore:#f39c12;--edge-mst:#1a6b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+
+/* Hero */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden;background:linear-gradient(170deg,#1a1a2e 0%,#2c3e7a 40%,#1a6b4a 100%);}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0%,transparent 40%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);}
+.hero-content{position:relative;z-index:1;max-width:860px;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#fff;letter-spacing:.04em;line-height:1.3;margin-bottom:1rem;}
+.hero h1 .green{color:#2ecc71;}
+.hero h1 .blue{color:#5dade2;}
+.hero h1 .orange{color:#f39c12;}
+.hero h1 .purple{color:#bb8fce;}
+.hero .subtitle{font-size:clamp(.95rem,2.2vw,1.2rem);color:rgba(255,255,255,.65);font-weight:300;margin-bottom:2rem;}
+.hero .big-formula{color:#2ecc71;background:rgba(0,0,0,.3);padding:.8rem 2rem;border-radius:12px;display:inline-block;border:1px solid rgba(255,255,255,.1);margin-bottom:2rem;backdrop-filter:blur(4px);font-size:1.05rem;}
+.scroll-hint{color:rgba(255,255,255,.4);font-size:.9rem;animation:bounce 2s infinite;}
+.scroll-hint span{display:block;font-size:1.4rem;margin-top:.3rem;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+
+/* Hero mini-graph illustration */
+.hero-graph{position:absolute;right:5%;top:50%;transform:translateY(-50%);opacity:.18;pointer-events:none;}
+@media(max-width:900px){.hero-graph{display:none;}}
+
+/* Layout */
+.container{max-width:1180px;margin:0 auto;padding:3rem 1.5rem;}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;line-height:1.4;}
+h3{font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:var(--accent2);margin:1.4rem 0 .8rem;}
+section{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--card-border);}
+section:last-of-type{border-bottom:none;}
+p{margin-bottom:1rem;}
+code{font-family:'JetBrains Mono',monospace;font-size:.92em;background:rgba(44,62,122,.08);padding:1px 6px;border-radius:4px;color:var(--accent2);}
+strong{color:var(--ink);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0 2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.toc-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.7rem;}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem .8rem;}
+.toc-grid a{color:var(--accent2);text-decoration:none;font-size:.9rem;padding:.3rem 0;display:flex;align-items:center;gap:.4rem;transition:color .2s;}
+.toc-grid a:hover{color:var(--accent);}
+.toc-grid a .toc-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);min-width:34px;}
+
+/* Viz layout */
+.viz-layout{display:grid;grid-template-columns:1fr 320px;gap:1.3rem;margin:1.2rem 0;align-items:start;}
+@media(max-width:900px){.viz-layout{grid-template-columns:1fr;}}
+
+.viz-panel{background:linear-gradient(160deg,#fffdf7 0%,#f4efe3 100%);border:1px solid var(--card-border);border-radius:12px;padding:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06);position:relative;}
+
+/* Graph SVG canvas */
+.graph-canvas{position:relative;width:100%;height:380px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #ececec;}
+.graph-canvas svg{width:100%;height:100%;display:block;}
+
+/* SVG elements styles */
+.graph-edge{stroke:var(--edge-default);stroke-width:2;fill:none;transition:stroke .25s, stroke-width .25s;}
+.graph-edge.tree{stroke:var(--edge-tree);stroke-width:3.5;}
+.graph-edge.exploring{stroke:var(--edge-explore);stroke-width:3.5;stroke-dasharray:5 4;animation:dash 1s linear infinite;}
+.graph-edge.mst{stroke:var(--edge-mst);stroke-width:4;}
+.graph-edge.path{stroke:var(--accent);stroke-width:4;}
+.graph-edge.dotted{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+.edge-label{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;fill:var(--ink);pointer-events:none;}
+.edge-label-bg{fill:#fafafa;stroke:#ececec;stroke-width:1;}
+
+.graph-node{cursor:pointer;}
+.graph-node circle{fill:var(--node-white);stroke:var(--ink);stroke-width:2;transition:fill .25s, stroke .25s, r .2s;}
+.graph-node.gray circle{fill:var(--node-gray);}
+.graph-node.black circle{fill:var(--node-black);stroke:var(--node-black);}
+.graph-node.current circle{fill:var(--node-current);stroke:#d68910;stroke-width:3;}
+.graph-node.start circle{fill:var(--node-start);stroke:#7d3c98;stroke-width:3;}
+.graph-node.found circle{fill:var(--node-found);stroke:#117a65;stroke-width:3;}
+.graph-node.in-mst circle{fill:#82e0aa;stroke:var(--accent3);stroke-width:3;}
+.graph-node text.node-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.graph-node.black text.node-key{fill:#fff;}
+.graph-node.current text.node-key{fill:#fff;}
+.graph-node.start text.node-key{fill:#fff;}
+.graph-node.found text.node-key{fill:#fff;}
+.graph-node text.node-meta{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;fill:var(--accent);text-anchor:middle;pointer-events:none;}
+
+/* Status banner */
+.status-banner{margin-top:.8rem;padding:.7rem 1rem;background:var(--code-bg);color:#fff;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;min-height:42px;display:flex;align-items:center;gap:.6rem;}
+.status-banner .status-icon{color:#2ecc71;font-weight:700;}
+.status-banner .status-text{flex:1;}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--card-border);}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-play{background:var(--accent3);color:#fff;}
+.btn-play:hover{background:#22845c;}
+.btn-play.active{background:var(--accent);}
+.btn-step{background:var(--accent2);color:#fff;}
+.btn-step:hover{background:#1f2e5f;}
+.btn-step:disabled{background:#ccc;cursor:not-allowed;}
+.btn-reset{background:var(--card-border);color:var(--ink);}
+.btn-reset:hover{background:#ccc;}
+.btn-toggle{background:var(--accent2);color:#fff;}
+.btn-toggle:hover{background:#1f2e5f;}
+.btn-toggle.off{background:#bbb;color:#555;}
+.btn-shuffle{background:#8e44ad;color:#fff;}
+.btn-shuffle:hover{background:#6c3485;}
+
+/* Slider row */
+.slider-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:var(--paper);border-radius:8px;margin-bottom:.5rem;}
+.slider-row .slider-label{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent2);font-weight:600;min-width:60px;}
+.slider-row input[type="range"]{flex:1;accent-color:var(--accent3);height:5px;cursor:pointer;}
+.slider-row .slider-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:600;min-width:60px;text-align:right;}
+
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:.85rem;}
+.info-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:.85rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.info-card .ic-title{font-size:.72rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;border-bottom:1px solid var(--card-border);padding-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;}
+.info-card .ic-title .ic-badge{font-size:.7rem;color:#fff;background:var(--accent3);padding:1px 7px;border-radius:3px;letter-spacing:.05em;font-weight:700;}
+.info-card .ic-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.83rem;padding:.2rem 0;}
+.info-card .ic-label{color:var(--muted);}
+.info-card .ic-value{color:var(--ink);font-weight:600;}
+.info-card .ic-value.highlight{color:var(--accent);}
+.info-card .ic-value.big{font-size:1.4rem;color:var(--accent2);}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.4rem;}
+.stat-tile{background:var(--paper);border-radius:8px;padding:.5rem .7rem;text-align:center;}
+.stat-tile .stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.stat-tile .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent2);}
+
+/* Queue / Stack / PQ visualization */
+.ds-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--paper);border-radius:6px;padding:.5rem .7rem;min-height:36px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px dashed var(--card-border);}
+.ds-display .ds-empty{color:var(--muted);font-style:italic;}
+.ds-item{background:var(--accent2);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+.ds-item.front{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.top{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.pq{background:var(--accent3);}
+.ds-item.pq.min{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-arrow{color:var(--muted);}
+
+/* Pseudo code */
+.pseudo-code{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;overflow-x:auto;}
+.pseudo-code .line{padding:1px 4px;border-radius:3px;display:block;white-space:pre;}
+.pseudo-code .line.active{background:rgba(243,156,18,.3);color:#fff;border-left:3px solid var(--node-current);padding-left:6px;}
+.pseudo-code .kw{color:#ff79c6;}
+.pseudo-code .fn{color:#50fa7b;}
+.pseudo-code .num{color:#bd93f9;}
+.pseudo-code .com{color:#6272a4;font-style:italic;}
+.pseudo-code .str{color:#f1fa8c;}
+
+/* Adjacency table */
+.adj-display{margin:.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.adj-matrix{border-collapse:collapse;margin:.5rem auto;}
+.adj-matrix td,.adj-matrix th{border:1px solid var(--card-border);padding:6px 10px;text-align:center;min-width:34px;background:#fff;}
+.adj-matrix th{background:var(--accent2);color:#fff;font-weight:700;}
+.adj-matrix td.zero{color:#ccc;}
+.adj-matrix td.nonzero{background:#eafaf1;color:var(--accent3);font-weight:700;}
+.adj-matrix td.highlight{background:#fff3cd;}
+.adj-list{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:.7rem 1rem;}
+.adj-list .adj-row{padding:3px 0;border-bottom:1px dashed var(--card-border);}
+.adj-list .adj-row:last-child{border-bottom:none;}
+.adj-list .adj-key{color:var(--accent);font-weight:700;display:inline-block;min-width:32px;}
+.adj-list .adj-arrow{color:var(--muted);margin:0 6px;}
+.adj-list .adj-neighbor{background:#eef2ff;color:var(--accent2);padding:1px 8px;border-radius:4px;margin:1px 3px;display:inline-block;font-weight:600;}
+
+/* Chess board for Knight's tour */
+.chess-board{display:grid;background:#fff;border:2px solid var(--ink);border-radius:6px;overflow:hidden;margin:.5rem auto;width:fit-content;}
+.chess-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:700;position:relative;transition:background .2s;}
+.chess-cell.light{background:#f0d9b5;color:#666;}
+.chess-cell.dark{background:#b58863;color:#fff;}
+.chess-cell.visited{background:#27ae60 !important;color:#fff;}
+.chess-cell.current{background:#f39c12 !important;color:#fff;box-shadow:inset 0 0 0 3px #d68910;}
+.chess-cell.start{background:#9b59b6 !important;color:#fff;}
+.chess-cell .knight{font-size:1.4em;line-height:1;}
+.chess-cell .step-num{font-size:.7em;}
+
+/* Info box */
+.info-box{background:#eef2ff;border:2px solid var(--accent2);border-radius:10px;padding:1.1rem 1.4rem;margin:1.3rem 0;position:relative;}
+.info-box .info-label{position:absolute;top:-11px;left:14px;background:var(--accent2);color:#fff;font-size:.74rem;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em;}
+.info-box.warm{background:#fef5e7;border-color:#d68910;}
+.info-box.warm .info-label{background:#d68910;}
+.info-box.green{background:#eafaf1;border-color:var(--accent3);}
+.info-box.green .info-label{background:var(--accent3);}
+.info-box.purple{background:#f4ecf7;border-color:#8e44ad;}
+.info-box.purple .info-label{background:#8e44ad;}
+
+/* Pill labels */
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:4px;margin:0 .15rem;vertical-align:1px;}
+.pill-blue{background:rgba(41,128,185,.12);color:#2980b9;border:1px solid rgba(41,128,185,.3);}
+.pill-red{background:rgba(192,57,43,.12);color:var(--accent);border:1px solid rgba(192,57,43,.3);}
+.pill-green{background:rgba(39,174,96,.12);color:var(--accent3);border:1px solid rgba(39,174,96,.3);}
+.pill-orange{background:rgba(243,156,18,.12);color:#d68910;border:1px solid rgba(243,156,18,.3);}
+.pill-purple{background:rgba(142,68,173,.12);color:#8e44ad;border:1px solid rgba(142,68,173,.3);}
+.pill-gray{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid rgba(0,0,0,.12);}
+
+/* Comparison table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.86rem;margin:.8rem 0;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.cmp-table th{background:var(--accent2);color:#fff;padding:.6rem .8rem;text-align:center;font-weight:600;font-size:.82rem;}
+.cmp-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--card-border);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.cmp-table td:first-child{font-family:'Noto Sans TC',sans-serif;color:var(--accent2);font-weight:600;text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:nth-child(even){background:rgba(0,0,0,.015);}
+.cmp-table .best{color:var(--accent3);font-weight:700;}
+.cmp-table .worst{color:var(--accent);font-weight:700;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+.legend-item{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;background:var(--paper);border-radius:5px;}
+.legend-item .lg-swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink);}
+.legend-item .lg-edge{width:18px;height:3px;border-radius:2px;}
+
+/* Quiz */
+.quiz-box{background:var(--card);border:2px solid var(--accent2);border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0;}
+.quiz-box .quiz-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0;}
+.quiz-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;background:var(--paper);border:2px solid var(--card-border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+.quiz-opt:hover{border-color:var(--accent2);}
+.quiz-opt .opt-letter{font-weight:700;color:var(--accent2);min-width:22px;}
+.quiz-opt.correct{background:#eafaf1;border-color:var(--accent3);}
+.quiz-opt.correct .opt-letter{color:var(--accent3);}
+.quiz-opt.wrong{background:#fef5e7;border-color:var(--accent);}
+.quiz-opt.wrong .opt-letter{color:var(--accent);}
+.quiz-feedback{margin-top:.7rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.correct{background:#eafaf1;color:var(--accent3);border-left:4px solid var(--accent3);}
+.quiz-feedback.wrong{background:#fef5e7;color:var(--accent);border-left:4px solid var(--accent);}
+
+/* Floating sidebar navigation */
+.float-nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px;background:rgba(255,253,250,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--card-border);border-radius:12px;padding:10px 7px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-family:'JetBrains Mono',monospace;max-height:88vh;overflow-y:auto;transition:padding .25s ease;}
+.float-nav .fn-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.68rem;color:var(--accent2);text-align:center;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--card-border);max-width:0;overflow:hidden;transition:max-width .25s ease;}
+.float-nav:hover .fn-title{max-width:220px;}
+.float-nav a{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;white-space:nowrap;transition:all .2s ease;border-left:3px solid transparent;}
+.float-nav a .fn-num{font-weight:700;font-size:.66rem;color:var(--muted);letter-spacing:.4px;flex-shrink:0;width:30px;text-align:left;}
+.float-nav a .fn-name{font-family:'Noto Sans TC',sans-serif;font-size:.76rem;font-weight:500;max-width:0;overflow:hidden;transition:max-width .25s ease,padding .25s ease;padding:0;}
+.float-nav:hover a .fn-name{max-width:220px;padding-left:2px;}
+.float-nav a:hover{background:var(--card);}
+.float-nav a.active{background:var(--accent2);color:#fff;border-left-color:var(--accent);box-shadow:0 2px 6px rgba(192,57,43,.25);}
+.float-nav a.active .fn-num{color:rgba(255,255,255,.85);}
+.float-nav a.active .fn-name{color:#fff;}
+.float-nav .fn-top{margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);justify-content:center;}
+.float-nav .fn-top .fn-num{width:auto;color:var(--accent2);font-size:.78rem;}
+@media(max-width:768px){
+  .float-nav{right:8px;top:auto;bottom:14px;transform:none;padding:6px 5px;max-height:70vh;}
+  .float-nav .fn-title{display:none;}
+  .float-nav a{padding:4px 7px;}
+  .float-nav a .fn-num{width:26px;font-size:.62rem;}
+}
+
+footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+
+/* Distance / table inside graph viz */
+.vert-table{margin-top:.6rem;width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.vert-table th,.vert-table td{padding:4px 6px;text-align:center;border:1px solid var(--card-border);}
+.vert-table th{background:var(--accent2);color:#fff;font-weight:600;font-size:.74rem;}
+.vert-table td.tcell-current{background:#fff3cd;font-weight:700;color:var(--accent);}
+.vert-table td.tcell-done{background:#eafaf1;color:var(--accent3);}
+.vert-table td.tcell-inf{color:#ccc;}
+.sec-badge{font-size:.6em;color:var(--muted);border:1px solid var(--card-border);background:var(--card);padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:.6rem;font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.02em;white-space:nowrap;}
+
+/* Phase 8 shared widgets */
+.bs-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:4px;min-height:180px;justify-content:flex-start;padding:.6rem;}
+.bs-item{width:110px;text-align:center;padding:.4rem .6rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.bs-hl{background:#f39c12;}
+.bs-toplabel,.bq-label{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bq-row{display:flex;align-items:center;gap:6px;min-height:64px;flex-wrap:wrap;padding:.4rem;}
+.bq-item{min-width:52px;text-align:center;padding:.45rem .5rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.char-strip{display:flex;gap:3px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;padding:.4rem 0;}
+.char-cell{min-width:30px;text-align:center;padding:.35rem .25rem;border:1px solid var(--card-border);border-radius:5px;background:var(--card);}
+.char-cur{background:#f39c12;color:#fff;border-color:#f39c12;}
+.char-done{background:#e8f5ec;color:#1a6b4a;border-color:#bfe3cd;}
+.char-bad{background:#c0392b;color:#fff;border-color:#c0392b;}
+.token-out{display:flex;gap:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;min-height:40px;padding:.3rem 0;}
+.tok{padding:.3rem .55rem;border-radius:5px;background:#2c3e7a;color:#fff;font-weight:600;}
+.tok-op{background:#8e44ad;}
+.tok-new{outline:3px solid #f39c12;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+<style>
+/* ===== 網站化附加樣式（study-guide / flashcards / chapter-nav）===== */
+.study-guide{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.2rem 1.4rem;margin:0 0 2.2rem;}
+.study-guide .sg-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.5rem;}
+.study-guide p{font-size:.92rem;margin-bottom:.5rem;}
+.study-guide .sg-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.study-guide .sg-links a{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;color:var(--accent2);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .85rem;text-decoration:none;transition:all .2s;}
+.study-guide .sg-links a:hover{background:var(--accent2);color:#fff;}
+.fc-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0 1.2rem;}
+.fc-controls button{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:1px solid var(--card-border);cursor:pointer;background:var(--card);color:var(--ink);transition:all .2s;}
+.fc-controls button:hover{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:.9rem;}
+.fc-card{perspective:900px;height:170px;cursor:pointer;}
+.fc-card .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+.fc-card .fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.9rem;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.fc-card .fc-front{background:linear-gradient(150deg,var(--accent2),var(--ink));color:#fff;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;letter-spacing:.02em;flex-direction:column;gap:.4rem;}
+.fc-card .fc-front .fc-hint{font-size:.62rem;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.1em;}
+.fc-card .fc-back{background:var(--card);border:2px solid var(--accent3);color:var(--ink);font-size:.78rem;line-height:1.55;transform:rotateY(180deg);overflow-y:auto;}
+.chapter-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:stretch;margin:2.5rem 0 1rem;}
+.chapter-nav a{display:block;border:1px solid var(--card-border);border-radius:12px;padding:.8rem 1.1rem;text-decoration:none;color:var(--ink);background:var(--card);transition:all .2s;}
+.chapter-nav a:hover{border-color:var(--accent2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.chapter-nav .nav-dir{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.2rem;}
+.chapter-nav .nav-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.95rem;color:var(--accent2);}
+.chapter-nav a.next{text-align:right;}
+.chapter-nav a.home{display:flex;flex-direction:column;justify-content:center;text-align:center;}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr;}}
+</style>
+<style>
+/* ===== 講義範例卡 ===== */
+.deck-extra{margin:1.2rem 0;}
+.deck-extra .dx-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:.4rem;}
+.deck-extra .dx-note{font-size:.9rem;margin-top:.6rem;}
+.expected-out{background:var(--card);border:1px solid var(--card-border);border-left:4px solid var(--accent3);border-radius:0 8px 8px 0;padding:.5rem .9rem;margin-top:.5rem;}
+.expected-out .eo-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--accent3);display:block;margin-bottom:.2rem;}
+.expected-out pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre-wrap;margin:0;}
+.warn-box{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.25);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem 1rem;margin:.8rem 0;font-size:.9rem;}
+.warn-box b{color:var(--accent);}
+</style>
+<style>
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
+</style>
+</head>
+<body>
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#problem" data-target="problem"><span class="fn-num">P00</span><span class="fn-name">演算法與問題</span></a>
+  <a href="#ram" data-target="ram"><span class="fn-num">P01</span><span class="fn-name">RAM 模型</span></a>
+  <a href="#insertion" data-target="insertion"><span class="fn-num">P02</span><span class="fn-name">insertion sort</span></a>
+  <a href="#invariant" data-target="invariant"><span class="fn-num">P03</span><span class="fn-name">loop invariant</span></a>
+  <a href="#analysis" data-target="analysis"><span class="fn-num">P04</span><span class="fn-name">執行時間分析</span></a>
+  <a href="#mergesort" data-target="mergesort"><span class="fn-num">P05</span><span class="fn-name">merge sort 與分治</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="green">演算法基礎</span>：insertion sort 與 <span class="orange">loop invariant</span></h1>
+    <div class="subtitle">第 01 章 — Foundations（CLRS 4e Ch 1–2）</div>
+    <div class="big-formula">problem｜instance｜RAM model｜loop invariant｜incremental｜divide &amp; conquer</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 1–2）</div>
+  <p>① <strong>照節次讀</strong>：每一節先讀說明、動手玩互動元件，預測結果再按按鈕驗證。
+  ② <strong>三版對照</strong>：每個演算法先讀 pseudocode（與課本同款 1-based 索引），再切到 C++／Python 分頁看 0-based 實作差在哪。
+  ③ <strong>每節做 quiz</strong>：答錯就回到該節重讀，不要往下跳。
+  ④ 最後翻 <a href="#cards">關鍵詞彙卡</a>自測術語。本章是全學期的地基：loop invariant 的三段式論證會在之後每一章反覆出現。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#problem"><span class="toc-num">P00</span>演算法與問題</a>
+    <a href="#ram"><span class="toc-num">P01</span>RAM 模型</a>
+    <a href="#insertion"><span class="toc-num">P02</span>insertion sort</a>
+    <a href="#invariant"><span class="toc-num">P03</span>loop invariant</a>
+    <a href="#analysis"><span class="toc-num">P04</span>執行時間分析</a>
+    <a href="#mergesort"><span class="toc-num">P05</span>merge sort 與分治</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="problem">
+  <div class="section-number">P00 · 演算法與問題</div>
+  <h2>演算法是「把輸入變成輸出的計算程序」 <span class="sec-badge">§1.1</span></h2>
+  <p>資料結構課問「資料怎麼放」；演算法課問「問題怎麼解、解得多快、能不能證明它對」。
+  CLRS 給的定義很乾脆：<strong>演算法（algorithm）是一個定義明確的計算程序，
+  接受某些值作為輸入（input），產生某些值作為輸出（output）</strong>。</p>
+  <p>談演算法之前要先把「問題」說清楚。一個<strong>計算問題（computational problem）</strong>描述的是
+  輸入與輸出之間「應該滿足」的關係。以貫穿 Ch 2 的排序問題為例：</p>
+  <div class="info-box">
+    <span class="info-label">排序問題（sorting problem）</span>
+    <strong>輸入</strong>：n 個數的序列 ⟨a₁, a₂, …, aₙ⟩。<br>
+    <strong>輸出</strong>：輸入序列的一個重排 ⟨a′₁, a′₂, …, a′ₙ⟩，使得 a′₁ ≤ a′₂ ≤ … ≤ a′ₙ。
+  </div>
+  <p>給定一組具體的輸入（例如 ⟨5, 2, 4, 6, 1, 3⟩）就得到這個問題的一個<strong>實例（instance）</strong>。
+  演算法<strong>正確（correct）</strong>的意思是：對<em>每一個</em>實例都會停機（halt）、且輸出正確答案。
+  「對大部分輸入都對」在這門課不及格——我們要的是證明，而證明的主力工具就是本頁 P03 的 loop invariant。</p>
+  <div class="info-box warm">
+    <span class="info-label">和資料結構課的關係</span>
+    你在資結課已經寫過 bubble／selection／insertion／shell／merge／quick 六種排序。
+    這門課把其中兩個（insertion、merge）重新拿出來，但問的問題不一樣：
+    <strong>不再只是「會動」，而是「為什麼一定對？成本函數長什麼樣？」</strong>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · 正確性</div>
+    <p>某排序程式在 10⁶ 筆隨機測資上全對，但輸入「已排序的陣列」時會當掉。依 CLRS 的定義，它是正確的演算法嗎？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="false" data-fb="測資過再多也只是「沒找到反例」。正確性是對所有實例的全稱敘述，一個反例就推翻。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> 是，因為絕大多數輸入都對</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。已排序的陣列也是排序問題的合法實例；在該實例上不停機（當掉）就不是正確演算法。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 不是，存在一個實例使它失敗</div>
+      <div class="quiz-opt" data-correct="false" data-fb="輸入已排序仍是合法實例——輸出等於輸入的重排（恆等重排）即可，演算法必須處理它。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 不算，因為已排序的輸入不是合法實例</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="ram">
+  <div class="section-number">P01 · 計算模型</div>
+  <h2>RAM 模型：我們用什麼尺量「快慢」 <span class="sec-badge">§2.2</span></h2>
+  <p>說「這個演算法比較快」之前，得先講好用什麼機器量。CLRS 採用
+  <strong>RAM（random-access machine）模型</strong>：一台單處理器的抽象機器，指令一條接一條執行（不平行）。</p>
+  <div class="viz-layout">
+    <div>
+      <p>RAM 模型的三條家規：</p>
+      <p>① <strong>基本指令花常數時間</strong>：算術（＋−×÷、取餘、floor/ceiling）、資料搬移（load/store/copy）、控制（分支、副程式呼叫、return），每條都是 O(1)。<br>
+      ② <strong>整數字組寬度有限</strong>：存 n 個東西時索引用 c·lg n 位元的字組表示（c ≥ 1 常數）——不能把整個大陣列塞進一個字組裡作弊。<br>
+      ③ <strong>沒有的東西就是沒有</strong>：沒有向量指令、沒有快取階層假設、沒有「一次排序一整列」的魔法指令。</p>
+      <p>在這個模型下，<strong>執行時間 = 執行的基本指令條數</strong>。
+      這就是為什麼資結課用 <code>&lt;chrono&gt;</code> 量到的秒數會隨機器不同，
+      但「成長速率」的結論永遠一致——我們數的是指令條數對輸入大小 n 的函數。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">O(1) 一條指令 <span class="ic-badge">RAM</span></div>
+        <div class="ic-row"><span class="ic-label">x + y、x % y</span><span class="ic-value">✓</span></div>
+        <div class="ic-row"><span class="ic-label">A[i] 讀寫</span><span class="ic-value">✓</span></div>
+        <div class="ic-row"><span class="ic-label">if、函式呼叫</span><span class="ic-value">✓</span></div>
+        <div class="ic-row"><span class="ic-label">「排序整個 A」</span><span class="ic-value highlight">✗ 不是指令</span></div>
+        <div class="ic-row"><span class="ic-label">xʸ（任意大）</span><span class="ic-value highlight">✗ 要小心</span></div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">為什麼要抽象模型</div>
+        <div style="font-size:.85rem;line-height:1.7;">同一支程式在筆電和伺服器上秒數差 10 倍，但「n 加倍、時間變四倍」這件事在哪台機器都成立。模型讓分析<strong>與機器脫鉤</strong>。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · RAM 模型</div>
+    <p>下列哪個操作<strong>不能</strong>當成 RAM 模型的一條常數時間指令？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="false" data-fb="陣列隨機存取正是 RAM（random access）名稱的由來，O(1)。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 讀取 A[i]</div>
+      <div class="quiz-opt" data-correct="false" data-fb="整數乘法是基本算術指令，O(1)。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 計算 x × y</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。「找出整個陣列的最小值」需要看過 n 個元素，是一個 Θ(n) 的子程序，不是單一指令——把它當 O(1) 就是在模型裡作弊。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 取得整個陣列的最小值</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="insertion">
+  <div class="section-number">P02 · INSERTION SORT</div>
+  <h2>insertion sort：像整理手上的撲克牌 <span class="sec-badge">§2.1</span></h2>
+  <p>insertion sort 是<strong>漸增法（incremental method）</strong>的代表：
+  維持「左手牌永遠排好」這個狀態，每次從桌上抽一張新牌（key），
+  在已排好的牌裡<strong>從右往左</strong>找位置插進去。
+  下面的動畫直接對照 pseudocode 行號——按「單步」時，先猜下一步陣列會變成什麼樣。</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="bq-row" id="insArr"></div>
+      <div class="status-banner" id="insStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」或「播放」開始。範例即 CLRS 圖 2.2：⟨5, 2, 4, 6, 1, 3⟩。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="insPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="insPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="insPlayer.reset()">↺ 重來</button>
+        <div class="slider-row" style="flex:1;margin:0;">
+          <span class="slider-label">速度</span>
+          <input type="range" id="insDelay" min="200" max="1500" value="700">
+        </div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="clrs-code" id="insCode">
+        <div class="cc-title"><span class="fn">INSERTION-SORT</span>(A, n)</div>
+        <span class="line" data-l="1"><span class="ln">1</span><span class="kw">for</span> i = 2 <span class="kw">to</span> n</span>
+        <span class="line" data-l="2"><span class="ln">2</span>    key = A[i]</span>
+        <span class="line" data-l="3"><span class="ln">3</span>    <span class="com">// 將 A[i] 插入已排序的 A[1:i−1]</span></span>
+        <span class="line" data-l="4"><span class="ln">4</span>    j = i − 1</span>
+        <span class="line" data-l="5"><span class="ln">5</span>    <span class="kw">while</span> j &gt; 0 <span class="kw">and</span> A[j] &gt; key</span>
+        <span class="line" data-l="6"><span class="ln">6</span>        A[j+1] = A[j]</span>
+        <span class="line" data-l="7"><span class="ln">7</span>        j = j − 1</span>
+        <span class="line" data-l="8"><span class="ln">8</span>    A[j+1] = key</span>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">目前狀態</div>
+        <div class="ic-row"><span class="ic-label">i（外圈）</span><span class="ic-value" id="insI">—</span></div>
+        <div class="ic-row"><span class="ic-label">key</span><span class="ic-value highlight" id="insKey">—</span></div>
+        <div class="ic-row"><span class="ic-label">已排序前綴</span><span class="ic-value" id="insSorted">—</span></div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">▲ 深藍＝未處理；綠＝已排序前綴；橘＝正在右移比較的元素；紅框＝key 落點。</p>
+
+  <h3>三版對照：pseudocode（1-based）vs C++／Python（0-based）</h3>
+  <div class="code-tabs" id="ctIns">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctIns','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctIns','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctIns','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">INSERTION-SORT</span>(A, n)</div>
+        <span class="line"><span class="ln">1</span><span class="kw">for</span> i = 2 <span class="kw">to</span> n</span>
+        <span class="line"><span class="ln">2</span>    key = A[i]</span>
+        <span class="line"><span class="ln">3</span>    <span class="com">// Insert A[i] into the sorted subarray A[1:i−1].</span></span>
+        <span class="line"><span class="ln">4</span>    j = i − 1</span>
+        <span class="line"><span class="ln">5</span>    <span class="kw">while</span> j &gt; 0 <span class="kw">and</span> A[j] &gt; key</span>
+        <span class="line"><span class="ln">6</span>        A[j+1] = A[j]</span>
+        <span class="line"><span class="ln">7</span>        j = j − 1</span>
+        <span class="line"><span class="ln">8</span>    A[j+1] = key</span>
+      </div>
+      <div class="ct-note">課本索引 1-based：A[1:n]。第 5 行的兩個條件順序不能換——先檢查 j &gt; 0 才能安全讀 A[j]（short-circuit）。</div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="kw">void</span> <span class="fn">insertionSort</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A) {</span><span class="line">    <span class="kw">for</span> (std::size_t i = <span class="num">1</span>; i &lt; A.size(); ++i) {</span><span class="line">        <span class="kw">int</span> key = A[i];</span><span class="line">        <span class="com">// 將 key 插入已排序的 A[0..i-1]：把比 key 大的元素右移</span></span><span class="line">        <span class="kw">int</span> j = <span class="kw">static_cast</span>&lt;<span class="kw">int</span>&gt;(i) - <span class="num">1</span>;</span><span class="line">        <span class="kw">while</span> (j &gt;= <span class="num">0</span> &amp;&amp; A[j] &gt; key) {</span><span class="line">            A[j + <span class="num">1</span>] = A[j];</span><span class="line">            --j;</span><span class="line">        }</span><span class="line">        A[j + <span class="num">1</span>] = key;</span><span class="line">    }</span><span class="line">}</span></span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 {5, 2, 4, 6, 1, 3}）</span><pre>1 2 3 4 5 6</pre></div>
+      <div class="ct-note">0-based 改寫：外圈從 i = 1 起跑、while 條件變 j ≥ 0。j 用 int 而非 size_t，才能安全地減到 −1。</div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="kw">def</span> <span class="fn">insertion_sort</span>(A, n):</span><span class="line">    <span class="com"># Traverse the list or array from index 1 to n-1.</span></span><span class="line">    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, n):</span><span class="line">        key = A[i]</span><span class="line">        <span class="com"># Insert A[i] into the sorted subarray A[0:i].</span></span><span class="line">        j = i - <span class="num">1</span></span><span class="line">        <span class="kw">while</span> j &gt;= <span class="num">0</span> <span class="kw">and</span> A[j] &gt; key:</span><span class="line">            A[j + <span class="num">1</span>] = A[j]</span><span class="line">            j -= <span class="num">1</span></span><span class="line">        A[j + <span class="num">1</span>] = key</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 [5, 2, 4, 6, 1, 3]）</span><pre>[1, 2, 3, 4, 5, 6]</pre></div>
+      <div class="ct-note">取自 CLRS 4e 官方 Python 實作（Linda Xiao &amp; Tom Cormen，MIT License），註解保留原文。</div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 手跑追蹤</div>
+    <p>對 ⟨5, 2, 4, 6, 1, 3⟩ 執行 insertion sort，外圈 <strong>i = 3（1-based，key = 4）</strong>那一輪結束後，陣列是？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="i=2 那輪把 2 插到最前 → ⟨2,5,4,6,1,3⟩；i=3 取 key=4，5 右移一格、遇到 2 停下，4 插入 → ⟨2,4,5,6,1,3⟩。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> ⟨2, 4, 5, 6, 1, 3⟩</div>
+      <div class="quiz-opt" data-correct="false" data-fb="這是整個演算法跑完的結果。i=3 時只保證前 3 個元素排好，右邊的 1 和 3 都還沒動。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> ⟨1, 2, 3, 4, 5, 6⟩</div>
+      <div class="quiz-opt" data-correct="false" data-fb="別忘了 i=2 那輪已經先把 2 插到 5 前面了；i=3 是在 ⟨2,5,…⟩ 的基礎上處理 key=4。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> ⟨4, 5, 2, 6, 1, 3⟩</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="invariant">
+  <div class="section-number">P03 · LOOP INVARIANT</div>
+  <h2>loop invariant：用「數學歸納法」證迴圈是對的 <span class="sec-badge">§2.1</span></h2>
+  <p>怎麼<em>證明</em> insertion sort 一定對？CLRS 的答案是<strong>迴圈不變量（loop invariant）</strong>：
+  一句在迴圈每一輪開始前都成立的敘述。對 insertion sort：</p>
+  <div class="info-box green">
+    <span class="info-label">INSERTION-SORT 的 loop invariant</span>
+    在外圈 <strong>for</strong> 迴圈每輪開始時（索引為 i），子陣列 A[1:i−1] 由「原本就在 A[1:i−1] 裡的元素」組成，
+    但已排成遞增順序。
+  </div>
+  <p>要用 loop invariant 證正確性，必須完成<strong>三段式論證</strong>——結構和數學歸納法一模一樣：</p>
+  <div class="viz-layout">
+    <div>
+      <div class="thm-box">
+        <div class="thm-label">① INITIALIZATION（初始化）</div>
+        第一輪開始前（i = 2）：A[1:1] 只有一個元素，單一元素天然有序 ✓。<em>對應歸納法的 base case。</em>
+      </div>
+      <div class="thm-box">
+        <div class="thm-label">② MAINTENANCE（維持）</div>
+        假設第 i 輪開始前 invariant 成立。這一輪把 A[i] 右邊比它大的元素逐一右移、插入 key，
+        結束時 A[1:i] 排好、且元素集合不變 → 下一輪開始前 invariant 仍成立 ✓。<em>對應歸納步驟。</em>
+      </div>
+      <div class="thm-box">
+        <div class="thm-label">③ TERMINATION（終止）</div>
+        迴圈結束時 i = n + 1。把 i = n + 1 代入 invariant：<strong>A[1:n] 已排序、且是原元素的重排</strong>——這正是排序問題要的輸出，證畢。
+        <em>歸納法沒有這段；迴圈會停，所以最後一定要「收割」invariant。</em>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">寫證明的檢查清單</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        ▸ invariant 是「狀態敘述」不是「動作敘述」<br>
+        ▸ 三段缺一不可，termination 常被忘記<br>
+        ▸ invariant 要「夠強」：只說「A[1:i−1] 有序」不夠，還要說「元素是原本那些」——否則把陣列全填 0 也滿足<br>
+        ▸ 之後章節同一招：merge 的 k 迴圈、Dijkstra 的集合 S、紅黑樹性質全是 invariant</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 三段式</div>
+    <p>為什麼 invariant 必須包含「A[1:i−1] 的元素就是原本 A[1:i−1] 那些元素（的重排）」這句話？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="false" data-fb="初始化不受影響——單一元素怎樣都成立。問題出在 termination 收割不到想要的結論。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 否則初始化那段會失敗</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。若只要求「有序」，一個把陣列全部改成 0 的錯誤程式也滿足 invariant；termination 時就只能得到「輸出有序」卻不能保證「輸出是輸入的重排」。invariant 太弱，證不出正確性。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 否則終止時推不出「輸出是輸入的重排」</div>
+      <div class="quiz-opt" data-correct="false" data-fb="迴圈當然還是會停——invariant 的強弱不影響停機，影響的是停機後能推出什麼。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 否則迴圈不會終止</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="analysis">
+  <div class="section-number">P04 · 執行時間</div>
+  <h2>逐行計費：從 Σ 到 Θ(n²) <span class="sec-badge">§2.2</span></h2>
+  <p>RAM 模型下，把每行 pseudocode 的「單次成本 × 執行次數」加總就是總時間 T(n)。
+  insertion sort 的關鍵在第 5–7 行 while 迴圈：令 tᵢ 為外圈第 i 輪 while 條件被測試的次數，則</p>
+  <div class="info-box">
+    <span class="info-label">T(n) 的形狀</span>
+    T(n) = c₁n + c₂(n−1) + c₄(n−1) + c₅ Σᵢ₌₂ⁿ tᵢ + c₆ Σᵢ₌₂ⁿ (tᵢ−1) + c₇ Σᵢ₌₂ⁿ (tᵢ−1) + c₈(n−1)
+    <br>一切取決於 <strong>Σ tᵢ</strong>——也就是「總共右移了幾次」。
+  </div>
+  <div class="viz-layout">
+    <div>
+      <p><strong>最好情況（best case）</strong>：輸入已排序。每輪 while 第一次測試就失敗（tᵢ = 1），
+      T(n) = an + b 是 <strong>n 的線性函數 Θ(n)</strong>。</p>
+      <p><strong>最壞情況（worst case）</strong>：輸入嚴格遞減。每個 key 都要一路移到最前面（tᵢ = i），
+      Σᵢ₌₂ⁿ i = n(n+1)/2 − 1，T(n) = an² + bn + c 是 <strong>n 的二次函數 Θ(n²)</strong>。</p>
+      <p>這門課預設報告<strong>最壞情況</strong>：① 它是對任何輸入的保證上限；② 對很多演算法而言最壞情況並不罕見；③「平均情況」需要假設輸入分布（Ch 5 的機率分析），而且 insertion sort 的平均仍是 Θ(n²)——平均每個 key 要移過一半的前綴。</p>
+      <p>按右邊按鈕，比較兩種極端輸入下「右移總次數」的實測值。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">右移次數實驗 <span class="ic-badge">n = 30</span></div>
+        <div class="controls-bar" style="border:none;margin:0;padding:0 0 .5rem;">
+          <button class="btn btn-step" onclick="shiftExp('sorted')">已排序</button>
+          <button class="btn btn-step" onclick="shiftExp('reversed')">嚴格遞減</button>
+          <button class="btn btn-shuffle" onclick="shiftExp('random')">隨機</button>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-tile"><div class="stat-label">右移次數</div><div class="stat-value" id="shiftCount">—</div></div>
+          <div class="stat-tile"><div class="stat-label">理論值</div><div class="stat-value" id="shiftTheory">—</div></div>
+        </div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:.4rem;" id="shiftNote">n(n−1)/2 = 435 是遞減輸入的理論右移數。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 情況分析</div>
+    <p>輸入是「幾乎排好、只有常數 k 個元素放錯位置（每個錯位距離 ≤ d，k、d 都是常數）」。insertion sort 跑多快？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="每個元素右移距離有常數上限，Σtᵢ ≤ n + k·d = O(n)。這就是「insertion sort 對幾乎排序的輸入是實戰利器」的原因，STL 的 introsort 小區間也用它收尾。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> Θ(n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Θ(n²) 需要 Σtᵢ 是二次級——錯位元素數量與距離都是常數時，總右移只有線性。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> Θ(n²)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="insertion sort 沒有任何 lg n 的機制（沒有折半、沒有樹）——它只會逐格右移。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> Θ(n lg n)</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="mergesort">
+  <div class="section-number">P05 · MERGE SORT</div>
+  <h2>merge sort：第一次正式見到 divide-and-conquer <span class="sec-badge">§2.3</span></h2>
+  <p>漸增法之外的另一條路：<strong>分治法（divide-and-conquer）</strong>。
+  遞迴結構固定三步——<strong>Divide</strong> 把問題切成子問題、<strong>Conquer</strong> 遞迴解子問題、
+  <strong>Combine</strong> 把子解合併成原問題的解。merge sort 把陣列對半切到只剩單元素（天然有序），
+  再用 MERGE 逐層「兩疊已排序的牌合併成一疊」。</p>
+
+  <div class="code-tabs" id="ctMs">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctMs','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctMs','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctMs','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">MERGE-SORT</span>(A, p, r)</div>
+        <span class="line"><span class="ln">1</span><span class="kw">if</span> p ≥ r　　<span class="com">// 0 或 1 個元素？</span></span>
+        <span class="line"><span class="ln">2</span>    <span class="kw">return</span></span>
+        <span class="line"><span class="ln">3</span>q = ⌊(p + r)／2⌋　　<span class="com">// 中點</span></span>
+        <span class="line"><span class="ln">4</span><span class="fn">MERGE-SORT</span>(A, p, q)</span>
+        <span class="line"><span class="ln">5</span><span class="fn">MERGE-SORT</span>(A, q + 1, r)</span>
+        <span class="line"><span class="ln">6</span><span class="fn">MERGE</span>(A, p, q, r)　　<span class="com">// 合併 A[p:q] 與 A[q+1:r]</span></span>
+      </div>
+      <div class="clrs-code" style="margin-top:.7rem;">
+        <div class="cc-title"><span class="fn">MERGE</span>(A, p, q, r) <span class="com">— 主迴圈</span></div>
+        <span class="line"><span class="ln">…</span>複製 A[p:q] → L、A[q+1:r] → R；i = j = 0，k = p</span>
+        <span class="line"><span class="ln">12</span><span class="kw">while</span> i &lt; n<sub>L</sub> <span class="kw">and</span> j &lt; n<sub>R</sub></span>
+        <span class="line"><span class="ln">13</span>    <span class="kw">if</span> L[i] ≤ R[j]</span>
+        <span class="line"><span class="ln">14</span>        A[k] = L[i]；i = i + 1</span>
+        <span class="line"><span class="ln">15</span>    <span class="kw">else</span> A[k] = R[j]；j = j + 1</span>
+        <span class="line"><span class="ln">16</span>    k = k + 1</span>
+        <span class="line"><span class="ln">…</span>把 L 或 R 剩下的元素依序倒進 A</span>
+      </div>
+      <div class="ct-note">閉區間 [p, r]。第 13 行的「≤」讓相等元素優先取左邊 → merge sort 是<strong>穩定排序</strong>。</div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="kw">void</span> <span class="fn">merge</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> p, <span class="kw">int</span> q, <span class="kw">int</span> r) {</span><span class="line">    std::vector&lt;<span class="kw">int</span>&gt; L(A.begin() + p, A.begin() + q + <span class="num">1</span>);   <span class="com">// A[p..q]</span></span><span class="line">    std::vector&lt;<span class="kw">int</span>&gt; R(A.begin() + q + <span class="num">1</span>, A.begin() + r + <span class="num">1</span>); <span class="com">// A[q+1..r]</span></span><span class="line">    std::size_t i = <span class="num">0</span>, j = <span class="num">0</span>;</span><span class="line">    <span class="kw">int</span> k = p;</span><span class="line">    <span class="kw">while</span> (i &lt; L.size() &amp;&amp; j &lt; R.size())</span><span class="line">        A[k++] = (L[i] &lt;= R[j]) ? L[i++] : R[j++];   <span class="com">// 取兩疊頂端較小者</span></span><span class="line">    <span class="kw">while</span> (i &lt; L.size()) A[k++] = L[i++];</span><span class="line">    <span class="kw">while</span> (j &lt; R.size()) A[k++] = R[j++];</span><span class="line">}</span><span class="line"></span><span class="line"><span class="kw">void</span> <span class="fn">mergeSort</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> p, <span class="kw">int</span> r) {</span><span class="line">    <span class="kw">if</span> (p &gt;= r) <span class="kw">return</span>;                 <span class="com">// 0 或 1 個元素：已排序</span></span><span class="line">    <span class="kw">int</span> q = (p + r) / <span class="num">2</span>;</span><span class="line">    <span class="fn">mergeSort</span>(A, p, q);                 <span class="com">// Divide + Conquer 左半</span></span><span class="line">    <span class="fn">mergeSort</span>(A, q + <span class="num">1</span>, r);             <span class="com">// Conquer 右半</span></span><span class="line">    <span class="fn">merge</span>(A, p, q, r);                  <span class="com">// Combine</span></span><span class="line">}</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 {12, 3, 7, 9, 14, 6, 11, 2}）</span><pre>2 3 6 7 9 11 12 14</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="kw">def</span> <span class="fn">merge_sort</span>(A, p, r):</span><span class="line">    <span class="com"># 官方版核心（Chapter 2/merge_sort.py，MIT License）</span></span><span class="line">    <span class="kw">if</span> p &gt;= r:   <span class="com"># 0 or 1 element?</span></span><span class="line">        <span class="kw">return</span></span><span class="line">    q = (p + r) // <span class="num">2</span>          <span class="com"># midpoint of A[p:r]</span></span><span class="line">    merge_sort(A, p, q)       <span class="com"># recursively sort A[p:q]</span></span><span class="line">    merge_sort(A, q + <span class="num">1</span>, r)   <span class="com"># recursively sort A[q+1:r]</span></span><span class="line">    merge(A, p, q, r)         <span class="com"># merge A[p:q] and A[q+1:r] into A[p:r]</span></span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 [12, 3, 7, 9, 14, 6, 11, 2]）</span><pre>[2, 3, 6, 7, 9, 11, 12, 14]</pre></div>
+      <div class="ct-note">取自 CLRS 4e 官方實作；merge() 全文見官方 Chapter 2/merge_sort.py。</div>
+    </div>
+  </div>
+
+  <h3>逐層合併動畫</h3>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div id="msLevels"></div>
+      <div class="status-banner" id="msStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」看每一次 MERGE 呼叫把哪兩段合併。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="msPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="msPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="msPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">成本帳</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        每一「層」的 MERGE 總工作量都是 Θ(n)；<br>
+        層數 = lg n + 1。<br>
+        <strong>T(n) = 2T(n/2) + Θ(n) = Θ(n lg n)</strong><br>
+        這條<strong>遞迴式（recurrence）</strong>怎麼正式解？下一章的 recursion tree 與 Master Theorem。</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">代價</div>
+        <div style="font-size:.85rem;line-height:1.8;">MERGE 需要 Θ(n) 額外空間（L、R 暫存陣列）——insertion sort 則是就地（in place）排序。快與省，不可兼得（Ch 6 的 heapsort 兩者都要）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05 · 分治</div>
+    <p>MERGE 合併兩段各 n/2 個元素的已排序子陣列，<strong>最壞情況</strong>下元素比較（L[i] ≤ R[j]）大約幾次？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="false" data-fb="lg n 是「層數」的來源，單次 MERGE 沒有折半機制——它要線性掃過兩段。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 約 lg n 次</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。兩邊交錯取用時，每次比較恰好送一個元素進 A，直到某側用完——最壞要比到 n−1 次，Θ(n)。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 約 n 次</div>
+      <div class="quiz-opt" data-correct="false" data-fb="n²/4 是「每個左元素跟每個右元素都比一次」——但兩段都已排序，指標只會前進不回頭，總比較數是線性的。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 約 n²/4 次</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>把兩把工具用在新演算法上</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · selection sort 的 invariant</div>
+    <p>selection sort（每輪從 A[i:n] 挑最小值換到 A[i]）外圈的 loop invariant，下列哪個<strong>最恰當</strong>？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="false" data-fb="只說有序不夠強：termination 時推不出「而且這 i−1 個是全域最小的那批」——這正是 selection sort 與 insertion sort invariant 的差異。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> A[1:i−1] 已排序</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。selection sort 的前綴不只有序，還是「整個陣列最小的 i−1 個元素」——所以後面永遠不會再動它。insertion sort 的前綴則只保證內部有序，之後還會被插入新元素。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> A[1:i−1] 已排序，且包含整個陣列最小的 i−1 個元素</div>
+      <div class="quiz-opt" data-correct="false" data-fb="這是動作描述（這一輪做什麼），不是狀態敘述（每輪開始前什麼成立）。invariant 必須是狀態敘述。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 每輪都會從右半段挑出最小元素</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 交叉點</div>
+    <p>insertion sort 每步成本低（c·n² 的 c 小）、merge sort 有遞迴開銷（d·n lg n 的 d 大）。實務上排序函式庫常怎麼取兩者之長？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。小 n 時 n² 與 n lg n 差距小、常數主導，insertion sort 反而快——所以遞迴切到小區間（例如 ≤ 16 或 32）就改用 insertion sort 收尾。std::sort 的 introsort 正是這樣做。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> 大陣列用分治排序，遞迴到小區間改用 insertion sort</div>
+      <div class="quiz-opt" data-correct="false" data-fb="方向反了：insertion sort 的優勢在小輸入（常數小），大輸入時 n² 必輸給 n lg n。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 大陣列用 insertion sort，小陣列用 merge sort</div>
+      <div class="quiz-opt" data-correct="false" data-fb="漸近符號忽略常數是分析工具的取捨，不代表實務常數不重要——正因為重要才有混合式排序。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 不用取長，漸近較快的演算法在所有 n 都比較快</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章速查表</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.88rem;">
+    <thead><tr><th>面向</th><th>insertion sort</th><th>merge sort</th></tr></thead>
+    <tbody>
+      <tr><td>設計典範</td><td>漸增法（incremental）</td><td class="best">分治法（divide &amp; conquer）</td></tr>
+      <tr><td>最壞情況</td><td class="worst">Θ(n²)</td><td class="best">Θ(n lg n)</td></tr>
+      <tr><td>最好情況</td><td class="best">Θ(n)（已排序）</td><td>Θ(n lg n)（不分輸入）</td></tr>
+      <tr><td>額外空間</td><td class="best">O(1)（in place）</td><td class="worst">Θ(n)</td></tr>
+      <tr><td>穩定性</td><td class="best">穩定</td><td class="best">穩定（MERGE 用 ≤）</td></tr>
+      <tr><td>正確性證明</td><td>loop invariant 三段式</td><td>對子問題大小做歸納</td></tr>
+      <tr><td>小輸入實務</td><td class="best">快（常數小）</td><td>慢（遞迴開銷）</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① 正確性是全稱敘述：對<strong>每個實例</strong>都要停機且輸出正確。<br>
+    ② RAM 模型把「快慢」定義成基本指令條數，讓分析與機器脫鉤。<br>
+    ③ loop invariant 三段式 = 迴圈版數學歸納法，termination 負責收割結論。<br>
+    ④ 最壞情況是預設報告值：它是保證，不是悲觀。<br>
+    ⑤ 分治三步 Divide／Conquer／Combine，成本寫成遞迴式 → 下一章解它。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch1.json · 12 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="home" href="index.html"><div class="nav-dir">HOME</div><div class="nav-title">課程地圖</div></a><a class="next" href="analysis.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">漸近分析與遞迴式</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 01 章 Foundations（CLRS 4e Ch 1–2）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"演算法（Algorithm）","back":"一個定義明確的計算程序：接受某些值作為輸入，經過有限步驟產生輸出。可以視為解決一個計算問題的工具。"},
+  {"front":"問題實例（Instance）","back":"計算問題的一組具體輸入。例如排序問題的一個實例是 ⟨5, 2, 4, 6, 1, 3⟩。正確性是對「所有」實例的要求。"},
+  {"front":"正確性（Correctness）","back":"演算法對每一個輸入實例都會停機（halt）並輸出正確答案。只要存在一個實例失敗，演算法就不正確。"},
+  {"front":"RAM 模型（Random-Access Machine）","back":"分析用的抽象單處理器機器：算術、資料搬移、控制等基本指令各花常數時間，指令依序執行。執行時間＝執行的指令條數。"},
+  {"front":"迴圈不變量（Loop Invariant）","back":"在迴圈每一輪開始前都成立的狀態敘述。用初始化（initialization）、維持（maintenance）、終止（termination）三段式論證迴圈的正確性。"},
+  {"front":"漸增法（Incremental Method）","back":"逐步擴大「已解決部分」的設計方法：insertion sort 每輪把一個新元素插入已排序前綴，維持前綴有序。"},
+  {"front":"插入排序（Insertion Sort）","back":"像整理撲克牌：取出 key，把左邊比它大的元素逐一右移後插入。最壞 Θ(n²)、已排序輸入 Θ(n)、就地且穩定。"},
+  {"front":"最壞情況分析（Worst-Case Analysis）","back":"報告演算法在最不利輸入下的執行時間。它是對任何輸入的保證上限，是本課程預設的分析對象。"},
+  {"front":"分治法（Divide-and-Conquer）","back":"遞迴設計典範三步驟：Divide 把問題切成子問題、Conquer 遞迴解子問題、Combine 把子解合併成原問題的解。"},
+  {"front":"合併排序（Merge Sort）","back":"分治排序：對半切到單一元素，再逐層用 MERGE 合併兩段已排序子陣列。任何輸入都是 Θ(n lg n)，但需要 Θ(n) 額外空間。"},
+  {"front":"遞迴式（Recurrence）","back":"用「自己在較小輸入上的值」描述函數的等式，例如 merge sort 的 T(n) = 2T(n/2) + Θ(n)。解遞迴式的三種方法見下一章。"},
+  {"front":"就地排序（Sorted in Place）","back":"排序過程中任何時刻只有常數個元素存放在陣列之外。insertion sort 是就地排序；教科書版 merge sort 不是。"}
+];
+
+/* ---------- P02 insertion sort 動畫 ---------- */
+const INS_INPUT = [5, 2, 4, 6, 1, 3];
+function insFrames() {
+  const A = [...INS_INPUT], frames = [];
+  const snap = (line, msg, st) => frames.push({A:[...A], line, msg, ...st});
+  snap(null, '初始狀態：⟨' + A.join(', ') + '⟩。i 從 2 開始（1-based）。', {i:null,key:null,sorted:1,hl:-1,keyPos:-1});
+  for (let i = 1; i < A.length; i++) {
+    const key = A[i];
+    snap(2, `i = ${i+1}（1-based）：取出 key = ${key}。`, {i:i+1,key,sorted:i,hl:i,keyPos:i});
+    let j = i - 1;
+    while (j >= 0 && A[j] > key) {
+      A[j+1] = A[j];
+      snap(6, `A[${j+1}] = ${A[j+1]} > key，右移一格。`, {i:i+1,key,sorted:i,hl:j+1,keyPos:-1});
+      j--;
+    }
+    A[j+1] = key;
+    snap(8, `插入 key = ${key} 到位置 ${j+2}（1-based）。前 ${i+1} 個元素已排序。`, {i:i+1,key,sorted:i+1,hl:-1,keyPos:j+1});
+  }
+  snap(null, '完成：⟨' + A.join(', ') + '⟩。外圈結束，termination 收割 invariant。', {i:'—',key:'—',sorted:A.length,hl:-1,keyPos:-1});
+  return frames;
+}
+function insApply(f) {
+  const el = $('insArr'); el.innerHTML = '';
+  f.A.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item';
+    if (idx < f.sorted) d.style.background = '#1a6b4a';
+    if (idx === f.hl) d.style.background = '#f39c12';
+    if (idx === f.keyPos) d.style.outline = '3px solid #c0392b';
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  hlLine('insCode', f.line);
+  setStatus('insStatus', f.msg);
+  $('insI').textContent = f.i ?? '—';
+  $('insKey').textContent = f.key ?? '—';
+  $('insSorted').textContent = typeof f.sorted === 'number' ? `A[1:${f.sorted}]` : '—';
+}
+const insPlayer = new Player({frames: insFrames(), apply: insApply, delayInput: null});
+insPlayer.delayInput = $('insDelay');
+insPlayer.reset();
+
+/* ---------- P04 右移次數實驗 ---------- */
+function shiftExp(mode) {
+  const n = 30;
+  let A;
+  if (mode === 'sorted') A = Array.from({length:n}, (_,k) => k);
+  else if (mode === 'reversed') A = Array.from({length:n}, (_,k) => n-k);
+  else A = Array.from({length:n}, () => Math.floor(Math.random()*100));
+  let shifts = 0;
+  for (let i = 1; i < n; i++) {
+    const key = A[i]; let j = i-1;
+    while (j >= 0 && A[j] > key) { A[j+1] = A[j]; j--; shifts++; }
+    A[j+1] = key;
+  }
+  $('shiftCount').textContent = shifts;
+  $('shiftTheory').textContent = mode === 'sorted' ? '0' : (mode === 'reversed' ? n*(n-1)/2 : '≈' + Math.round(n*(n-1)/4));
+  $('shiftNote').textContent = mode === 'sorted'
+    ? '已排序：每輪 while 立刻失敗，右移 0 次 → Θ(n)。'
+    : (mode === 'reversed' ? `嚴格遞減：每個 key 移到底，n(n−1)/2 = ${n*(n-1)/2} 次 → Θ(n²)。`
+    : '隨機輸入平均約 n(n−1)/4 次——仍是二次級，平均情況也是 Θ(n²)。');
+}
+
+/* ---------- P05 merge sort 逐層動畫 ---------- */
+const MS_INPUT = [12, 3, 7, 9, 14, 6, 11, 2];
+function msFrames() {
+  const A = [...MS_INPUT], frames = [], merges = [];
+  (function rec(p, r) {
+    if (p >= r) return;
+    const q = (p + r) >> 1;
+    rec(p, q); rec(q+1, r);
+    const L = A.slice(p, q+1), R = A.slice(q+1, r+1);
+    let i = 0, j = 0, k = p;
+    while (i < L.length && j < R.length) A[k++] = (L[i] <= R[j]) ? L[i++] : R[j++];
+    while (i < L.length) A[k++] = L[i++];
+    while (j < R.length) A[k++] = R[j++];
+    merges.push({p, q, r, A:[...A]});
+  })(0, A.length-1);
+  frames.push({A:[...MS_INPUT], seg:null, msg:'初始：⟨' + MS_INPUT.join(', ') + '⟩。遞迴切到單元素後開始逐層合併。'});
+  merges.forEach(m => frames.push({A:m.A, seg:[m.p,m.r], mid:m.q,
+    msg:`MERGE(A, ${m.p+1}, ${m.q+1}, ${m.r+1})（1-based）：合併 A[${m.p+1}:${m.q+1}] 與 A[${m.q+2}:${m.r+1}]。`}));
+  frames.push({A:frames[frames.length-1].A, seg:null, msg:'完成：⟨' + frames[frames.length-1].A.join(', ') + '⟩。共 ' + merges.length + ' 次 MERGE，每層總工作量 Θ(n)。'});
+  return frames;
+}
+function msApply(f) {
+  const el = $('msLevels'); el.innerHTML = '';
+  const row = document.createElement('div'); row.className = 'bq-row';
+  f.A.forEach((v, idx) => {
+    const d = document.createElement('div'); d.className = 'bq-item';
+    if (f.seg && idx >= f.seg[0] && idx <= f.seg[1]) d.style.background = idx <= f.mid ? '#1a6b4a' : '#8e44ad';
+    d.textContent = v; row.appendChild(d);
+  });
+  el.appendChild(row);
+  setStatus('msStatus', f.msg);
+}
+const msPlayer = new Player({frames: msFrames(), apply: msApply, delayInput: null});
+msPlayer.reset();
+</script>
+<script>
+/* ============ shared utilities ============ */
+const $ = id => document.getElementById(id);
+
+function quizCheck(quizId, optEl) {
+  const isCorrect = optEl.dataset.correct === 'true';
+  optEl.parentElement.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct','wrong'));
+  optEl.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = $(quizId + 'Feedback');
+  fb.classList.remove('correct','wrong');
+  fb.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  fb.innerHTML = (isCorrect ? '<strong>正確 ✓</strong> ' : '<strong>不對 ✗</strong> ') + (optEl.dataset.fb || '');
+}
+
+function hlLine(rootId, n) {
+  const root = $(rootId);
+  if (!root) return;
+  root.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+  if (n != null) {
+    const line = root.querySelector(`.line[data-l="${n}"]`);
+    if (line) line.classList.add('active');
+  }
+}
+
+/* step player: frames = [{...}], apply(frame) renders */
+class Player {
+  constructor({frames, apply, delayInput, onDone}) {
+    this.frames = frames; this.apply = apply;
+    this.delayInput = delayInput; this.i = -1; this.timer = null;
+    this.onDone = onDone || (()=>{});
+  }
+  step() {
+    if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+    this.i += 1; this.apply(this.frames[this.i]);
+  }
+  play() {
+    this.stop();
+    const tick = () => {
+      if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+      this.step();
+      this.timer = setTimeout(tick, this.delayInput ? parseInt(this.delayInput.value,10) : 700);
+    };
+    tick();
+  }
+  stop() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  reset() { this.stop(); this.i = -1; if (this.frames.length) this.apply(this.frames[0]); }
+}
+
+function setStatus(id, html) {
+  const el = $(id); if (el) el.querySelector('.status-text').innerHTML = html;
+}
+
+/* vertical box stack renderer (DOM) */
+function renderBoxStack(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  const hl = opts.highlight ?? -1;   // index from top (0 = top)
+  el.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bs-toplabel';
+  label.textContent = items.length ? 'top ↓' : '(empty)';
+  el.appendChild(label);
+  items.slice().reverse().forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bs-item' + (idx === hl ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+
+/* horizontal queue renderer: front at left */
+function renderBoxQueue(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  el.innerHTML = '';
+  const front = document.createElement('div');
+  front.className = 'bq-label'; front.textContent = items.length ? 'front →' : '(empty)';
+  el.appendChild(front);
+  items.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item' + (idx === (opts.highlight ?? -1) ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  const rear = document.createElement('div');
+  rear.className = 'bq-label'; rear.textContent = items.length ? '← rear' : '';
+  el.appendChild(rear);
+}
+
+/* floating nav scroll spy */
+(function setupNav() {
+  const nav = $('floatNav');
+  const links = nav.querySelectorAll('a[data-target]');
+  const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
+  function update() {
+    const y = window.scrollY + window.innerHeight * 0.3;
+    let active = sections[0]?.id;
+    for (const s of sections) if (s.offsetTop <= y) active = s.id;
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>
