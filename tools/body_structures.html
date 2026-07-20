@@ -1,0 +1,566 @@
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#chaining" data-target="chaining"><span class="fn-num">P00</span><span class="fn-name">hash 與 chaining</span></a>
+  <a href="#universal" data-target="universal"><span class="fn-num">P01</span><span class="fn-name">open addressing 與 universal</span></a>
+  <a href="#bst" data-target="bst"><span class="fn-num">P02</span><span class="fn-name">BST 複習</span></a>
+  <a href="#rbprops" data-target="rbprops"><span class="fn-num">P03</span><span class="fn-name">紅黑樹五性質</span></a>
+  <a href="#rbinsert" data-target="rbinsert"><span class="fn-num">P04</span><span class="fn-name">insert fixup</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="blue">Hash 深化</span>、BST 與<span class="orange">紅黑樹</span></h1>
+    <div class="subtitle">第 04 章 — Data Structures（CLRS 4e Ch 11–13）</div>
+    <div class="big-formula">chaining｜load factor α｜universal hashing｜BST｜rotation｜insert fixup</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 11–13）</div>
+  <p>① 資結課已寫過 hash table（chaining＋open addressing）和 BST；本章的新東西是<strong>期望分析的嚴謹版</strong>（α、universal hashing）和<strong>紅黑樹</strong>——第一棵「保證 O(lg n)」的平衡搜尋樹。
+  ② P04 的 insert fixup 三個 case 是考試手跑重點：動畫看熟後，拿 41,38,31,12,19,8 這串自己畫一遍。
+  ③ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#chaining"><span class="toc-num">P00</span>hash 與 chaining</a>
+    <a href="#universal"><span class="toc-num">P01</span>open addressing 與 universal hashing</a>
+    <a href="#bst"><span class="toc-num">P02</span>BST 複習</a>
+    <a href="#rbprops"><span class="toc-num">P03</span>紅黑樹五性質與旋轉</a>
+    <a href="#rbinsert"><span class="toc-num">P04</span>RB-INSERT-FIXUP</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="chaining">
+  <div class="section-number">P00 · HASHING</div>
+  <h2>chaining 與負載因子 α：期望 O(1) 的條件 <span class="sec-badge">§11.1–11.2</span></h2>
+  <p>資結課的 hash table 複習 30 秒：h(k) 把鍵壓進 m 個 slot；碰撞用<strong>鏈結（chaining）</strong>或
+  <strong>開放定址（open addressing）</strong>處理。本章補上嚴謹的分析語言——一切圍著<strong>負載因子 α = n/m</strong>轉：</p>
+  <div class="thm-box">
+    <div class="thm-label">定理 11.1／11.2（simple uniform hashing 假設下）</div>
+    chaining 的搜尋期望時間 = Θ(1 + α)——不論找不找得到。
+    直覺：期望鏈長就是 α；只要 <strong>n = O(m)</strong>（α 是常數），所有字典操作期望 O(1)。
+  </div>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="controls-bar" style="border:none;padding:0;margin:0 0 .6rem;">
+        <button class="btn btn-play" onclick="chPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="chPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="chPlayer.reset()">↺ 重來</button>
+      </div>
+      <div class="adj-list" id="chSlots" style="font-family:'JetBrains Mono',monospace;font-size:.82rem;"></div>
+      <div class="status-banner" id="chStatus"><span class="status-icon">▸</span><span class="status-text">m = 9、h(k) = k mod 9。依序插入 5, 28, 19, 15, 20, 33, 12, 17, 10。</span></div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">目前狀態</div>
+        <div class="ic-row"><span class="ic-label">n（元素數）</span><span class="ic-value" id="chN">0</span></div>
+        <div class="ic-row"><span class="ic-label">α = n/m</span><span class="ic-value highlight" id="chAlpha">0.00</span></div>
+        <div class="ic-row"><span class="ic-label">最長鏈</span><span class="ic-value" id="chMax">0</span></div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">C++ 對照</div>
+        <div style="font-size:.85rem;line-height:1.8;"><code>std::unordered_map</code> 就是 chaining：<code>load_factor()</code>、<code>max_load_factor()</code>（預設 1.0）超標就 rehash——所以它的 O(1) 也是「攤還＋期望」雙重意義下的。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · α 的意義</div>
+    <p>chaining hash table 有 n 個元素、m 個 slot。下列哪個情況「期望 O(1) 搜尋」會失效？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="false" data-fb="α = 0.5 是常數 → Θ(1 + 0.5) = O(1) ✓。α 不需要小於某個門檻，只要是常數。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> m = 2n（α = 0.5）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="α = 3 也是常數 → 期望鏈長 3，仍是 O(1)。鏈稍長但不隨 n 成長。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> n = 3m（α = 3）</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。m = √n 時 α = n/√n = √n 隨 n 成長 → 期望搜尋 Θ(1 + √n)，不再是 O(1)。「slot 數要跟元素數同級」正是 rehash 的存在理由。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> m = √n（α = √n）</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="universal">
+  <div class="section-number">P01 · UNIVERSAL HASHING</div>
+  <h2>對手知道你的 hash 函數怎麼辦？——隨機選一個 <span class="sec-badge">§11.3–11.4</span></h2>
+  <p><strong>open addressing</strong> 複習：所有元素直接住在表格裡（α ≤ 1），碰撞就沿<strong>探測序列</strong>找下一格
+  （linear probing 有一次群聚問題；4e 主推的分析假設是 independent uniform permutation hashing）。
+  搜尋失敗的期望探測數約 <strong>1/(1−α)</strong>——α → 1 時爆炸，這就是 open addressing 必須提早 rehash 的原因。</p>
+  <p>更深的問題：任何<strong>固定的</strong> hash 函數 h 都有天敵——對手挑 n 個全部映到同一 slot 的鍵，表格退化成鏈結串列。
+  解法與 quicksort 一模一樣：<strong>把隨機性放進演算法</strong>。</p>
+  <div class="info-box purple">
+    <span class="info-label">universal hashing（§11.3.3）</span>
+    從一族函數 ℋ 中<strong>隨機挑一個</strong> h 使用。ℋ 是 universal 的定義：對任兩個相異鍵 k ≠ l，
+    Pr<sub>h∈ℋ</sub>{h(k) = h(l)} ≤ <strong>1/m</strong>——碰撞機率不超過「純隨機亂丟」。
+    在 universal 家族下，chaining 的期望性能對<em>任何</em>輸入成立（定理 11.3），沒有天生的壞鍵集。
+    實例：h<sub>ab</sub>(k) = ((ak + b) mod p) mod m，隨機挑 a ∈ {1,…,p−1}、b ∈ {0,…,p−1}。
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 為何隨機</div>
+    <p>universal hashing 與 randomized quicksort 的共同邏輯是？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。兩者都把「對輸入分布的假設」換成「演算法自帶的隨機性」：期望保證對任何輸入成立，對手無法預先構造最壞輸入——因為他不知道你抽到哪個 h（或哪個 pivot 序列）。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 期望保證來自演算法內部的隨機性，對任何輸入成立</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩者的最壞情況都仍存在（機率極低），隨機化消除的是「必然踩中最壞」的輸入，不是最壞情況本身。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 隨機化讓最壞情況不可能發生</div>
+      <div class="quiz-opt" data-correct="false" data-fb="假設輸入隨機是「機率分析」；universal hashing 恰恰是不想做這個假設才隨機選 h。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 兩者都假設輸入是均勻隨機的</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="bst">
+  <div class="section-number">P02 · BST</div>
+  <h2>BST 複習：一切成本 = O(h)，而 h 不受控 <span class="sec-badge">Ch 12</span></h2>
+  <p>BST 性質：左子樹 ≤ 節點 ≤ 右子樹。SEARCH／MIN／MAX／SUCCESSOR／INSERT／DELETE 全部是 <strong>O(h)</strong>。
+  問題在 h：隨機插入期望 O(lg n)，但<strong>已排序的插入序列會退化成 h = n−1 的鏈</strong>——這是紅黑樹存在的理由。
+  按單步看 ⟨12, 5, 18, 2, 9, 15, 19, 17⟩ 逐步建樹：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="graph-canvas" style="height:300px;"><svg id="bstSvg" viewBox="0 0 640 300"></svg></div>
+      <div class="status-banner" id="bstStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」插入下一個鍵。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="bstPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="bstPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="bstPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctBst">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctBst','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctBst','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctBst','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code">
+            <div class="cc-title"><span class="fn">TREE-INSERT</span>(T, z) <span class="com">— 摘要</span></div>
+            <span class="line"><span class="ln">1</span>x = T.root；y = NIL</span>
+            <span class="line"><span class="ln">2</span><span class="kw">while</span> x ≠ NIL　<span class="com">// 追蹤落點</span></span>
+            <span class="line"><span class="ln">3</span>    y = x</span>
+            <span class="line"><span class="ln">4</span>    x = (z.key &lt; x.key) ? x.left : x.right</span>
+            <span class="line"><span class="ln">5</span>z.p = y；把 z 掛在 y 的左或右</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code"><span class="line"><span class="kw">void</span> <span class="fn">insert</span>(<span class="kw">int</span> k) {</span><span class="line">    Node* z = <span class="kw">new</span> Node(k);</span><span class="line">    Node *y = <span class="kw">nullptr</span>, *x = root;</span><span class="line">    <span class="kw">while</span> (x) { y = x;</span><span class="line">        x = (k &lt; x-&gt;key) ? x-&gt;left : x-&gt;right; }</span><span class="line">    z-&gt;p = y;</span><span class="line">    <span class="kw">if</span> (!y) root = z;</span><span class="line">    <span class="kw">else if</span> (k &lt; y-&gt;key) y-&gt;left = z;</span><span class="line">    <span class="kw">else</span> y-&gt;right = z;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">inorder 輸出（含 transplant 刪除 12 後）</span><pre>2 5 9 12 15 17 18 19
+2 5 9 15 17 18 19</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 12/binary_search_tree.py（MIT License）</span></span><span class="line">T = BinarySearchTree()</span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> [<span class="num">12</span>, <span class="num">5</span>, <span class="num">18</span>, <span class="num">2</span>, <span class="num">9</span>, <span class="num">15</span>, <span class="num">19</span>, <span class="num">17</span>]:</span><span class="line">    T.tree_insert(k)</span><span class="line">T.inorder_tree_walk(T.get_root())</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[2, 5, 9, 12, 15, 17, 18, 19]</pre></div>
+          <div class="ct-note">官方類別另含 successor／predecessor／transplant／tree_delete，介面與課本 pseudocode 一一對應。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p><strong>TREE-DELETE 三情境</strong>（transplant 版）：① 無左子 → 右子頂上；② 無右子 → 左子頂上；
+  ③ 兩子俱在 → 用<strong>後繼 y = MINIMUM(z.right)</strong>接手（y 必無左子），y 先脫離原位再取代 z。inorder 順序保持不變。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 高度敏感</div>
+    <p>把 1, 2, 3, …, n 依序插入空 BST，再 SEARCH(n)。總成本是？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="false" data-fb="O(lg n) 是「樹夠平衡」時的搜尋成本——遞增插入建出的是一條右斜鏈，h = n−1。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 建樹 O(n lg n)、搜尋 O(lg n)</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。每次插入都走到鏈尾：第 i 次花 i 步 → 建樹 Σi = Θ(n²)；搜尋 n 也要走完整條鏈 Θ(n)。這就是「BST 一切成本 = O(h)、而 h 不受控」的災難案例，紅黑樹登場的動機。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 建樹 Θ(n²)、搜尋 Θ(n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="BST 插入不會自動平衡——沒有任何旋轉機制，遞增序列就是最壞輸入。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 建樹 Θ(n)、搜尋 O(lg n)</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="rbprops">
+  <div class="section-number">P03 · RED-BLACK 性質</div>
+  <h2>紅黑樹：五條性質買到 h ≤ 2 lg(n+1) <span class="sec-badge">§13.1–13.2</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>紅黑樹 = BST ＋ 每節點一個顏色位，維持五條性質：</p>
+      <div class="info-box">
+        <span class="info-label">五條性質</span>
+        ① 每個節點是紅或黑。<br>
+        ② 根是黑的。<br>
+        ③ 每個葉子（NIL 哨兵）是黑的。<br>
+        ④ <strong>紅節點的兩個子節點都是黑的</strong>（不能紅紅相連）。<br>
+        ⑤ <strong>每個節點到其所有後代葉子的路徑上，黑節點數相同</strong>（黑高度 bh 一致）。
+      </div>
+      <div class="thm-box">
+        <div class="thm-label">引理 13.1</div>
+        n 個內部節點的紅黑樹高度 <strong>h ≤ 2 lg(n + 1)</strong>。<br>
+        直覺：性質 ⑤ 說每條根到葉路徑黑節點數相同（= bh）；性質 ④ 說紅節點不能連續
+        → 任何路徑長 ≤ 2·bh。最短可能全黑（bh）、最長紅黑交錯（2bh）——<strong>最長路徑不超過最短的兩倍</strong>，
+        「近似平衡」就夠讓一切操作 O(lg n)。
+      </div>
+      <p><strong>旋轉（rotation）</strong>是修樹的板手：LEFT-ROTATE(x) 讓右子 y 升上來、x 降為 y 的左子、
+      y 原本的左子樹 β 過繼給 x 當右子樹——<strong>O(1) 個指標操作、BST 性質不變</strong>（inorder 順序完全不動）。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">LEFT-ROTATE 前後</div>
+        <div class="pseudo-code" style="font-size:.75rem;"><span class="line">    x               y</span><span class="line">   / \      →     / \</span><span class="line">  α   y          x   γ</span><span class="line">     / \        / \</span><span class="line">    β   γ      α   β</span></div>
+        <div style="font-size:.82rem;line-height:1.7;margin-top:.4rem;">α ≤ x ≤ β ≤ y ≤ γ 在旋轉前後都成立——inorder 不變是旋轉合法性的全部理由。</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">為什麼不用 AVL？</div>
+        <div style="font-size:.85rem;line-height:1.7;">AVL 更矮（≈1.44 lg n）但插刪旋轉較多；紅黑樹每次插入最多 2 次旋轉、刪除最多 3 次。std::map／Linux CFS 都選紅黑樹。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 性質推理</div>
+    <p>一棵紅黑樹的某條根到葉路徑有 8 個節點（含 NIL 前的最後內部節點）。其他根到葉路徑的節點數<strong>最少</strong>可能是幾個？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。最長路徑 8 個節點 → 至少 4 個黑（紅不能相連，紅 ≤ 黑數）→ 黑高度 = 該路徑黑數 ≥ 4。最短路徑可以全黑 = 黑高度個節點 ≥ 4。性質⑤保證黑數相同，所以其他路徑至少 4 個節點。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 4 個</div>
+      <div class="quiz-opt" data-correct="false" data-fb="1 個節點的路徑黑數頂多 1，與長路徑至少 4 個黑矛盾（性質⑤）。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 1 個</div>
+      <div class="quiz-opt" data-correct="false" data-fb="8 是「所有路徑等長」的情況——性質只要求黑數相同，紅節點可以讓路徑差到兩倍。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 8 個</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="rbinsert">
+  <div class="section-number">P04 · INSERT FIXUP</div>
+  <h2>RB-INSERT-FIXUP：三個 case 修回五性質 <span class="sec-badge">§13.3</span></h2>
+  <p>插入流程：照 BST 插入 → 新節點 z <strong>塗紅</strong>（只可能壞性質②或④，不動性質⑤）→ FIXUP 往上修。
+  while 迴圈的 invariant：只有「z 是紅、z.p 也是紅」這一處違規。看叔叔 y 的臉色分三個 case（z.p 是左子的版本；右子鏡像）：</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table">
+    <thead><tr><th>Case</th><th>條件</th><th>動作</th><th>效果</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>叔叔 y 是紅</td><td>父、叔塗黑，祖父塗紅；z ← 祖父</td><td>違規上推兩層（可能迭代）</td></tr>
+      <tr><td>2</td><td>叔黑、z 是內側（右）子</td><td>z ← z.p 後 LEFT-ROTATE</td><td>轉成 Case 3</td></tr>
+      <tr><td>3</td><td>叔黑、z 是外側（左）子</td><td>父塗黑、祖父塗紅，RIGHT-ROTATE(祖父)</td><td>違規消失，迴圈結束</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>按單步看 ⟨41, 38, 31, 12, 19, 8⟩ 逐一插入（考古題等級的序列，三個 case 都會遇到）：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="graph-canvas" style="height:300px;"><svg id="rbSvg" viewBox="0 0 640 300"></svg></div>
+      <div class="status-banner" id="rbStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」開始插入 41。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="rbPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="rbPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="rbPlayer.reset()">↺ 重來</button>
+        <div class="slider-row" style="flex:1;margin:0;">
+          <span class="slider-label">速度</span>
+          <input type="range" id="rbDelay" min="300" max="2000" value="900">
+        </div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctRb">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctRb','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctRb','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctRb','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">RB-INSERT-FIXUP</span>(T, z) <span class="com">— 左側版</span></div>
+            <span class="line"><span class="ln">1</span><span class="kw">while</span> z.p.color == RED</span>
+            <span class="line"><span class="ln">2</span>  y = 叔叔</span>
+            <span class="line"><span class="ln">3</span>  <span class="kw">if</span> y.color == RED　<span class="com">// Case 1</span></span>
+            <span class="line"><span class="ln">4</span>    父叔塗黑、祖父塗紅；z = 祖父</span>
+            <span class="line"><span class="ln">5</span>  <span class="kw">else</span></span>
+            <span class="line"><span class="ln">6</span>    <span class="kw">if</span> z 是內側子　<span class="com">// Case 2</span></span>
+            <span class="line"><span class="ln">7</span>      z = z.p；<span class="fn">LEFT-ROTATE</span>(z)</span>
+            <span class="line"><span class="ln">8</span>    父塗黑、祖父塗紅　<span class="com">// Case 3</span></span>
+            <span class="line"><span class="ln">9</span>    <span class="fn">RIGHT-ROTATE</span>(祖父)</span>
+            <span class="line"><span class="ln">10</span>T.root.color = BLACK</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">void</span> <span class="fn">insertFixup</span>(Node* z) {</span><span class="line">  <span class="kw">while</span> (z-&gt;p-&gt;color == RED) {</span><span class="line">    <span class="kw">if</span> (z-&gt;p == z-&gt;p-&gt;p-&gt;left) {</span><span class="line">      Node* y = z-&gt;p-&gt;p-&gt;right;      <span class="com">// 叔叔</span></span><span class="line">      <span class="kw">if</span> (y-&gt;color == RED) {         <span class="com">// Case 1</span></span><span class="line">        z-&gt;p-&gt;color = BLACK; y-&gt;color = BLACK;</span><span class="line">        z-&gt;p-&gt;p-&gt;color = RED; z = z-&gt;p-&gt;p;</span><span class="line">      } <span class="kw">else</span> {</span><span class="line">        <span class="kw">if</span> (z == z-&gt;p-&gt;right) {      <span class="com">// Case 2</span></span><span class="line">          z = z-&gt;p; <span class="fn">leftRotate</span>(z);</span><span class="line">        }</span><span class="line">        z-&gt;p-&gt;color = BLACK;           <span class="com">// Case 3</span></span><span class="line">        z-&gt;p-&gt;p-&gt;color = RED;</span><span class="line">        <span class="fn">rightRotate</span>(z-&gt;p-&gt;p);</span><span class="line">      }</span><span class="line">    } <span class="kw">else</span> { <span class="com">/* 鏡像 */</span> }</span><span class="line">  }</span><span class="line">  root-&gt;color = BLACK;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">插入 41,38,31,12,19,8 後（inorder，R/B 為顏色）</span><pre>8R 12B 19R 31B 38B 41B
+root = 38, 性質檢查(黑高度) = 3</pre></div>
+          <div class="ct-note">完整實作（含旋轉與性質驗證器）見 src/structures/rb_tree.cpp。</div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.75rem;"><span class="line"><span class="com"># 官方 Chapter 13/red_black_tree.py（MIT License）</span></span><span class="line">R = RedBlackTree()</span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> [<span class="num">41</span>, <span class="num">38</span>, <span class="num">31</span>, <span class="num">12</span>, <span class="num">19</span>, <span class="num">8</span>]:</span><span class="line">    R.tree_insert(k)</span><span class="line">print(R)　<span class="com"># pretty print 含顏色</span></span></div>
+          <div class="expected-out"><span class="eo-tag">輸出（root = 38: black；縮排表深度）</span><pre>  41: black
+38: black
+    31: black
+  19: red
+    12: black
+      8: red</pre></div>
+          <div class="ct-note">與 C++ 版結果一致：38B 為根、19R 掛 12B（8R）與 31B、41B 在右。官方類別繼承 BinarySearchTree 並覆寫 insert／delete。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · case 判定</div>
+    <p>FIXUP 中，z 與 z.p 都是紅、叔叔 y 是<strong>黑</strong>、z 是父的<strong>內側</strong>子節點。接下來的動作序列是？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。Case 2（先把 z 推到外側：z←z.p 後對它旋轉）緊接 Case 3（父黑祖紅＋反向旋轉祖父），一共兩次旋轉後迴圈結束。Case 2 永遠只是 Case 3 的前置化妝。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> Case 2 → Case 3：旋轉兩次後結束</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Case 1 的條件是叔叔是紅——這裡叔叔是黑，走不進 Case 1。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> Case 1：變色後把 z 上推、繼續迭代</div>
+      <div class="quiz-opt" data-correct="false" data-fb="內側子直接做 Case 3 的旋轉修不好性質④——必須先用 Case 2 把 z 轉到外側。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 直接 Case 3：一次旋轉解決</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>結構選型與追蹤</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 選型</div>
+    <p>需求：依序走訪所有鍵（sorted order）、找「≥ k 的最小鍵」（successor 查詢）、插入刪除都要最壞 O(lg n)。選哪個？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="false" data-fb="hash table 不維護順序——sorted 走訪要 O(n lg n) 重排，successor 查詢更是 O(n)。hash 只適合「精確查找」。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> chaining hash table</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。紅黑樹（std::map）保證最壞 O(lg n) 插刪查，inorder 走訪 Θ(n) 依序輸出，successor／lower_bound O(lg n)。「要順序 → 平衡樹；只要精確查找 → hash」是資料結構選型的第一分歧點。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> 紅黑樹</div>
+      <div class="quiz-opt" data-correct="false" data-fb="普通 BST 的 O(lg n) 只是期望（隨機輸入）；最壞退化 O(n)，不符「最壞 O(lg n)」需求。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 普通 BST</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 黑高度計數</div>
+    <p>黑高度 bh = 3 的紅黑樹（不含 NIL），內部節點數<strong>最少</strong>是幾個？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。最省節點的做法是全黑：一棵黑高度 3 的全黑完美樹有 2³−1 = 7 個節點。引理 13.1 證明中的子樹下界 2^bh − 1 就是這個。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> 7</div>
+      <div class="quiz-opt" data-correct="false" data-fb="3 個節點的黑高度頂多 2（根＋一層黑）。逐層數：bh=3 至少要三層全黑。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 3</div>
+      <div class="quiz-opt" data-correct="false" data-fb="15 = 2⁴−1 是 bh=4 全黑的下界；bh=3 只需要 7。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 15</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>字典（Map）實作全家福</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>結構</th><th>SEARCH</th><th>INSERT/DELETE</th><th>依序走訪</th><th>備註</th></tr></thead>
+    <tbody>
+      <tr><td>chaining hash</td><td class="best">O(1) 期望</td><td class="best">O(1) 期望</td><td class="worst">✗</td><td>α 常數＋(universal) hashing</td></tr>
+      <tr><td>open addressing</td><td class="best">O(1/(1−α)) 期望</td><td>同左</td><td class="worst">✗</td><td>α&lt;1 硬限制；cache 友善</td></tr>
+      <tr><td>BST（未平衡）</td><td>O(h)，最壞 Θ(n)</td><td>O(h)</td><td class="best">Θ(n) inorder</td><td>隨機輸入期望 O(lg n)</td></tr>
+      <tr><td>紅黑樹</td><td class="best">O(lg n) 最壞</td><td class="best">O(lg n) 最壞</td><td class="best">Θ(n) inorder</td><td>std::map；插入 ≤2 次旋轉</td></tr>
+      <tr><td>AVL（資結課）</td><td class="best">O(lg n) 最壞</td><td class="best">O(lg n) 最壞</td><td class="best">Θ(n)</td><td>更矮但旋轉較多</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① chaining 期望 Θ(1+α)：α = n/m 是常數就是 O(1)；open addressing 是 1/(1−α)。<br>
+    ② universal hashing：隨機選 h，Pr{碰撞} ≤ 1/m——對手無壞鍵可構造。<br>
+    ③ BST 一切 O(h)；h 不受控 → 遞增插入退化 Θ(n)。<br>
+    ④ 紅黑五性質 → 最長路徑 ≤ 2×最短 → h ≤ 2 lg(n+1)。<br>
+    ⑤ FIXUP 三 case：叔紅變色上推；叔黑內側先轉外側，再變色＋旋轉收工。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch4.json · 12 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="sorting.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">排序與順序統計</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="dp.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">動態規劃</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 04 章 Data Structures（CLRS 4e Ch 11–13）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"負載因子（Load Factor α）","back":"α = n/m（元素數除以 slot 數）。chaining 的期望搜尋 Θ(1+α)、open addressing 約 1/(1−α)。α 維持常數是 O(1) 的前提，rehash 因此存在。"},
+  {"front":"鏈結法（Chaining）","back":"碰撞的元素掛進同一 slot 的鏈結串列。插入 O(1)；搜尋期望 Θ(1+α)。std::unordered_map 採此法。"},
+  {"front":"開放定址（Open Addressing）","back":"所有元素直接存在表格中（α ≤ 1），碰撞沿探測序列找下一格。刪除需墓碑標記；linear probing 有一次群聚問題。"},
+  {"front":"通用雜湊（Universal Hashing）","back":"從函數族 ℋ 隨機挑 h：任兩相異鍵碰撞機率 ≤ 1/m。期望保證對任何輸入成立，對手無法構造壞鍵集——隨機化思想在資料結構的應用。"},
+  {"front":"二元搜尋樹性質（BST Property）","back":"任一節點 x：左子樹所有鍵 ≤ x.key ≤ 右子樹所有鍵。inorder 走訪輸出遞增序列；所有操作成本 O(h)。"},
+  {"front":"TRANSPLANT","back":"BST 刪除的輔助程序：用子樹 v 整棵取代 u 的位置（改 u.p 的子指標與 v.p）。TREE-DELETE 的三情境都靠它完成。"},
+  {"front":"後繼（Successor）","back":"inorder 順序中的下一個節點：有右子樹 → 右子樹最小值；否則往上找「第一個把 x 放在左邊」的祖先。O(h)。"},
+  {"front":"紅黑樹（Red-Black Tree）","back":"帶顏色位的 BST，五條性質保證 h ≤ 2 lg(n+1)：所有字典操作最壞 O(lg n)。std::map、Linux 核心的標準選擇。"},
+  {"front":"黑高度（Black-Height）","back":"bh(x)：x 到後代葉子路徑上的黑節點數（不含 x）。性質⑤保證定義良好；以 x 為根的子樹至少有 2^bh − 1 個內部節點。"},
+  {"front":"旋轉（Rotation）","back":"O(1) 的局部指標重排：子節點升上來、自己降一層、中間子樹過繼。inorder 順序不變（BST 性質保持），是所有平衡樹的修復板手。"},
+  {"front":"RB-INSERT-FIXUP","back":"新節點塗紅後修復：叔紅 → Case 1 變色上推；叔黑內側 → Case 2 先旋成外側；叔黑外側 → Case 3 變色＋旋轉結束。最多 2 次旋轉、O(lg n) 次變色。"},
+  {"front":"哨兵 NIL（Sentinel）","back":"紅黑樹用單一黑色 NIL 節點代替所有空指標（葉子與根的父母）：邊界情況統一處理，FIXUP 的程式碼不必判空。"}
+];
+
+/* ---------- 通用 SVG 樹渲染 ---------- */
+function renderTree(svgId, nodes) {
+  // nodes: [{key, color:'R'|'B'|null, depth, x(inorder 序), hl}]（x 為 0..k-1）
+  const svg = $(svgId); svg.innerHTML = '';
+  if (!nodes.length) return;
+  const W = 640, stepX = W / (nodes.length + 1);
+  const pos = {};
+  nodes.forEach(nd => { pos[nd.key] = {cx: (nd.x + 1) * stepX, cy: 40 + nd.depth * 58}; });
+  const NS = 'http://www.w3.org/2000/svg';
+  nodes.forEach(nd => {
+    if (nd.parent != null && pos[nd.parent]) {
+      const ln = document.createElementNS(NS, 'line');
+      ln.setAttribute('x1', pos[nd.parent].cx); ln.setAttribute('y1', pos[nd.parent].cy);
+      ln.setAttribute('x2', pos[nd.key].cx); ln.setAttribute('y2', pos[nd.key].cy);
+      ln.setAttribute('stroke', '#95a5a6'); ln.setAttribute('stroke-width', '2');
+      svg.appendChild(ln);
+    }
+  });
+  nodes.forEach(nd => {
+    const g = document.createElementNS(NS, 'g');
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', pos[nd.key].cx); c.setAttribute('cy', pos[nd.key].cy); c.setAttribute('r', 17);
+    let fill = '#ffffff', stroke = '#1a1a2e', txt = '#1a1a2e';
+    if (nd.color === 'R') { fill = '#c0392b'; stroke = '#922b21'; txt = '#fff'; }
+    if (nd.color === 'B') { fill = '#34495e'; stroke = '#1a1a2e'; txt = '#fff'; }
+    c.setAttribute('fill', fill);
+    c.setAttribute('stroke', nd.hl ? '#f39c12' : stroke);
+    c.setAttribute('stroke-width', nd.hl ? 4 : 2);
+    g.appendChild(c);
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', pos[nd.key].cx); t.setAttribute('y', pos[nd.key].cy);
+    t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'central');
+    t.setAttribute('font-family', 'JetBrains Mono, monospace');
+    t.setAttribute('font-size', '13'); t.setAttribute('font-weight', '700');
+    t.setAttribute('fill', txt);
+    t.textContent = nd.key;
+    g.appendChild(t);
+    svg.appendChild(g);
+  });
+}
+// 把樹物件攤平成 renderTree 的節點清單（inorder 決定 x）
+function flatten(root, isNil, hlKey) {
+  const out = []; let ix = 0;
+  (function rec(nd, depth, parent) {
+    if (!nd || isNil(nd)) return;
+    rec(nd.left, depth + 1, nd.key);
+    out.push({key: nd.key, color: nd.color ?? null, depth, x: ix++, parent, hl: nd.key === hlKey});
+    rec(nd.right, depth + 1, nd.key);
+  })(root, 0, null);
+  return out;
+}
+
+/* ---------- P00 chaining 動畫 ---------- */
+function chFrames() {
+  const m = 9, keys = [5, 28, 19, 15, 20, 33, 12, 17, 10];
+  const T = Array.from({length: m}, () => []);
+  const frames = [{T: T.map(l => [...l]), n: 0, k: null, msg: `空表：m = ${m} 個 slot。`}];
+  keys.forEach((k, i) => {
+    T[k % m].unshift(k);
+    frames.push({T: T.map(l => [...l]), n: i + 1, k,
+      msg: `insert(${k})：h(${k}) = ${k} mod ${m} = ${k % m}，插入該鏈開頭（O(1)）。${T[k % m].length > 1 ? '發生碰撞，鏈長 ' + T[k % m].length + '。' : ''}`});
+  });
+  return frames;
+}
+function chApply(f) {
+  const el = $('chSlots'); el.innerHTML = '';
+  f.T.forEach((list, s) => {
+    const row = document.createElement('div');
+    row.className = 'adj-row';
+    row.innerHTML = `<span class="adj-key">${s}</span><span class="adj-arrow">→</span>` +
+      (list.length ? list.map(x => `<span class="adj-neighbor"${x === f.k ? ' style="background:#f39c12;color:#fff;"' : ''}>${x}</span>`).join('') : '<span style="color:#bbb;">∅</span>');
+    el.appendChild(row);
+  });
+  setStatus('chStatus', f.msg);
+  $('chN').textContent = f.n;
+  $('chAlpha').textContent = (f.n / 9).toFixed(2);
+  $('chMax').textContent = Math.max(...f.T.map(l => l.length));
+}
+const chPlayer = new Player({frames: chFrames(), apply: chApply, delayInput: null});
+chPlayer.reset();
+
+/* ---------- P02 BST 建樹動畫 ---------- */
+function bstFrames() {
+  const keys = [12, 5, 18, 2, 9, 15, 19, 17];
+  let root = null;
+  const frames = [{tree: [], msg: '空樹。'}];
+  keys.forEach(k => {
+    const z = {key: k, left: null, right: null};
+    if (!root) root = z;
+    else {
+      let x = root, y = null;
+      while (x) { y = x; x = (k < x.key) ? x.left : x.right; }
+      if (k < y.key) y.left = z; else y.right = z;
+    }
+    frames.push({tree: flatten(root, n => !n, k),
+      msg: `insert(${k})：從根一路比較（< 往左、≥ 往右）到空位掛上。`});
+  });
+  frames.push({tree: flatten(root, n => !n, null),
+    msg: 'inorder 走訪：2 5 9 12 15 17 18 19——BST 性質的直接紅利。'});
+  return frames;
+}
+const bstPlayer = new Player({frames: bstFrames(), apply: f => { renderTree('bstSvg', f.tree); setStatus('bstStatus', f.msg); }, delayInput: null});
+bstPlayer.reset();
+
+/* ---------- P04 紅黑樹 insert fixup 動畫 ---------- */
+function rbFrames() {
+  const NIL = {key: null, color: 'B', left: null, right: null, p: null};
+  NIL.left = NIL.right = NIL.p = NIL;
+  let root = NIL;
+  const frames = [];
+  const snap = (msg, hlKey) => frames.push({tree: flatten(root, n => n === NIL, hlKey ?? null), msg});
+  function leftRotate(x) {
+    const y = x.right;
+    x.right = y.left; if (y.left !== NIL) y.left.p = x;
+    y.p = x.p;
+    if (x.p === NIL) root = y;
+    else if (x === x.p.left) x.p.left = y; else x.p.right = y;
+    y.left = x; x.p = y;
+  }
+  function rightRotate(x) {
+    const y = x.left;
+    x.left = y.right; if (y.right !== NIL) y.right.p = x;
+    y.p = x.p;
+    if (x.p === NIL) root = y;
+    else if (x === x.p.right) x.p.right = y; else x.p.left = y;
+    y.right = x; x.p = y;
+  }
+  function insert(k) {
+    const z = {key: k, color: 'R', left: NIL, right: NIL, p: NIL};
+    let y = NIL, x = root;
+    while (x !== NIL) { y = x; x = (k < x.key) ? x.left : x.right; }
+    z.p = y;
+    if (y === NIL) root = z;
+    else if (k < y.key) y.left = z; else y.right = z;
+    snap(`BST 插入 ${k} 並塗紅。${z.p !== NIL && z.p.color === 'R' ? '紅紅相連（違反性質④），進 FIXUP。' : '無違規。'}`, k);
+    let zz = z;
+    while (zz.p.color === 'R') {
+      const left = (zz.p === zz.p.p.left);
+      const y2 = left ? zz.p.p.right : zz.p.p.left;
+      if (y2.color === 'R') {
+        zz.p.color = 'B'; y2.color = 'B'; zz.p.p.color = 'R';
+        zz = zz.p.p;
+        snap(`Case 1：叔叔 ${y2.key} 是紅 → 父叔塗黑、祖父塗紅，違規上推到 ${zz.key}。`, zz.key);
+      } else {
+        if (left ? (zz === zz.p.right) : (zz === zz.p.left)) {
+          zz = zz.p;
+          left ? leftRotate(zz) : rightRotate(zz);
+          snap(`Case 2：z 在內側 → 對 ${zz.key} 旋轉，轉成外側（Case 3 前置）。`, zz.key);
+        }
+        zz.p.color = 'B'; zz.p.p.color = 'R';
+        const g = zz.p.p;
+        left ? rightRotate(g) : leftRotate(g);
+        snap(`Case 3：父塗黑、祖父塗紅，旋轉祖父 ${g.key}——違規消失。`, zz.key);
+      }
+    }
+    if (root.color !== 'B') { root.color = 'B'; snap('根塗黑（性質②收尾）。', root.key); }
+  }
+  snap('空樹（NIL 哨兵不畫）。');
+  [41, 38, 31, 12, 19, 8].forEach(insert);
+  snap('完成：黑高度一致、無紅紅相連。inorder：8R 12B 19R 31B 38B 41B。');
+  return frames;
+}
+const rbPlayer = new Player({frames: rbFrames(), apply: f => { renderTree('rbSvg', f.tree); setStatus('rbStatus', f.msg); }, delayInput: null});
+rbPlayer.delayInput = $('rbDelay');
+rbPlayer.reset();
+</script>

@@ -1,0 +1,50 @@
+[
+ {
+  "front": "負載因子（Load Factor α）",
+  "back": "α = n/m（元素數除以 slot 數）。chaining 的期望搜尋 Θ(1+α)、open addressing 約 1/(1−α)。α 維持常數是 O(1) 的前提，rehash 因此存在。"
+ },
+ {
+  "front": "鏈結法（Chaining）",
+  "back": "碰撞的元素掛進同一 slot 的鏈結串列。插入 O(1)；搜尋期望 Θ(1+α)。std::unordered_map 採此法。"
+ },
+ {
+  "front": "開放定址（Open Addressing）",
+  "back": "所有元素直接存在表格中（α ≤ 1），碰撞沿探測序列找下一格。刪除需墓碑標記；linear probing 有一次群聚問題。"
+ },
+ {
+  "front": "通用雜湊（Universal Hashing）",
+  "back": "從函數族 ℋ 隨機挑 h：任兩相異鍵碰撞機率 ≤ 1/m。期望保證對任何輸入成立，對手無法構造壞鍵集——隨機化思想在資料結構的應用。"
+ },
+ {
+  "front": "二元搜尋樹性質（BST Property）",
+  "back": "任一節點 x：左子樹所有鍵 ≤ x.key ≤ 右子樹所有鍵。inorder 走訪輸出遞增序列；所有操作成本 O(h)。"
+ },
+ {
+  "front": "TRANSPLANT",
+  "back": "BST 刪除的輔助程序：用子樹 v 整棵取代 u 的位置（改 u.p 的子指標與 v.p）。TREE-DELETE 的三情境都靠它完成。"
+ },
+ {
+  "front": "後繼（Successor）",
+  "back": "inorder 順序中的下一個節點：有右子樹 → 右子樹最小值；否則往上找「第一個把 x 放在左邊」的祖先。O(h)。"
+ },
+ {
+  "front": "紅黑樹（Red-Black Tree）",
+  "back": "帶顏色位的 BST，五條性質保證 h ≤ 2 lg(n+1)：所有字典操作最壞 O(lg n)。std::map、Linux 核心的標準選擇。"
+ },
+ {
+  "front": "黑高度（Black-Height）",
+  "back": "bh(x)：x 到後代葉子路徑上的黑節點數（不含 x）。性質⑤保證定義良好；以 x 為根的子樹至少有 2^bh − 1 個內部節點。"
+ },
+ {
+  "front": "旋轉（Rotation）",
+  "back": "O(1) 的局部指標重排：子節點升上來、自己降一層、中間子樹過繼。inorder 順序不變（BST 性質保持），是所有平衡樹的修復板手。"
+ },
+ {
+  "front": "RB-INSERT-FIXUP",
+  "back": "新節點塗紅後修復：叔紅 → Case 1 變色上推；叔黑內側 → Case 2 先旋成外側；叔黑外側 → Case 3 變色＋旋轉結束。最多 2 次旋轉、O(lg n) 次變色。"
+ },
+ {
+  "front": "哨兵 NIL（Sentinel）",
+  "back": "紅黑樹用單一黑色 NIL 節點代替所有空指標（葉子與根的父母）：邊界情況統一處理，FIXUP 的程式碼不必判空。"
+ }
+]
