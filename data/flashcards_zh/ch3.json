@@ -1,0 +1,58 @@
+[
+ {
+  "front": "最大堆積（Max-Heap）",
+  "back": "以陣列儲存的完全二元樹，滿足父節點 ≥ 子節點。堆頂 A[1] 恆為最大值；高度 Θ(lg n)。0-based 實作：left = 2i+1、right = 2i+2。"
+ },
+ {
+  "front": "MAX-HEAPIFY",
+  "back": "修復單點違規的下沉程序：假設左右子樹都是 max-heap，讓 A[i] 與較大子節點交換並遞迴下沉。成本 O(lg n)（＝O(h)）。"
+ },
+ {
+  "front": "BUILD-MAX-HEAP",
+  "back": "從最後一個內部節點倒著逐一 MAX-HEAPIFY。粗算 O(n lg n)，精算 O(n)——多數節點靠近底層、下沉距離短。"
+ },
+ {
+  "front": "堆積排序（Heapsort）",
+  "back": "BUILD-MAX-HEAP 後重複「堆頂↔尾端、heap-size−1、heapify」。Θ(n lg n)、就地（O(1) 額外空間）、不穩定。"
+ },
+ {
+  "front": "PARTITION（Lomuto）",
+  "back": "quicksort 引擎：pivot 取 A[r]，一趟掃描維持 A[p..i] ≤ x < A[i+1..j−1]，最後 pivot 歸位到 i+1 並回傳該位置。Θ(n)。"
+ },
+ {
+  "front": "隨機化快速排序（Randomized Quicksort）",
+  "back": "partition 前隨機挑 pivot 換到尾端。期望 Θ(n lg n) 對任何輸入成立；最壞 Θ(n²) 仍存在但機率極低。"
+ },
+ {
+  "front": "決策樹模型（Decision Tree Model）",
+  "back": "把比較排序畫成二元樹：內部節點是比較、葉子是輸出排列。正確演算法需 ≥ n! 個葉子，最壞比較次數 = 樹高。"
+ },
+ {
+  "front": "排序下界（Sorting Lower Bound）",
+  "back": "任何比較排序最壞情況需 Ω(n lg n) 次比較：2^h ≥ n! → h ≥ lg(n!) = Ω(n lg n)。merge sort／heapsort 因此漸近最優。"
+ },
+ {
+  "front": "計數排序（Counting Sort）",
+  "back": "值域 [0,k] 整數：計數 → 前綴和（C[v] = ≤v 的個數）→ 從後往前放進輸出。Θ(n+k)、穩定、不比較。"
+ },
+ {
+  "front": "基數排序（Radix Sort）",
+  "back": "d 位數整數從最低位（LSD）逐位用穩定排序（常用 counting sort）排 d 輪，Θ(d(n+k))。正確性依賴子排序的穩定性。"
+ },
+ {
+  "front": "桶排序（Bucket Sort）",
+  "back": "輸入均勻分布於 [0,1) 時切 n 個桶、各桶 insertion sort 後串接。期望 Θ(n)；最壞（全擠一桶）Θ(n²)。"
+ },
+ {
+  "front": "穩定排序（Stable Sort）",
+  "back": "鍵值相等的元素在輸出中保持輸入的相對順序。merge／insertion／counting 穩定；heapsort、quicksort 不穩定。"
+ },
+ {
+  "front": "順序統計量（Order Statistic）",
+  "back": "集合中第 i 小的元素；中位數是第 ⌊(n+1)/2⌋ 小。不需排序即可求得。"
+ },
+ {
+  "front": "RANDOMIZED-SELECT",
+  "back": "用 randomized partition 找第 i 小，但每次只遞迴 pivot 的一側：期望 Θ(n)（幾何級數），最壞 Θ(n²)。§9.3 的 SELECT 可達最壞線性。"
+ }
+]

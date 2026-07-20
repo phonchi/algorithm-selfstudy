@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heapsort、Quicksort 與線性時間排序 — Sorting（CLRS Ch6–9）</title>
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+  --node-white:#ffffff;--node-gray:#bdc3c7;--node-black:#34495e;
+  --node-current:#f39c12;--node-found:#16a085;--node-start:#9b59b6;
+  --edge-default:#95a5a6;--edge-tree:#27ae60;--edge-explore:#f39c12;--edge-mst:#1a6b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+
+/* Hero */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden;background:linear-gradient(170deg,#1a1a2e 0%,#2c3e7a 40%,#1a6b4a 100%);}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0%,transparent 40%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);}
+.hero-content{position:relative;z-index:1;max-width:860px;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#fff;letter-spacing:.04em;line-height:1.3;margin-bottom:1rem;}
+.hero h1 .green{color:#2ecc71;}
+.hero h1 .blue{color:#5dade2;}
+.hero h1 .orange{color:#f39c12;}
+.hero h1 .purple{color:#bb8fce;}
+.hero .subtitle{font-size:clamp(.95rem,2.2vw,1.2rem);color:rgba(255,255,255,.65);font-weight:300;margin-bottom:2rem;}
+.hero .big-formula{color:#2ecc71;background:rgba(0,0,0,.3);padding:.8rem 2rem;border-radius:12px;display:inline-block;border:1px solid rgba(255,255,255,.1);margin-bottom:2rem;backdrop-filter:blur(4px);font-size:1.05rem;}
+.scroll-hint{color:rgba(255,255,255,.4);font-size:.9rem;animation:bounce 2s infinite;}
+.scroll-hint span{display:block;font-size:1.4rem;margin-top:.3rem;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+
+/* Hero mini-graph illustration */
+.hero-graph{position:absolute;right:5%;top:50%;transform:translateY(-50%);opacity:.18;pointer-events:none;}
+@media(max-width:900px){.hero-graph{display:none;}}
+
+/* Layout */
+.container{max-width:1180px;margin:0 auto;padding:3rem 1.5rem;}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;line-height:1.4;}
+h3{font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:var(--accent2);margin:1.4rem 0 .8rem;}
+section{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--card-border);}
+section:last-of-type{border-bottom:none;}
+p{margin-bottom:1rem;}
+code{font-family:'JetBrains Mono',monospace;font-size:.92em;background:rgba(44,62,122,.08);padding:1px 6px;border-radius:4px;color:var(--accent2);}
+strong{color:var(--ink);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0 2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.toc-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.7rem;}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem .8rem;}
+.toc-grid a{color:var(--accent2);text-decoration:none;font-size:.9rem;padding:.3rem 0;display:flex;align-items:center;gap:.4rem;transition:color .2s;}
+.toc-grid a:hover{color:var(--accent);}
+.toc-grid a .toc-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);min-width:34px;}
+
+/* Viz layout */
+.viz-layout{display:grid;grid-template-columns:1fr 320px;gap:1.3rem;margin:1.2rem 0;align-items:start;}
+@media(max-width:900px){.viz-layout{grid-template-columns:1fr;}}
+
+.viz-panel{background:linear-gradient(160deg,#fffdf7 0%,#f4efe3 100%);border:1px solid var(--card-border);border-radius:12px;padding:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06);position:relative;}
+
+/* Graph SVG canvas */
+.graph-canvas{position:relative;width:100%;height:380px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #ececec;}
+.graph-canvas svg{width:100%;height:100%;display:block;}
+
+/* SVG elements styles */
+.graph-edge{stroke:var(--edge-default);stroke-width:2;fill:none;transition:stroke .25s, stroke-width .25s;}
+.graph-edge.tree{stroke:var(--edge-tree);stroke-width:3.5;}
+.graph-edge.exploring{stroke:var(--edge-explore);stroke-width:3.5;stroke-dasharray:5 4;animation:dash 1s linear infinite;}
+.graph-edge.mst{stroke:var(--edge-mst);stroke-width:4;}
+.graph-edge.path{stroke:var(--accent);stroke-width:4;}
+.graph-edge.dotted{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+.edge-label{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;fill:var(--ink);pointer-events:none;}
+.edge-label-bg{fill:#fafafa;stroke:#ececec;stroke-width:1;}
+
+.graph-node{cursor:pointer;}
+.graph-node circle{fill:var(--node-white);stroke:var(--ink);stroke-width:2;transition:fill .25s, stroke .25s, r .2s;}
+.graph-node.gray circle{fill:var(--node-gray);}
+.graph-node.black circle{fill:var(--node-black);stroke:var(--node-black);}
+.graph-node.current circle{fill:var(--node-current);stroke:#d68910;stroke-width:3;}
+.graph-node.start circle{fill:var(--node-start);stroke:#7d3c98;stroke-width:3;}
+.graph-node.found circle{fill:var(--node-found);stroke:#117a65;stroke-width:3;}
+.graph-node.in-mst circle{fill:#82e0aa;stroke:var(--accent3);stroke-width:3;}
+.graph-node text.node-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.graph-node.black text.node-key{fill:#fff;}
+.graph-node.current text.node-key{fill:#fff;}
+.graph-node.start text.node-key{fill:#fff;}
+.graph-node.found text.node-key{fill:#fff;}
+.graph-node text.node-meta{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;fill:var(--accent);text-anchor:middle;pointer-events:none;}
+
+/* Status banner */
+.status-banner{margin-top:.8rem;padding:.7rem 1rem;background:var(--code-bg);color:#fff;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;min-height:42px;display:flex;align-items:center;gap:.6rem;}
+.status-banner .status-icon{color:#2ecc71;font-weight:700;}
+.status-banner .status-text{flex:1;}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--card-border);}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-play{background:var(--accent3);color:#fff;}
+.btn-play:hover{background:#22845c;}
+.btn-play.active{background:var(--accent);}
+.btn-step{background:var(--accent2);color:#fff;}
+.btn-step:hover{background:#1f2e5f;}
+.btn-step:disabled{background:#ccc;cursor:not-allowed;}
+.btn-reset{background:var(--card-border);color:var(--ink);}
+.btn-reset:hover{background:#ccc;}
+.btn-toggle{background:var(--accent2);color:#fff;}
+.btn-toggle:hover{background:#1f2e5f;}
+.btn-toggle.off{background:#bbb;color:#555;}
+.btn-shuffle{background:#8e44ad;color:#fff;}
+.btn-shuffle:hover{background:#6c3485;}
+
+/* Slider row */
+.slider-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:var(--paper);border-radius:8px;margin-bottom:.5rem;}
+.slider-row .slider-label{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent2);font-weight:600;min-width:60px;}
+.slider-row input[type="range"]{flex:1;accent-color:var(--accent3);height:5px;cursor:pointer;}
+.slider-row .slider-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:600;min-width:60px;text-align:right;}
+
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:.85rem;}
+.info-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:.85rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.info-card .ic-title{font-size:.72rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;border-bottom:1px solid var(--card-border);padding-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;}
+.info-card .ic-title .ic-badge{font-size:.7rem;color:#fff;background:var(--accent3);padding:1px 7px;border-radius:3px;letter-spacing:.05em;font-weight:700;}
+.info-card .ic-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.83rem;padding:.2rem 0;}
+.info-card .ic-label{color:var(--muted);}
+.info-card .ic-value{color:var(--ink);font-weight:600;}
+.info-card .ic-value.highlight{color:var(--accent);}
+.info-card .ic-value.big{font-size:1.4rem;color:var(--accent2);}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.4rem;}
+.stat-tile{background:var(--paper);border-radius:8px;padding:.5rem .7rem;text-align:center;}
+.stat-tile .stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.stat-tile .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent2);}
+
+/* Queue / Stack / PQ visualization */
+.ds-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--paper);border-radius:6px;padding:.5rem .7rem;min-height:36px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px dashed var(--card-border);}
+.ds-display .ds-empty{color:var(--muted);font-style:italic;}
+.ds-item{background:var(--accent2);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+.ds-item.front{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.top{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.pq{background:var(--accent3);}
+.ds-item.pq.min{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-arrow{color:var(--muted);}
+
+/* Pseudo code */
+.pseudo-code{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;overflow-x:auto;}
+.pseudo-code .line{padding:1px 4px;border-radius:3px;display:block;white-space:pre;}
+.pseudo-code .line.active{background:rgba(243,156,18,.3);color:#fff;border-left:3px solid var(--node-current);padding-left:6px;}
+.pseudo-code .kw{color:#ff79c6;}
+.pseudo-code .fn{color:#50fa7b;}
+.pseudo-code .num{color:#bd93f9;}
+.pseudo-code .com{color:#6272a4;font-style:italic;}
+.pseudo-code .str{color:#f1fa8c;}
+
+/* Adjacency table */
+.adj-display{margin:.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.adj-matrix{border-collapse:collapse;margin:.5rem auto;}
+.adj-matrix td,.adj-matrix th{border:1px solid var(--card-border);padding:6px 10px;text-align:center;min-width:34px;background:#fff;}
+.adj-matrix th{background:var(--accent2);color:#fff;font-weight:700;}
+.adj-matrix td.zero{color:#ccc;}
+.adj-matrix td.nonzero{background:#eafaf1;color:var(--accent3);font-weight:700;}
+.adj-matrix td.highlight{background:#fff3cd;}
+.adj-list{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:.7rem 1rem;}
+.adj-list .adj-row{padding:3px 0;border-bottom:1px dashed var(--card-border);}
+.adj-list .adj-row:last-child{border-bottom:none;}
+.adj-list .adj-key{color:var(--accent);font-weight:700;display:inline-block;min-width:32px;}
+.adj-list .adj-arrow{color:var(--muted);margin:0 6px;}
+.adj-list .adj-neighbor{background:#eef2ff;color:var(--accent2);padding:1px 8px;border-radius:4px;margin:1px 3px;display:inline-block;font-weight:600;}
+
+/* Chess board for Knight's tour */
+.chess-board{display:grid;background:#fff;border:2px solid var(--ink);border-radius:6px;overflow:hidden;margin:.5rem auto;width:fit-content;}
+.chess-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:700;position:relative;transition:background .2s;}
+.chess-cell.light{background:#f0d9b5;color:#666;}
+.chess-cell.dark{background:#b58863;color:#fff;}
+.chess-cell.visited{background:#27ae60 !important;color:#fff;}
+.chess-cell.current{background:#f39c12 !important;color:#fff;box-shadow:inset 0 0 0 3px #d68910;}
+.chess-cell.start{background:#9b59b6 !important;color:#fff;}
+.chess-cell .knight{font-size:1.4em;line-height:1;}
+.chess-cell .step-num{font-size:.7em;}
+
+/* Info box */
+.info-box{background:#eef2ff;border:2px solid var(--accent2);border-radius:10px;padding:1.1rem 1.4rem;margin:1.3rem 0;position:relative;}
+.info-box .info-label{position:absolute;top:-11px;left:14px;background:var(--accent2);color:#fff;font-size:.74rem;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em;}
+.info-box.warm{background:#fef5e7;border-color:#d68910;}
+.info-box.warm .info-label{background:#d68910;}
+.info-box.green{background:#eafaf1;border-color:var(--accent3);}
+.info-box.green .info-label{background:var(--accent3);}
+.info-box.purple{background:#f4ecf7;border-color:#8e44ad;}
+.info-box.purple .info-label{background:#8e44ad;}
+
+/* Pill labels */
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:4px;margin:0 .15rem;vertical-align:1px;}
+.pill-blue{background:rgba(41,128,185,.12);color:#2980b9;border:1px solid rgba(41,128,185,.3);}
+.pill-red{background:rgba(192,57,43,.12);color:var(--accent);border:1px solid rgba(192,57,43,.3);}
+.pill-green{background:rgba(39,174,96,.12);color:var(--accent3);border:1px solid rgba(39,174,96,.3);}
+.pill-orange{background:rgba(243,156,18,.12);color:#d68910;border:1px solid rgba(243,156,18,.3);}
+.pill-purple{background:rgba(142,68,173,.12);color:#8e44ad;border:1px solid rgba(142,68,173,.3);}
+.pill-gray{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid rgba(0,0,0,.12);}
+
+/* Comparison table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.86rem;margin:.8rem 0;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.cmp-table th{background:var(--accent2);color:#fff;padding:.6rem .8rem;text-align:center;font-weight:600;font-size:.82rem;}
+.cmp-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--card-border);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.cmp-table td:first-child{font-family:'Noto Sans TC',sans-serif;color:var(--accent2);font-weight:600;text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:nth-child(even){background:rgba(0,0,0,.015);}
+.cmp-table .best{color:var(--accent3);font-weight:700;}
+.cmp-table .worst{color:var(--accent);font-weight:700;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+.legend-item{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;background:var(--paper);border-radius:5px;}
+.legend-item .lg-swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink);}
+.legend-item .lg-edge{width:18px;height:3px;border-radius:2px;}
+
+/* Quiz */
+.quiz-box{background:var(--card);border:2px solid var(--accent2);border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0;}
+.quiz-box .quiz-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0;}
+.quiz-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;background:var(--paper);border:2px solid var(--card-border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+.quiz-opt:hover{border-color:var(--accent2);}
+.quiz-opt .opt-letter{font-weight:700;color:var(--accent2);min-width:22px;}
+.quiz-opt.correct{background:#eafaf1;border-color:var(--accent3);}
+.quiz-opt.correct .opt-letter{color:var(--accent3);}
+.quiz-opt.wrong{background:#fef5e7;border-color:var(--accent);}
+.quiz-opt.wrong .opt-letter{color:var(--accent);}
+.quiz-feedback{margin-top:.7rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.correct{background:#eafaf1;color:var(--accent3);border-left:4px solid var(--accent3);}
+.quiz-feedback.wrong{background:#fef5e7;color:var(--accent);border-left:4px solid var(--accent);}
+
+/* Floating sidebar navigation */
+.float-nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px;background:rgba(255,253,250,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--card-border);border-radius:12px;padding:10px 7px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-family:'JetBrains Mono',monospace;max-height:88vh;overflow-y:auto;transition:padding .25s ease;}
+.float-nav .fn-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.68rem;color:var(--accent2);text-align:center;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--card-border);max-width:0;overflow:hidden;transition:max-width .25s ease;}
+.float-nav:hover .fn-title{max-width:220px;}
+.float-nav a{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;white-space:nowrap;transition:all .2s ease;border-left:3px solid transparent;}
+.float-nav a .fn-num{font-weight:700;font-size:.66rem;color:var(--muted);letter-spacing:.4px;flex-shrink:0;width:30px;text-align:left;}
+.float-nav a .fn-name{font-family:'Noto Sans TC',sans-serif;font-size:.76rem;font-weight:500;max-width:0;overflow:hidden;transition:max-width .25s ease,padding .25s ease;padding:0;}
+.float-nav:hover a .fn-name{max-width:220px;padding-left:2px;}
+.float-nav a:hover{background:var(--card);}
+.float-nav a.active{background:var(--accent2);color:#fff;border-left-color:var(--accent);box-shadow:0 2px 6px rgba(192,57,43,.25);}
+.float-nav a.active .fn-num{color:rgba(255,255,255,.85);}
+.float-nav a.active .fn-name{color:#fff;}
+.float-nav .fn-top{margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);justify-content:center;}
+.float-nav .fn-top .fn-num{width:auto;color:var(--accent2);font-size:.78rem;}
+@media(max-width:768px){
+  .float-nav{right:8px;top:auto;bottom:14px;transform:none;padding:6px 5px;max-height:70vh;}
+  .float-nav .fn-title{display:none;}
+  .float-nav a{padding:4px 7px;}
+  .float-nav a .fn-num{width:26px;font-size:.62rem;}
+}
+
+footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+
+/* Distance / table inside graph viz */
+.vert-table{margin-top:.6rem;width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.vert-table th,.vert-table td{padding:4px 6px;text-align:center;border:1px solid var(--card-border);}
+.vert-table th{background:var(--accent2);color:#fff;font-weight:600;font-size:.74rem;}
+.vert-table td.tcell-current{background:#fff3cd;font-weight:700;color:var(--accent);}
+.vert-table td.tcell-done{background:#eafaf1;color:var(--accent3);}
+.vert-table td.tcell-inf{color:#ccc;}
+.sec-badge{font-size:.6em;color:var(--muted);border:1px solid var(--card-border);background:var(--card);padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:.6rem;font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.02em;white-space:nowrap;}
+
+/* Phase 8 shared widgets */
+.bs-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:4px;min-height:180px;justify-content:flex-start;padding:.6rem;}
+.bs-item{width:110px;text-align:center;padding:.4rem .6rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.bs-hl{background:#f39c12;}
+.bs-toplabel,.bq-label{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bq-row{display:flex;align-items:center;gap:6px;min-height:64px;flex-wrap:wrap;padding:.4rem;}
+.bq-item{min-width:52px;text-align:center;padding:.45rem .5rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.char-strip{display:flex;gap:3px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;padding:.4rem 0;}
+.char-cell{min-width:30px;text-align:center;padding:.35rem .25rem;border:1px solid var(--card-border);border-radius:5px;background:var(--card);}
+.char-cur{background:#f39c12;color:#fff;border-color:#f39c12;}
+.char-done{background:#e8f5ec;color:#1a6b4a;border-color:#bfe3cd;}
+.char-bad{background:#c0392b;color:#fff;border-color:#c0392b;}
+.token-out{display:flex;gap:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;min-height:40px;padding:.3rem 0;}
+.tok{padding:.3rem .55rem;border-radius:5px;background:#2c3e7a;color:#fff;font-weight:600;}
+.tok-op{background:#8e44ad;}
+.tok-new{outline:3px solid #f39c12;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+<style>
+/* ===== 網站化附加樣式（study-guide / flashcards / chapter-nav）===== */
+.study-guide{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.2rem 1.4rem;margin:0 0 2.2rem;}
+.study-guide .sg-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.5rem;}
+.study-guide p{font-size:.92rem;margin-bottom:.5rem;}
+.study-guide .sg-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.study-guide .sg-links a{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;color:var(--accent2);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .85rem;text-decoration:none;transition:all .2s;}
+.study-guide .sg-links a:hover{background:var(--accent2);color:#fff;}
+.fc-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0 1.2rem;}
+.fc-controls button{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:1px solid var(--card-border);cursor:pointer;background:var(--card);color:var(--ink);transition:all .2s;}
+.fc-controls button:hover{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:.9rem;}
+.fc-card{perspective:900px;height:170px;cursor:pointer;}
+.fc-card .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+.fc-card .fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.9rem;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.fc-card .fc-front{background:linear-gradient(150deg,var(--accent2),var(--ink));color:#fff;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;letter-spacing:.02em;flex-direction:column;gap:.4rem;}
+.fc-card .fc-front .fc-hint{font-size:.62rem;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.1em;}
+.fc-card .fc-back{background:var(--card);border:2px solid var(--accent3);color:var(--ink);font-size:.78rem;line-height:1.55;transform:rotateY(180deg);overflow-y:auto;}
+.chapter-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:stretch;margin:2.5rem 0 1rem;}
+.chapter-nav a{display:block;border:1px solid var(--card-border);border-radius:12px;padding:.8rem 1.1rem;text-decoration:none;color:var(--ink);background:var(--card);transition:all .2s;}
+.chapter-nav a:hover{border-color:var(--accent2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.chapter-nav .nav-dir{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.2rem;}
+.chapter-nav .nav-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.95rem;color:var(--accent2);}
+.chapter-nav a.next{text-align:right;}
+.chapter-nav a.home{display:flex;flex-direction:column;justify-content:center;text-align:center;}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr;}}
+</style>
+<style>
+/* ===== 講義範例卡 ===== */
+.deck-extra{margin:1.2rem 0;}
+.deck-extra .dx-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:.4rem;}
+.deck-extra .dx-note{font-size:.9rem;margin-top:.6rem;}
+.expected-out{background:var(--card);border:1px solid var(--card-border);border-left:4px solid var(--accent3);border-radius:0 8px 8px 0;padding:.5rem .9rem;margin-top:.5rem;}
+.expected-out .eo-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--accent3);display:block;margin-bottom:.2rem;}
+.expected-out pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre-wrap;margin:0;}
+.warn-box{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.25);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem 1rem;margin:.8rem 0;font-size:.9rem;}
+.warn-box b{color:var(--accent);}
+</style>
+<style>
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
+</style>
+</head>
+<body>
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#heapsort" data-target="heapsort"><span class="fn-num">P00</span><span class="fn-name">heapsort</span></a>
+  <a href="#partition" data-target="partition"><span class="fn-num">P01</span><span class="fn-name">quicksort partition</span></a>
+  <a href="#qanalysis" data-target="qanalysis"><span class="fn-num">P02</span><span class="fn-name">quicksort 分析</span></a>
+  <a href="#lowerbound" data-target="lowerbound"><span class="fn-num">P03</span><span class="fn-name">排序下界</span></a>
+  <a href="#linear" data-target="linear"><span class="fn-num">P04</span><span class="fn-name">線性時間排序</span></a>
+  <a href="#select" data-target="select"><span class="fn-num">P05</span><span class="fn-name">order statistics</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="orange">Heapsort</span>、<span class="blue">Quicksort</span> 與<span class="green">線性時間排序</span></h1>
+    <div class="subtitle">第 03 章 — Sorting and Order Statistics（CLRS 4e Ch 6–9）</div>
+    <div class="big-formula">max-heapify｜partition｜decision tree｜Ω(n lg n)｜counting｜radix｜select</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 6–9）</div>
+  <p>① 資結課教過 merge／quick sort 和 binary heap；本章把 heap 接上排序（heapsort）、給 quicksort 完整的<strong>隨機化分析</strong>，再回答一個更深的問題：<strong>比較排序有沒有天花板？</strong>（有，Ω(n lg n)），以及怎麼繞過它（counting／radix／bucket 不比較、改「數」）。
+  ② 追蹤題（heapsort 手跑、partition 手跑）是考試常客——動畫先看懂，然後自己拿紙筆重現。
+  ③ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#heapsort"><span class="toc-num">P00</span>heapsort</a>
+    <a href="#partition"><span class="toc-num">P01</span>quicksort partition</a>
+    <a href="#qanalysis"><span class="toc-num">P02</span>quicksort 分析</a>
+    <a href="#lowerbound"><span class="toc-num">P03</span>比較排序下界</a>
+    <a href="#linear"><span class="toc-num">P04</span>線性時間排序</a>
+    <a href="#select"><span class="toc-num">P05</span>order statistics</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="heapsort">
+  <div class="section-number">P00 · HEAPSORT</div>
+  <h2>heapsort：你已經會 heap，現在讓它排序 <span class="sec-badge">Ch 6</span></h2>
+  <p>資結課的 binary heap 三件事複習：<strong>陣列存完全二元樹</strong>（0-based：left = 2i+1、right = 2i+2）、
+  <strong>max-heap 性質</strong>（父 ≥ 子）、<strong>MAX-HEAPIFY 往下沉修復</strong>（O(lg n)）。heapsort 只加兩個觀察：</p>
+  <p>① <strong>BUILD-MAX-HEAP</strong>：從最後一個內部節點（⌊n/2⌋−1）往前逐一 heapify——葉子天然是 heap，不用管。
+  精算總成本不是 O(n lg n) 而是 <strong>O(n)</strong>：大多數節點靠近底層、下沉距離很短（Σ h·n/2^(h+1) = O(n)）。<br>
+  ② <strong>排序主迴圈</strong>：堆頂（最大值）和尾端互換 → heap 縮小一格 → heapify 修復。重複 n−1 次，
+  陣列尾端長出一條「已排序尾巴」。<strong>Θ(n lg n)、就地、不穩定</strong>——merge sort 的速度＋insertion sort 的空間。</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="bq-row" id="hsArr"></div>
+      <div class="status-banner" id="hsStatus"><span class="status-icon">▸</span><span class="status-text">輸入為 CLRS 圖 6.3 的 ⟨4,1,3,2,16,9,10,14,8,7⟩。按「單步」看 BUILD-MAX-HEAP → 逐次取出最大值。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="hsPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="hsPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="hsPlayer.reset()">↺ 重來</button>
+        <div class="slider-row" style="flex:1;margin:0;">
+          <span class="slider-label">速度</span>
+          <input type="range" id="hsDelay" min="200" max="1500" value="650">
+        </div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">顏色圖例</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        深藍＝heap 區　橘＝正在下沉比較<br>綠＝已排序尾巴　紅框＝本步交換對象</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">成本帳</div>
+        <div class="ic-row"><span class="ic-label">BUILD-MAX-HEAP</span><span class="ic-value">O(n)</span></div>
+        <div class="ic-row"><span class="ic-label">n−1 次 heapify</span><span class="ic-value">O(n lg n)</span></div>
+        <div class="ic-row"><span class="ic-label">額外空間</span><span class="ic-value highlight">O(1) 就地</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="ctHs">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctHs','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctHs','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctHs','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">HEAPSORT</span>(A, n)</div>
+        <span class="line"><span class="ln">1</span><span class="fn">BUILD-MAX-HEAP</span>(A, n)</span>
+        <span class="line"><span class="ln">2</span><span class="kw">for</span> i = n <span class="kw">downto</span> 2</span>
+        <span class="line"><span class="ln">3</span>    exchange A[1] with A[i]　<span class="com">// 最大值歸位</span></span>
+        <span class="line"><span class="ln">4</span>    A.heap-size = A.heap-size − 1</span>
+        <span class="line"><span class="ln">5</span>    <span class="fn">MAX-HEAPIFY</span>(A, 1)　<span class="com">// 修復堆頂</span></span>
+      </div>
+      <div class="clrs-code" style="margin-top:.7rem;">
+        <div class="cc-title"><span class="fn">MAX-HEAPIFY</span>(A, i)</div>
+        <span class="line"><span class="ln">1</span>l = <span class="fn">LEFT</span>(i)；r = <span class="fn">RIGHT</span>(i)</span>
+        <span class="line"><span class="ln">2</span>largest = 三者（i、l、r）中值最大的合法索引</span>
+        <span class="line"><span class="ln">3</span><span class="kw">if</span> largest ≠ i</span>
+        <span class="line"><span class="ln">4</span>    exchange A[i] with A[largest]</span>
+        <span class="line"><span class="ln">5</span>    <span class="fn">MAX-HEAPIFY</span>(A, largest)　<span class="com">// 繼續往下沉</span></span>
+      </div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="kw">void</span> <span class="fn">maxHeapify</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> heapSize, <span class="kw">int</span> i) {</span><span class="line">    <span class="kw">int</span> l = <span class="num">2</span> * i + <span class="num">1</span>, r = <span class="num">2</span> * i + <span class="num">2</span>, largest = i;</span><span class="line">    <span class="kw">if</span> (l &lt; heapSize &amp;&amp; A[l] &gt; A[largest]) largest = l;</span><span class="line">    <span class="kw">if</span> (r &lt; heapSize &amp;&amp; A[r] &gt; A[largest]) largest = r;</span><span class="line">    <span class="kw">if</span> (largest != i) {</span><span class="line">        std::swap(A[i], A[largest]);</span><span class="line">        <span class="fn">maxHeapify</span>(A, heapSize, largest);   <span class="com">// 被換下去的值繼續往下沉</span></span><span class="line">    }</span><span class="line">}</span><span class="line"></span><span class="line"><span class="kw">void</span> <span class="fn">heapSort</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A) {</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = A.size() / <span class="num">2</span> - <span class="num">1</span>; i &gt;= <span class="num">0</span>; --i)   <span class="com">// BUILD-MAX-HEAP</span></span><span class="line">        <span class="fn">maxHeapify</span>(A, A.size(), i);</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = A.size() - <span class="num">1</span>; i &gt;= <span class="num">1</span>; --i) {</span><span class="line">        std::swap(A[<span class="num">0</span>], A[i]);        <span class="com">// 最大值歸位到尾端</span></span><span class="line">        <span class="fn">maxHeapify</span>(A, i, <span class="num">0</span>);          <span class="com">// heap 縮小一格後修復</span></span><span class="line">    }</span><span class="line">}</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 {4,1,3,2,16,9,10,14,8,7}）</span><pre>1 2 3 4 7 8 9 10 14 16</pre></div>
+      <div class="ct-note">0-based：LEFT = 2i+1、RIGHT = 2i+2、最後內部節點 = n/2 − 1（課本 1-based 是 2i、2i+1、⌊n/2⌋）。</div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 6/heapsort.py（MIT License）— 核心</span></span><span class="line"><span class="kw">def</span> <span class="fn">heapsort</span>(A):</span><span class="line">    <span class="com">"""Sort a list or numpy array in place."""</span></span><span class="line">    heap = MaxHeap(A)　　<span class="com"># build_max_heap 在建構子內完成</span></span><span class="line">    <span class="kw">for</span> i <span class="kw">in</span> range(heap.get_heap_size() - <span class="num">1</span>, <span class="num">0</span>, -<span class="num">1</span>):</span><span class="line">        heap.swap(<span class="num">0</span>, i)                 <span class="com"># 堆頂 ↔ 尾端</span></span><span class="line">        heap.set_heap_size(heap.get_heap_size() - <span class="num">1</span>)</span><span class="line">        heap.max_heapify(<span class="num">0</span>)             <span class="com"># 修復</span></span><span class="line"></span><span class="line">A = [<span class="num">4</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>, <span class="num">16</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">14</span>, <span class="num">8</span>, <span class="num">7</span>]</span><span class="line">heapsort(A)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>[1, 2, 3, 4, 7, 8, 9, 10, 14, 16]</pre></div>
+      <div class="ct-note">官方版把 heap 包成 MaxHeap 類別（Chapter 6/max_heap.py），介面對應 pseudocode 的 A.heap-size。</div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · BUILD-MAX-HEAP</div>
+    <p>BUILD-MAX-HEAP 為什麼從 ⌊n/2⌋ 往 1 倒著跑（0-based：n/2−1 → 0），而不是從 1 順著跑？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。MAX-HEAPIFY(A, i) 的前提是 i 的左右子樹都已是 max-heap。倒著跑保證處理 i 時子樹全部就緒；順著跑則前提不成立，修完的節點會被後面的操作破壞。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> heapify 的前提是「兩個子樹已是 heap」，必須由下而上</div>
+      <div class="quiz-opt" data-correct="false" data-fb="方向不影響漸近成本（都是逐節點呼叫 heapify）；差在正確性——順著跑根本建不出合法的 heap。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 倒著跑比較快，順著跑會變 O(n²)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="⌊n/2⌋+1 以後的節點是葉子、天然是 heap 沒錯，但這只解釋「為何從 ⌊n/2⌋ 開始」，不解釋「為何要倒著往前」。關鍵是 heapify 的前提條件。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 因為葉子不用處理</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="partition">
+  <div class="section-number">P01 · PARTITION</div>
+  <h2>quicksort 的引擎：Lomuto partition <span class="sec-badge">§7.1</span></h2>
+  <p>quicksort 的所有工作都在 <strong>PARTITION</strong> 裡：選 A[r] 當 pivot x，
+  一趟掃描把陣列整理成「≤ x｜&gt; x｜x」，最後把 pivot 換到中間<strong>正確的最終位置</strong>。
+  兩個指標的 invariant：<strong>A[p..i] ≤ x、A[i+1..j−1] &gt; x</strong>。動畫用 CLRS 圖 7.1 的 ⟨2,8,7,1,3,5,6,4⟩：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="bq-row" id="ptArr"></div>
+      <div class="status-banner" id="ptStatus"><span class="status-icon">▸</span><span class="status-text">pivot = 4（紅框）。按「單步」看 j 掃描、i 維持「≤ pivot 區」右界。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="ptPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="ptPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="ptPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="clrs-code" id="ptCode">
+        <div class="cc-title"><span class="fn">PARTITION</span>(A, p, r)</div>
+        <span class="line" data-l="1"><span class="ln">1</span>x = A[r]　<span class="com">// pivot</span></span>
+        <span class="line" data-l="2"><span class="ln">2</span>i = p − 1</span>
+        <span class="line" data-l="3"><span class="ln">3</span><span class="kw">for</span> j = p <span class="kw">to</span> r − 1</span>
+        <span class="line" data-l="4"><span class="ln">4</span>    <span class="kw">if</span> A[j] ≤ x</span>
+        <span class="line" data-l="5"><span class="ln">5</span>        i = i + 1</span>
+        <span class="line" data-l="6"><span class="ln">6</span>        exchange A[i] with A[j]</span>
+        <span class="line" data-l="7"><span class="ln">7</span>exchange A[i+1] with A[r]</span>
+        <span class="line" data-l="8"><span class="ln">8</span><span class="kw">return</span> i + 1</span>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">目前狀態</div>
+        <div class="ic-row"><span class="ic-label">i（≤x 區右界）</span><span class="ic-value" id="ptI">—</span></div>
+        <div class="ic-row"><span class="ic-label">j（掃描位置）</span><span class="ic-value" id="ptJ">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-tabs" id="ctQs">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctQs','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctQs','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctQs','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">QUICKSORT</span>(A, p, r)　／　<span class="fn">RANDOMIZED-PARTITION</span></div>
+        <span class="line"><span class="ln">1</span><span class="kw">if</span> p &lt; r</span>
+        <span class="line"><span class="ln">2</span>    q = <span class="fn">PARTITION</span>(A, p, r)　<span class="com">// 隨機化版：先把隨機位置換到 A[r]</span></span>
+        <span class="line"><span class="ln">3</span>    <span class="fn">QUICKSORT</span>(A, p, q − 1)　<span class="com">// pivot 已就定位，不再參與</span></span>
+        <span class="line"><span class="ln">4</span>    <span class="fn">QUICKSORT</span>(A, q + 1, r)</span>
+      </div>
+      <div class="ct-note">RANDOMIZED-PARTITION 只多一行：i = RANDOM(p, r)；exchange A[r] ↔ A[i]。就這一行把最壞情況從「特定輸入必發生」變成「任何輸入都只有極低機率」。</div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="kw">int</span> <span class="fn">partition</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> p, <span class="kw">int</span> r) {</span><span class="line">    <span class="kw">int</span> x = A[r];                       <span class="com">// pivot 取最後一個元素</span></span><span class="line">    <span class="kw">int</span> i = p - <span class="num">1</span>;                      <span class="com">// 「≤ x 區」的右邊界</span></span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> j = p; j &lt; r; ++j)</span><span class="line">        <span class="kw">if</span> (A[j] &lt;= x) std::swap(A[++i], A[j]);</span><span class="line">    std::swap(A[i + <span class="num">1</span>], A[r]);          <span class="com">// pivot 歸位</span></span><span class="line">    <span class="kw">return</span> i + <span class="num">1</span>;</span><span class="line">}</span><span class="line"></span><span class="line"><span class="kw">void</span> <span class="fn">randomizedQuicksort</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> p, <span class="kw">int</span> r,</span><span class="line">                          std::mt19937&amp; rng) {</span><span class="line">    <span class="kw">if</span> (p &gt;= r) <span class="kw">return</span>;</span><span class="line">    std::uniform_int_distribution&lt;<span class="kw">int</span>&gt; d(p, r);</span><span class="line">    std::swap(A[d(rng)], A[r]);         <span class="com">// 隨機挑 pivot 換到尾端</span></span><span class="line">    <span class="kw">int</span> q = <span class="fn">partition</span>(A, p, r);</span><span class="line">    <span class="fn">randomizedQuicksort</span>(A, p, q - <span class="num">1</span>, rng);</span><span class="line">    <span class="fn">randomizedQuicksort</span>(A, q + <span class="num">1</span>, r, rng);</span><span class="line">}</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 {2,8,7,1,3,5,6,4}）</span><pre>1 2 3 4 5 6 7 8</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 7/randomized_quicksort.py（MIT License）— 核心</span></span><span class="line"><span class="kw">def</span> <span class="fn">randomized_partition</span>(A, p, r):</span><span class="line">    i = randint(p, r)          <span class="com"># 隨機選 pivot 索引</span></span><span class="line">    A[i], A[r] = A[r], A[i]    <span class="com"># 換到尾端後跑一般 partition</span></span><span class="line">    <span class="kw">return</span> partition(A, p, r)</span><span class="line"></span><span class="line"><span class="kw">def</span> <span class="fn">randomized_quicksort</span>(A, p=<span class="num">0</span>, r=<span class="kw">None</span>):</span><span class="line">    <span class="kw">if</span> r <span class="kw">is</span> <span class="kw">None</span>:</span><span class="line">        r = len(A) - <span class="num">1</span></span><span class="line">    <span class="kw">if</span> p &lt; r:</span><span class="line">        q = randomized_partition(A, p, r)</span><span class="line">        randomized_quicksort(A, p, q - <span class="num">1</span>)</span><span class="line">        randomized_quicksort(A, q + <span class="num">1</span>, r)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 [2,8,7,1,3,5,6,4]）</span><pre>[1, 2, 3, 4, 5, 6, 7, 8]</pre></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 手跑追蹤</div>
+    <p>PARTITION(⟨2,8,7,1,3,5,6,4⟩, 1, 8)（pivot = 4）跑完後，回傳值 q 與陣列狀態是？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="2、1、3 依序被換進 ≤4 區（i 停在 3），最後 A[i+1]=8 與 pivot 交換 → ⟨2,1,3,4,7,5,6,8⟩、q = 4。pivot 左邊全 ≤ 4、右邊全 > 4，但兩側各自未排序。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> q = 4，⟨2,1,3,4,7,5,6,8⟩</div>
+      <div class="quiz-opt" data-correct="false" data-fb="partition 只保證「pivot 就定位、左 ≤、右 >」——不會把兩側排好，排序靠後續遞迴。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> q = 4，⟨1,2,3,4,5,6,7,8⟩</div>
+      <div class="quiz-opt" data-correct="false" data-fb="pivot 是 A[r] = 4，不是 8；q 是 pivot 的最終位置。重新用 invariant（A[p..i] ≤ x）走一遍。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> q = 8，⟨2,7,1,3,5,6,4,8⟩</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="qanalysis">
+  <div class="section-number">P02 · QUICKSORT 分析</div>
+  <h2>最壞 Θ(n²)、期望 Θ(n lg n)：差別全在切分平衡 <span class="sec-badge">§7.2、7.4</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p><strong>最壞情況</strong>：每次 pivot 都是最大或最小（例如已排序輸入＋固定取尾端），切分成 0 : n−1，
+      T(n) = T(n−1) + Θ(n) = <strong>Θ(n²)</strong>——遞迴樹退化成一條鏈。</p>
+      <p><strong>只要「成比例」就贏</strong>：即使每次都切 9 : 1，遞迴樹深度仍是 log₁₀⸝₉ n = Θ(lg n)、每層 O(n)
+      → O(n lg n)。切分不必完美，<strong>常數比例</strong>就夠——這是 P02 recursion tree 那題不平衡樹的直接應用。</p>
+      <p><strong>隨機化的期望分析</strong>（§7.4.2 的漂亮論證）：令 z₁&lt;…&lt;zₙ 為排序後元素，
+      zᵢ 與 zⱼ<em>要嘛比較一次、要嘛永不比較</em>——只有當 zᵢ 或 zⱼ 是「區間 Zᵢⱼ = {zᵢ,…,zⱼ} 中第一個被選到的 pivot」才會比較：</p>
+      <div class="info-box green">
+        <span class="info-label">indicator RV 再上場</span>
+        Pr{zᵢ 與 zⱼ 比較} = 2／(j − i + 1)。期望總比較數
+        E[X] = Σᵢ Σⱼ 2/(j−i+1) ≤ Σᵢ O(lg n) = <strong>O(n lg n)</strong>。
+        上一章 hiring problem 的工具原封不動搬過來。
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">為什麼實務最愛 quicksort</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        ▸ 就地（O(lg n) 遞迴堆疊）、常數小、cache 友善。<br>
+        ▸ 隨機化後沒有「天生最壞輸入」。<br>
+        ▸ std::sort 的 introsort = quicksort ＋ 深度超標時切 heapsort ＋ 小區間 insertion sort：三章的知識拼在同一支函式裡。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 平衡直覺</div>
+    <p>對<strong>已排序</strong>輸入跑「固定取尾端 pivot」的 quicksort 與「隨機 pivot」的 quicksort，各是什麼行為？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="固定取尾：每次切 0:n−1 → Θ(n²)，而且這個輸入「每次必中」。隨機化：期望 Θ(n lg n) 對任何輸入成立，已排序輸入不再特殊——這正是隨機化的意義。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 固定取尾 Θ(n²)；隨機 pivot 期望 Θ(n lg n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="已排序輸入對「固定取尾」是最壞輸入：pivot 永遠是最大值，切分 0:n−1。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 兩者都是 Θ(n lg n)，已排序輸入很好切</div>
+      <div class="quiz-opt" data-correct="false" data-fb="隨機化沒有「消滅」最壞情況（仍可能 Θ(n²)），但機率極低；期望值是 Θ(n lg n)。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 隨機化後保證不會再出現 Θ(n²)</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="lowerbound">
+  <div class="section-number">P03 · 下界</div>
+  <h2>比較排序的天花板：Ω(n lg n) <span class="sec-badge">§8.1</span></h2>
+  <p>merge sort 和 heapsort 都是 Θ(n lg n)——還能更快嗎？如果演算法<strong>只透過元素兩兩比較</strong>取得順序資訊，答案是不能：</p>
+  <div class="thm-box">
+    <div class="thm-label">定理 8.1（決策樹論證）</div>
+    把比較排序的執行過程畫成<strong>決策樹（decision tree）</strong>：內部節點是「aᵢ ≤ aⱼ？」，葉子是輸出的排列。
+    正確的演算法必須能產生全部 <strong>n! 種排列</strong> → 葉子 ≥ n!。
+    高度 h 的二元樹葉子 ≤ 2ʰ，所以 2ʰ ≥ n! → h ≥ lg(n!) = <strong>Ω(n lg n)</strong>（Stirling）。
+    最壞情況的比較次數 = 根到最深葉的路徑長 ≥ Ω(n lg n)。∎
+  </div>
+  <p>這是本課程第一個<strong>問題本身的下界</strong>——不是「還沒想到更快的方法」，而是「這個模型裡不存在更快的方法」。
+  merge sort／heapsort 因此是<strong>漸近最優</strong>的比較排序。想更快只有一條路：<strong>換模型</strong>——不比較，改用元素的「數值本身」當索引，這就是下一節。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 下界的意義</div>
+    <p>counting sort 是 Θ(n + k)，k = O(n) 時線性——它違反定理 8.1 嗎？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="false" data-fb="定理 8.1 沒有被推翻——它的前提是「只用比較」。前提不同，結論不適用，兩者並存。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 違反，所以下界證明有漏洞</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。counting sort 從不比較元素，而是把值當索引直接計數——跳出比較模型，下界自然管不到它。代價是需要知道值域 k 且只適用整數鍵。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 不違反：它不在「比較排序」模型裡</div>
+      <div class="quiz-opt" data-correct="false" data-fb="counting sort 是真的線性（k = O(n) 時）——它不是攤還或期望，是最壞情況 Θ(n + k)。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 不違反：Θ(n+k) 其實還是 Ω(n lg n)</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="linear">
+  <div class="section-number">P04 · 線性時間排序</div>
+  <h2>counting → radix → bucket：不比較，用「數的」 <span class="sec-badge">§8.2–8.4</span></h2>
+  <p><strong>counting sort</strong>：值域 [0, k] 的整數。C[v] 先數「值 = v 有幾個」，前綴和後 C[v] =「≤ v 的個數」——
+  這個數字<em>就是</em> v 該站的位置。<strong>從後往前</strong>放進輸出陣列 B，相等元素保持原相對順序（<strong>穩定</strong>）。按單步看放置過程：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);">A（輸入）</div>
+      <div class="bq-row" id="csA"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);">C（累計 ≤ v 個數）</div>
+      <div class="bq-row" id="csC"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);">B（輸出）</div>
+      <div class="bq-row" id="csB"></div>
+      <div class="status-banner" id="csStatus"><span class="status-icon">▸</span><span class="status-text">CLRS 圖 8.2 的例子：A = ⟨6,0,2,0,1,3,4,6,1,3,2⟩、k = 6。按「單步」從尾端開始放。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="csPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="csPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="csPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctCs">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctCs','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctCs','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctCs','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code">
+            <div class="cc-title"><span class="fn">COUNTING-SORT</span>(A, n, k)</div>
+            <span class="line"><span class="ln">1</span>C[0:k] 全設 0</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> j = 1 <span class="kw">to</span> n：C[A[j]] += 1</span>
+            <span class="line"><span class="ln">3</span><span class="kw">for</span> v = 1 <span class="kw">to</span> k：C[v] += C[v−1]</span>
+            <span class="line"><span class="ln">4</span><span class="kw">for</span> j = n <span class="kw">downto</span> 1</span>
+            <span class="line"><span class="ln">5</span>    B[C[A[j]]] = A[j]</span>
+            <span class="line"><span class="ln">6</span>    C[A[j]] −= 1</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code"><span class="line">std::vector&lt;<span class="kw">int</span>&gt; <span class="fn">countingSort</span>(</span><span class="line">        <span class="kw">const</span> std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> k) {</span><span class="line">    std::vector&lt;<span class="kw">int</span>&gt; C(k + <span class="num">1</span>, <span class="num">0</span>), B(A.size());</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> a : A) ++C[a];</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> v = <span class="num">1</span>; v &lt;= k; ++v) C[v] += C[v - <span class="num">1</span>];</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = A.size() - <span class="num">1</span>; i &gt;= <span class="num">0</span>; --i) {</span><span class="line">        B[C[A[i]] - <span class="num">1</span>] = A[i];   <span class="com">// 從後往前 → 穩定</span></span><span class="line">        --C[A[i]];</span><span class="line">    }</span><span class="line">    <span class="kw">return</span> B;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>0 0 1 1 2 2 3 3 4 6 6</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 8/counting_sort.py（MIT License）</span></span><span class="line"><span class="com"># 簽名：counting_sort(A, n, k)，值域 0..k-1</span></span><span class="line">sorted_A = counting_sort(A, len(A), <span class="num">7</span>)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[0, 0, 1, 1, 2, 2, 3, 3, 4, 6, 6]</pre></div>
+          <div class="ct-note">注意官方版的 k 是「值域大小」（值 0..k−1），課本是「最大值 k」——差一。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:1rem;"><strong>radix sort</strong>（§8.3）：d 位數的整數，從<strong>最低位</strong>開始逐位用「穩定排序」（通常就是 counting sort）排 d 輪
+  → Θ(d(n + k))。穩定性是命脈：排高位時，低位已排好的相對順序必須被保留。
+  <strong>bucket sort</strong>（§8.4）：輸入均勻分布在 [0,1) 時，切 n 個桶、各桶 insertion sort，<strong>期望</strong> Θ(n)——又是機率分析。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 穩定性的角色</div>
+    <p>radix sort 排 ⟨329, 457, 657, 839, 436, 720, 355⟩，若逐位使用的子排序<strong>不穩定</strong>，會發生什麼事？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。排百位時 436 與 457（同為 4）順序可能顛倒——但它們的十位個位已經決定了正確相對順序，不穩定排序會把先前輪次建立的順序打掉，整體結果錯誤。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 同位數值相同的元素順序被打亂，結果可能錯誤</div>
+      <div class="quiz-opt" data-correct="false" data-fb="會影響正確性，不只是效率——radix sort 的歸納證明就建立在「子排序穩定」上。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> 只會變慢，結果仍正確</div>
+      <div class="quiz-opt" data-correct="false" data-fb="從最高位開始（MSD）另有做法但需要分桶遞迴；LSD radix sort 的正確性依賴穩定性，兩件事都不能省。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 沒差，反正從最低位排起</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="select">
+  <div class="section-number">P05 · ORDER STATISTICS</div>
+  <h2>randomized select：找第 i 小，期望 Θ(n) <span class="sec-badge">§9.1–9.2</span></h2>
+  <p>找中位數（或第 i 小）要排序嗎？不用。<strong>RANDOMIZED-SELECT</strong> 借 quicksort 的 partition，
+  但每次只遞迴<strong>一邊</strong>：pivot 落點 q 把問題切成兩半，答案只會在其中一半。
+  期望分析：pivot 有一半機率落在「中間 50%」，每兩輪期望把問題砍到 3/4 → 幾何級數
+  n + 3n/4 + 9n/16 + … = <strong>Θ(n)</strong>。</p>
+  <div class="warn-box"><b>對照：</b>quicksort 兩邊都遞迴 → Θ(n lg n)；select 只走一邊 → Θ(n)。
+  同一個 partition，遞迴結構決定級別。另外 §9.3 的 <b>SELECT</b>（中位數之中位數、5 個一組）把「期望線性」升級成<b>最壞情況線性</b>——保證 pivot 至少甩掉 30% 的元素，代價是常數較大，實務反而少用。</div>
+
+  <div class="code-tabs" id="ctSel">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctSel','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctSel','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctSel','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">RANDOMIZED-SELECT</span>(A, p, r, i)　<span class="com">// 第 i 小</span></div>
+        <span class="line"><span class="ln">1</span><span class="kw">if</span> p == r：<span class="kw">return</span> A[p]</span>
+        <span class="line"><span class="ln">2</span>q = <span class="fn">RANDOMIZED-PARTITION</span>(A, p, r)</span>
+        <span class="line"><span class="ln">3</span>k = q − p + 1　<span class="com">// pivot 在本段排第 k 小</span></span>
+        <span class="line"><span class="ln">4</span><span class="kw">if</span> i == k：<span class="kw">return</span> A[q]</span>
+        <span class="line"><span class="ln">5</span><span class="kw">elseif</span> i &lt; k：<span class="kw">return</span> <span class="fn">RANDOMIZED-SELECT</span>(A, p, q−1, i)</span>
+        <span class="line"><span class="ln">6</span><span class="kw">else</span>：<span class="kw">return</span> <span class="fn">RANDOMIZED-SELECT</span>(A, q+1, r, i−k)</span>
+      </div>
+      <div class="ct-note">第 6 行的 i − k：進入右半段後「目標排名」要扣掉左半段（含 pivot）的 k 個元素。</div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="kw">int</span> <span class="fn">randomizedSelect</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> p, <span class="kw">int</span> r,</span><span class="line">                      <span class="kw">int</span> i, std::mt19937&amp; rng) {</span><span class="line">    <span class="kw">if</span> (p == r) <span class="kw">return</span> A[p];</span><span class="line">    std::uniform_int_distribution&lt;<span class="kw">int</span>&gt; d(p, r);</span><span class="line">    std::swap(A[d(rng)], A[r]);</span><span class="line">    <span class="kw">int</span> q = <span class="fn">partition</span>(A, p, r);</span><span class="line">    <span class="kw">int</span> k = q - p + <span class="num">1</span>;</span><span class="line">    <span class="kw">if</span> (i == k) <span class="kw">return</span> A[q];</span><span class="line">    <span class="kw">if</span> (i &lt; k) <span class="kw">return</span> <span class="fn">randomizedSelect</span>(A, p, q - <span class="num">1</span>, i, rng);</span><span class="line">    <span class="kw">return</span> <span class="fn">randomizedSelect</span>(A, q + <span class="num">1</span>, r, i - k, rng);</span><span class="line">}</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（{3,2,9,0,7,5,4,8,6,1}）</span><pre>第 1 小 = 0
+第 5 小 = 4
+第 10 小 = 9</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 9/randomized_select.py（MIT License）— 核心</span></span><span class="line"><span class="kw">def</span> <span class="fn">randomized_select</span>(A, p, r, i):</span><span class="line">    <span class="kw">if</span> p == r:</span><span class="line">        <span class="kw">return</span> A[p]</span><span class="line">    q = randomized_partition(A, p, r)</span><span class="line">    k = q - p + <span class="num">1</span></span><span class="line">    <span class="kw">if</span> i == k:</span><span class="line">        <span class="kw">return</span> A[q]</span><span class="line">    <span class="kw">elif</span> i &lt; k:</span><span class="line">        <span class="kw">return</span> randomized_select(A, p, q - <span class="num">1</span>, i)</span><span class="line">    <span class="kw">else</span>:</span><span class="line">        <span class="kw">return</span> randomized_select(A, q + <span class="num">1</span>, r, i - k)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>第5小: 4</pre></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05 · 遞迴結構</div>
+    <p>RANDOMIZED-SELECT 期望 Θ(n) 的關鍵，下列哪個說法對？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="false" data-fb="partition 本身仍是 Θ(n)——省的不是 partition，是遞迴分支數。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 它用了比 quicksort 更快的 partition</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。只遞迴一邊 → 成本是遞減幾何級數 n(1 + 3/4 + (3/4)² + …) = Θ(n)；quicksort 兩邊都走，每層都是滿的 n，才多出 lg n 因子。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 每次只遞迴一邊，期望問題大小以幾何級數縮小</div>
+      <div class="quiz-opt" data-correct="false" data-fb="最壞情況仍是 Θ(n²)（每次 pivot 都選到端點）；Θ(n) 是期望值。要最壞線性得用 §9.3 的中位數之中位數。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 它保證最壞情況也是 Θ(n)</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>排序演算法選型</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 選型</div>
+    <p>嵌入式系統：記憶體極度受限（不能開 Θ(n) 暫存）、需要最壞情況 O(n lg n) 保證、不要求穩定。選哪個？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。heapsort 是唯一同時「就地 + 最壞 n lg n」的選項。merge sort 要 Θ(n) 暫存；quicksort 最壞 Θ(n²)（隨機化也只是期望）。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> heapsort</div>
+      <div class="quiz-opt" data-correct="false" data-fb="merge sort 的 MERGE 需要 Θ(n) 暫存陣列，記憶體受限時出局。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> merge sort</div>
+      <div class="quiz-opt" data-correct="false" data-fb="隨機化 quicksort 的「n lg n」是期望值，最壞仍是 Θ(n²)——題目要求最壞情況保證。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> randomized quicksort</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 換模型</div>
+    <p>要排 10⁶ 筆「0–9999 的整數學號」，理論與實務上最合適的是？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="false" data-fb="可以用，但 n lg n ≈ 2×10⁷ 次比較；值域小到可以直接數，何必比較。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> randomized quicksort</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。k = 10⁴ ≪ n lg n 的成本，counting sort Θ(n + k) ≈ 10⁶ 次操作、還穩定。值域有限的整數鍵是跳出比較模型的完美時機。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> counting sort（k = 10⁴）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="bucket sort 的期望線性建立在「輸入均勻分布」假設上；counting sort 不需要任何分布假設，值域小時直接贏。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> bucket sort</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>排序演算法全家福</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>演算法</th><th>最壞</th><th>平均/期望</th><th>額外空間</th><th>穩定</th><th>模型</th></tr></thead>
+    <tbody>
+      <tr><td>insertion sort</td><td class="worst">Θ(n²)</td><td>Θ(n²)</td><td class="best">O(1)</td><td class="best">✓</td><td>比較</td></tr>
+      <tr><td>merge sort</td><td class="best">Θ(n lg n)</td><td>Θ(n lg n)</td><td class="worst">Θ(n)</td><td class="best">✓</td><td>比較</td></tr>
+      <tr><td>heapsort</td><td class="best">Θ(n lg n)</td><td>Θ(n lg n)</td><td class="best">O(1)</td><td>✗</td><td>比較</td></tr>
+      <tr><td>quicksort（隨機）</td><td class="worst">Θ(n²)</td><td class="best">Θ(n lg n) 期望</td><td>O(lg n) 堆疊</td><td>✗</td><td>比較</td></tr>
+      <tr><td>counting sort</td><td class="best">Θ(n + k)</td><td>Θ(n + k)</td><td>Θ(n + k)</td><td class="best">✓</td><td>整數鍵</td></tr>
+      <tr><td>radix sort</td><td class="best">Θ(d(n + k))</td><td>Θ(d(n + k))</td><td>Θ(n + k)</td><td class="best">✓</td><td>整數鍵</td></tr>
+      <tr><td>bucket sort</td><td class="worst">Θ(n²)</td><td class="best">Θ(n) 期望</td><td>Θ(n)</td><td class="best">✓</td><td>均勻分布</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① heapsort = BUILD-MAX-HEAP（O(n)，由下而上）＋ n−1 次「換頂、縮堆、heapify」。<br>
+    ② partition 的 invariant：A[p..i] ≤ x &lt; A[i+1..j−1]；quicksort 好壞全看切分平衡，常數比例即可。<br>
+    ③ 決策樹：n! 個葉子 → 高度 ≥ lg(n!) = Ω(n lg n)，比較排序的天花板。<br>
+    ④ 線性排序靠「換模型」：counting 用值當索引、radix 靠穩定子排序逐位、bucket 靠分布假設。<br>
+    ⑤ select 只遞迴一邊 → 期望 Θ(n)；同一個 partition，遞迴結構決定級別。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch3.json · 14 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="analysis.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">漸近分析與遞迴式</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="structures.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">Hash、BST 與紅黑樹</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 03 章 Sorting and Order Statistics（CLRS 4e Ch 6–9）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"最大堆積（Max-Heap）","back":"以陣列儲存的完全二元樹，滿足父節點 ≥ 子節點。堆頂 A[1] 恆為最大值；高度 Θ(lg n)。0-based 實作：left = 2i+1、right = 2i+2。"},
+  {"front":"MAX-HEAPIFY","back":"修復單點違規的下沉程序：假設左右子樹都是 max-heap，讓 A[i] 與較大子節點交換並遞迴下沉。成本 O(lg n)（＝O(h)）。"},
+  {"front":"BUILD-MAX-HEAP","back":"從最後一個內部節點倒著逐一 MAX-HEAPIFY。粗算 O(n lg n)，精算 O(n)——多數節點靠近底層、下沉距離短。"},
+  {"front":"堆積排序（Heapsort）","back":"BUILD-MAX-HEAP 後重複「堆頂↔尾端、heap-size−1、heapify」。Θ(n lg n)、就地（O(1) 額外空間）、不穩定。"},
+  {"front":"PARTITION（Lomuto）","back":"quicksort 引擎：pivot 取 A[r]，一趟掃描維持 A[p..i] ≤ x < A[i+1..j−1]，最後 pivot 歸位到 i+1 並回傳該位置。Θ(n)。"},
+  {"front":"隨機化快速排序（Randomized Quicksort）","back":"partition 前隨機挑 pivot 換到尾端。期望 Θ(n lg n) 對任何輸入成立；最壞 Θ(n²) 仍存在但機率極低。"},
+  {"front":"決策樹模型（Decision Tree Model）","back":"把比較排序畫成二元樹：內部節點是比較、葉子是輸出排列。正確演算法需 ≥ n! 個葉子，最壞比較次數 = 樹高。"},
+  {"front":"排序下界（Sorting Lower Bound）","back":"任何比較排序最壞情況需 Ω(n lg n) 次比較：2^h ≥ n! → h ≥ lg(n!) = Ω(n lg n)。merge sort／heapsort 因此漸近最優。"},
+  {"front":"計數排序（Counting Sort）","back":"值域 [0,k] 整數：計數 → 前綴和（C[v] = ≤v 的個數）→ 從後往前放進輸出。Θ(n+k)、穩定、不比較。"},
+  {"front":"基數排序（Radix Sort）","back":"d 位數整數從最低位（LSD）逐位用穩定排序（常用 counting sort）排 d 輪，Θ(d(n+k))。正確性依賴子排序的穩定性。"},
+  {"front":"桶排序（Bucket Sort）","back":"輸入均勻分布於 [0,1) 時切 n 個桶、各桶 insertion sort 後串接。期望 Θ(n)；最壞（全擠一桶）Θ(n²)。"},
+  {"front":"穩定排序（Stable Sort）","back":"鍵值相等的元素在輸出中保持輸入的相對順序。merge／insertion／counting 穩定；heapsort、quicksort 不穩定。"},
+  {"front":"順序統計量（Order Statistic）","back":"集合中第 i 小的元素；中位數是第 ⌊(n+1)/2⌋ 小。不需排序即可求得。"},
+  {"front":"RANDOMIZED-SELECT","back":"用 randomized partition 找第 i 小，但每次只遞迴 pivot 的一側：期望 Θ(n)（幾何級數），最壞 Θ(n²)。§9.3 的 SELECT 可達最壞線性。"}
+];
+
+/* ---------- P00 heapsort 動畫 ---------- */
+function hsFrames() {
+  const A = [4, 1, 3, 2, 16, 9, 10, 14, 8, 7];
+  const n = A.length, frames = [];
+  let heapSize = n;
+  let sortedFrom = n;
+  const snap = (msg, hl, sw) => frames.push({A:[...A], heapSize, sortedFrom, hl:hl??[], sw:sw??[], msg});
+  snap('原始輸入（CLRS 圖 6.3）。先 BUILD-MAX-HEAP：從最後內部節點 i=4 倒著整理。');
+  function heapify(i, hs, phase) {
+    while (true) {
+      const l = 2*i+1, r = 2*i+2;
+      let largest = i;
+      if (l < hs && A[l] > A[largest]) largest = l;
+      if (r < hs && A[r] > A[largest]) largest = r;
+      if (largest === i) break;
+      [A[i], A[largest]] = [A[largest], A[i]];
+      snap(`${phase}：A[${i}] 與較大子節點 A[${largest}] 交換，繼續下沉。`, [i, largest]);
+      i = largest;
+    }
+  }
+  for (let i = Math.floor(n/2) - 1; i >= 0; i--) {
+    snap(`BUILD：heapify(${i})。`, [i]);
+    heapify(i, heapSize, 'BUILD');
+  }
+  snap('max-heap 完成：堆頂 = 16。開始排序主迴圈。');
+  for (let i = n - 1; i >= 1; i--) {
+    [A[0], A[i]] = [A[i], A[0]];
+    heapSize--; sortedFrom = i;
+    snap(`堆頂 ${A[i]} 歸位到 A[${i}]；heap 縮成 ${heapSize} 格，heapify(0) 修復。`, [], [0, i]);
+    heapify(0, heapSize, 'SORT');
+  }
+  sortedFrom = 0;
+  snap('完成：⟨' + A.join(', ') + '⟩。共 n−1 次「換頂＋heapify」。');
+  return frames;
+}
+function hsApply(f) {
+  const el = $('hsArr'); el.innerHTML = '';
+  f.A.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item';
+    if (idx >= f.sortedFrom) d.style.background = '#1a6b4a';
+    if (f.hl.includes(idx)) d.style.background = '#f39c12';
+    if (f.sw.includes(idx)) d.style.outline = '3px solid #c0392b';
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  setStatus('hsStatus', f.msg);
+}
+const hsPlayer = new Player({frames: hsFrames(), apply: hsApply, delayInput: null});
+hsPlayer.delayInput = $('hsDelay');
+hsPlayer.reset();
+
+/* ---------- P01 partition 動畫 ---------- */
+function ptFrames() {
+  const A = [2, 8, 7, 1, 3, 5, 6, 4];
+  const r = A.length - 1, x = A[r], frames = [];
+  let i = -1;
+  const snap = (line, msg, j, sw) => frames.push({A:[...A], i, j, line, sw:sw??[], msg});
+  snap(1, `pivot x = A[r] = ${x}。i = 0 前（空的 ≤x 區）。`, null);
+  for (let j = 0; j < r; j++) {
+    if (A[j] <= x) {
+      i++;
+      [A[i], A[j]] = [A[j], A[i]];
+      snap(6, `A[${j}] = ${A[i] === A[j] ? A[j] : A[i]} ≤ ${x}：i → ${i}，交換 A[${i}] ↔ A[${j}]。`, j, [i, j]);
+    } else {
+      snap(4, `A[${j}] = ${A[j]} > ${x}：只有 j 前進。`, j);
+    }
+  }
+  [A[i+1], A[r]] = [A[r], A[i+1]];
+  snap(7, `pivot 歸位：A[${i+1}] ↔ A[${r}]。回傳 q = ${i+2}（1-based）。左 ≤ ${x}、右 > ${x}。`, null, [i+1, r]);
+  return frames;
+}
+function ptApply(f) {
+  const el = $('ptArr'); el.innerHTML = '';
+  f.A.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item';
+    if (idx <= f.i) d.style.background = '#1a6b4a';
+    if (f.j !== null && idx === f.j) d.style.background = '#f39c12';
+    if (idx === f.A.length - 1 && f.line !== 7) d.style.outline = '3px solid #c0392b';
+    if (f.sw.includes(idx)) d.style.outline = '3px solid #c0392b';
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  hlLine('ptCode', f.line);
+  setStatus('ptStatus', f.msg);
+  $('ptI').textContent = f.i >= 0 ? f.i : '—';
+  $('ptJ').textContent = f.j ?? '—';
+}
+const ptPlayer = new Player({frames: ptFrames(), apply: ptApply, delayInput: null});
+ptPlayer.reset();
+
+/* ---------- P04 counting sort 動畫 ---------- */
+function csFrames() {
+  const A = [6, 0, 2, 0, 1, 3, 4, 6, 1, 3, 2], k = 6;
+  const C = new Array(k+1).fill(0);
+  A.forEach(a => C[a]++);
+  for (let v = 1; v <= k; v++) C[v] += C[v-1];
+  const B = new Array(A.length).fill(null);
+  const frames = [];
+  frames.push({A:[...A], C:[...C], B:[...B], j:null, msg:'計數＋前綴和完成：C[v] =「≤ v 的個數」。從 j = n 倒著放。'});
+  for (let j = A.length - 1; j >= 0; j--) {
+    const v = A[j];
+    B[C[v] - 1] = v;
+    C[v]--;
+    frames.push({A:[...A], C:[...C], B:[...B], j, pos:C[v],
+      msg:`A[${j}] = ${v} → 放到 B[${C[v]}]（C[${v}] 原值減 1）。`});
+  }
+  frames.push({A:[...A], C:[...C], B:[...B], j:null, msg:'完成——每個值直接「算」出自己的位置，全程零比較。'});
+  return frames;
+}
+function csApply(f) {
+  const render = (id, arr, hl, labels) => {
+    const el = $(id); el.innerHTML = '';
+    arr.forEach((v, idx) => {
+      const d = document.createElement('div');
+      d.className = 'bq-item';
+      d.style.minWidth = '38px';
+      d.style.fontSize = '.78rem';
+      if (labels) d.innerHTML = `<div style="font-size:.6rem;opacity:.75;">${idx}</div>${v === null ? '·' : v}`;
+      else d.textContent = v === null ? '·' : v;
+      if (v === null) d.style.background = '#bbb';
+      if (hl === idx) d.style.background = '#f39c12';
+      el.appendChild(d);
+    });
+  };
+  render('csA', f.A, f.j, false);
+  render('csC', f.C, null, true);
+  render('csB', f.B, f.pos ?? null, true);
+  setStatus('csStatus', f.msg);
+}
+const csPlayer = new Player({frames: csFrames(), apply: csApply, delayInput: null});
+csPlayer.reset();
+</script>
+<script>
+/* ============ shared utilities ============ */
+const $ = id => document.getElementById(id);
+
+function quizCheck(quizId, optEl) {
+  const isCorrect = optEl.dataset.correct === 'true';
+  optEl.parentElement.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct','wrong'));
+  optEl.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = $(quizId + 'Feedback');
+  fb.classList.remove('correct','wrong');
+  fb.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  fb.innerHTML = (isCorrect ? '<strong>正確 ✓</strong> ' : '<strong>不對 ✗</strong> ') + (optEl.dataset.fb || '');
+}
+
+function hlLine(rootId, n) {
+  const root = $(rootId);
+  if (!root) return;
+  root.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+  if (n != null) {
+    const line = root.querySelector(`.line[data-l="${n}"]`);
+    if (line) line.classList.add('active');
+  }
+}
+
+/* step player: frames = [{...}], apply(frame) renders */
+class Player {
+  constructor({frames, apply, delayInput, onDone}) {
+    this.frames = frames; this.apply = apply;
+    this.delayInput = delayInput; this.i = -1; this.timer = null;
+    this.onDone = onDone || (()=>{});
+  }
+  step() {
+    if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+    this.i += 1; this.apply(this.frames[this.i]);
+  }
+  play() {
+    this.stop();
+    const tick = () => {
+      if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+      this.step();
+      this.timer = setTimeout(tick, this.delayInput ? parseInt(this.delayInput.value,10) : 700);
+    };
+    tick();
+  }
+  stop() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  reset() { this.stop(); this.i = -1; if (this.frames.length) this.apply(this.frames[0]); }
+}
+
+function setStatus(id, html) {
+  const el = $(id); if (el) el.querySelector('.status-text').innerHTML = html;
+}
+
+/* vertical box stack renderer (DOM) */
+function renderBoxStack(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  const hl = opts.highlight ?? -1;   // index from top (0 = top)
+  el.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bs-toplabel';
+  label.textContent = items.length ? 'top ↓' : '(empty)';
+  el.appendChild(label);
+  items.slice().reverse().forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bs-item' + (idx === hl ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+
+/* horizontal queue renderer: front at left */
+function renderBoxQueue(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  el.innerHTML = '';
+  const front = document.createElement('div');
+  front.className = 'bq-label'; front.textContent = items.length ? 'front →' : '(empty)';
+  el.appendChild(front);
+  items.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item' + (idx === (opts.highlight ?? -1) ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  const rear = document.createElement('div');
+  rear.className = 'bq-label'; rear.textContent = items.length ? '← rear' : '';
+  el.appendChild(rear);
+}
+
+/* floating nav scroll spy */
+(function setupNav() {
+  const nav = $('floatNav');
+  const links = nav.querySelectorAll('a[data-target]');
+  const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
+  function update() {
+    const y = window.scrollY + window.innerHeight * 0.3;
+    let active = sections[0]?.id;
+    for (const s of sections) if (s.offsetTop <= y) active = s.id;
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>
