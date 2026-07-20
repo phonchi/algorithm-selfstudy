@@ -1,0 +1,631 @@
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#mst" data-target="mst"><span class="fn-num">P00</span><span class="fn-name">MST 與切割性質</span></a>
+  <a href="#kruskal" data-target="kruskal"><span class="fn-num">P01</span><span class="fn-name">Kruskal</span></a>
+  <a href="#prim" data-target="prim"><span class="fn-num">P02</span><span class="fn-name">Prim 正確性</span></a>
+  <a href="#bellman" data-target="bellman"><span class="fn-num">P03</span><span class="fn-name">Bellman-Ford</span></a>
+  <a href="#dijkstra" data-target="dijkstra"><span class="fn-num">P04</span><span class="fn-name">Dijkstra 證明</span></a>
+  <a href="#apsp" data-target="apsp"><span class="fn-num">P05</span><span class="fn-name">Floyd-Warshall</span></a>
+  <a href="#maxflow" data-target="maxflow"><span class="fn-num">P06</span><span class="fn-name">max flow 概覽</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="purple">MST</span> 與<span class="green">最短路徑</span></h1>
+    <div class="subtitle">第 08 章 — Minimum Spanning Trees, Shortest Paths &amp; Max Flow（CLRS 4e Ch 21–24）</div>
+    <div class="big-formula">cut property｜union-find 引擎｜relaxation｜負權與負環｜DP 填表｜max-flow min-cut</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 21–24）</div>
+  <p>① 資結課你已會「用」Prim 和 Dijkstra；本章補上「為什麼對」：MST 的切割性質、Dijkstra 的貪婪不變量——考試考的是論證，不是背步驟。
+  ② <strong>Kruskal 是新內容</strong>，引擎正是上一章的 union-find——兩章連著讀。
+  ③ <strong>Bellman-Ford 是新武器</strong>：允許負權、還能偵測負環；Floyd-Warshall 則把 DP 框架搬到圖上——回想 Ch14 的「子問題定義」。
+  ④ max flow 是概覽週：抓住殘餘網路、增廣路徑、max-flow min-cut 三個詞就夠。
+  ⑤ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#mst"><span class="toc-num">P00</span>MST 與切割性質</a>
+    <a href="#kruskal"><span class="toc-num">P01</span>Kruskal（union-find 引擎）</a>
+    <a href="#prim"><span class="toc-num">P02</span>Prim 的正確性</a>
+    <a href="#bellman"><span class="toc-num">P03</span>鬆弛與 Bellman-Ford</a>
+    <a href="#dijkstra"><span class="toc-num">P04</span>Dijkstra 的證明</a>
+    <a href="#apsp"><span class="toc-num">P05</span>APSP：Floyd-Warshall</a>
+    <a href="#maxflow"><span class="toc-num">P06</span>max flow 概覽</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="mst">
+  <div class="section-number">P00 · MST</div>
+  <h2>MST 問題與切割性質：所有正確性的源頭 <span class="sec-badge">§21.1</span></h2>
+  <p>連通無向帶權圖找一棵<strong>生成樹（碰到所有頂點的樹）</strong>使邊權總和最小——佈線、修路、電路板走線都是它。
+  CLRS 先給一個「泛型方法」：維護一個必是某 MST 子集的邊集 A，每次加一條<strong>安全邊</strong>（加了仍是某 MST 子集）。
+  Kruskal 與 Prim 只是「挑安全邊」的兩種策略。</p>
+  <div class="thm-box proof">
+    <div class="thm-label">切割性質（定理 21.1）——安全邊怎麼找</div>
+    <div style="font-size:.86rem;line-height:1.7;">
+    把頂點切成兩堆 (S, V−S)，若邊集 A 沒有邊橫跨這個切割（切割<strong>尊重</strong> A），
+    則橫跨切割的<strong>最輕邊（light edge）</strong>對 A 是安全的。<br>
+    證明（交換論證，Ch15 貪婪的老朋友）：設 T 是包含 A 的 MST。若 light edge (u,v) ∉ T，
+    T 中 u→v 的唯一路徑必有另一條邊 (x,y) 橫跨切割；換掉它：T′ = T − (x,y) + (u,v) 仍是生成樹，
+    且 w(u,v) ≤ w(x,y) ⟹ w(T′) ≤ w(T)，所以 T′ 也是 MST 且包含 A ∪ {(u,v)}。∎</div>
+  </div>
+  <div class="info-box purple">
+    <span class="info-label">兩種策略、一個定理</span>
+    <strong>Kruskal</strong>：A 是森林，每次加「連接兩棵不同樹的最輕邊」——切割取「這棵樹 vs 其他全部」。<br>
+    <strong>Prim</strong>：A 是一棵從根長大的樹，每次加「離開這棵樹的最輕邊」——切割取「樹內 vs 樹外」。<br>
+    兩者的每一步都恰是某個切割的 light edge → 由定理 21.1 全程安全 → 結束時是 MST。
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · MST 唯一性</div>
+    <p>若圖中<strong>所有邊權互不相同</strong>，MST 有幾棵？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確，恰好一棵。反證：若 T₁ ≠ T₂ 都是 MST，取只在 T₁ 的最輕邊 e，加進 T₂ 成環，環上必有一條不在 T₁ 的邊 e′；權重互異且可證 w(e) < w(e′)，換掉得到更輕的生成樹，矛盾。權重有平手時 MST 才可能不唯一——本頁的例圖就有兩棵（見 P02）。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> 恰好一棵</div>
+      <div class="quiz-opt" data-correct="false" data-fb="權重互異時唯一。多棵 MST 需要「平手邊可互換」——例如本頁例圖權重 8 的兩條邊。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 可能有多棵</div>
+      <div class="quiz-opt" data-correct="false" data-fb="連通圖一定有生成樹，也就一定有最小的那（些）棵。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 可能不存在</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="kruskal">
+  <div class="section-number">P01 · KRUSKAL</div>
+  <h2>Kruskal：排序邊＋union-find 擋環 <span class="sec-badge">§21.2</span></h2>
+  <p>邊按權重由小到大掃一遍：兩端<strong>不同集合</strong>就收（UNION），<strong>同集合</strong>代表會成環、跳過（FIND-SET 判定）。
+  上一章的 union-find 在這裡上場。按單步看 CLRS 圖 21.4 的完整過程：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="token-out" id="krEdges" style="min-height:56px;"></div>
+      <div class="adj-list" id="krComps" style="font-family:'JetBrains Mono',monospace;"></div>
+      <div class="status-banner" id="krStatus"><span class="status-icon">▸</span><span class="status-text">14 條邊已按權重排序。按「單步」逐邊決定收或丟。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="krPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="krPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="krPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctKruskal">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctKruskal','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctKruskal','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctKruskal','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">MST-KRUSKAL</span>(G, w)</div>
+            <span class="line"><span class="ln">1</span>A = ∅；每個頂點 <span class="fn">MAKE-SET</span></span>
+            <span class="line"><span class="ln">2</span>邊按 w 遞增排序</span>
+            <span class="line"><span class="ln">3</span><span class="kw">for</span> 每條邊 (u, v)（依序）</span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">if</span> <span class="fn">FIND-SET</span>(u) ≠ <span class="fn">FIND-SET</span>(v)</span>
+            <span class="line"><span class="ln">5</span>    A = A ∪ {(u, v)}；<span class="fn">UNION</span>(u, v)</span>
+            <span class="line"><span class="ln">6</span><span class="kw">return</span> A</span>
+          </div>
+          <div class="ct-note">成本 O(E lg E) = O(E lg V)：排序主導；union-find 那 m 次操作只要 O(m α(n))。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">std::sort(edges.begin(), edges.end(),</span><span class="line">          [](<span class="kw">const</span> Edge&amp; a, <span class="kw">const</span> Edge&amp; b) { <span class="kw">return</span> a.w &lt; b.w; });</span><span class="line"><span class="kw">int</span> total = <span class="num">0</span>;</span><span class="line"><span class="kw">for</span> (<span class="kw">const</span> Edge&amp; e : edges)</span><span class="line">    <span class="kw">if</span> (unite(e.u, e.v)) {   <span class="com">// FIND 不同才 UNION、收邊</span></span><span class="line">        std::cout &lt;&lt; name[e.u] &lt;&lt; <span class="str">"-"</span> &lt;&lt; name[e.v]</span><span class="line">                  &lt;&lt; <span class="str">"("</span> &lt;&lt; e.w &lt;&lt; <span class="str">") "</span>;</span><span class="line">        total += e.w;</span><span class="line">    }</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/mst.cpp，CLRS 圖 21.4）</span><pre>Kruskal MST：g-h(1) c-i(2) f-g(2) a-b(4) c-f(4) c-d(7) a-h(8) d-e(9)
+  總權重 = 37</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 21/mst.py（MIT License）</span></span><span class="line">G = AdjacencyListGraph(<span class="num">9</span>, directed=<span class="kw">False</span>, weighted=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 21.4 的 14 條邊 …</span></span><span class="line">K = kruskal(G)</span><span class="line">get_total_weight(K)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>MST 邊 = {a-b, a-h, c-d, c-f, c-i, d-e, f-g, g-h}
+總權重 = 37</pre></div>
+          <div class="ct-note">官方版內部同樣用 Chapter 19 的 make_set／find_set／union——跨章複用。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 為什麼丟掉 g-i</div>
+    <p>動畫中權重 6 的邊 (g, i) 被跳過。原因是？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。掃到 (g,i) 時，g 與 i 早已透過 c-i、c-f、f-g 連在同一棵樹（FIND-SET 同代表）——再加就成環，生成樹容不下環。Kruskal 丟邊永遠只有這一個理由。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> g 與 i 已在同一集合，加入會成環</div>
+      <div class="quiz-opt" data-correct="false" data-fb="6 不算重——後面權重 7、8、9 的邊都有被收。收不收與絕對權重無關，只看兩端是否已連通。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 權重 6 太重</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Kruskal 不限制頂點度數——那是別的問題（degree-constrained spanning tree）的事。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> g 的度數已滿</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="prim">
+  <div class="section-number">P02 · PRIM</div>
+  <h2>Prim 的正確性：每步都是切割的 light edge <span class="sec-badge">§21.2</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>資結課寫過 Prim：從根開始長一棵樹，priority queue 裡放「樹外頂點連進樹的最便宜邊權 key」。
+      本章補的是<strong>為什麼對</strong>：每次 EXTRACT-MIN 取出的 (v, key[v])，正是切割「樹內 vs 樹外」的
+      light edge——定理 21.1 說它安全。整路都安全，長完就是 MST。</p>
+      <div class="info-box green">
+        <span class="info-label">同一張圖、兩棵 MST</span>
+        圖 21.4 有兩條權重 8 的邊：a-h 與 b-c。我們的實測：<strong>Kruskal 收 a-h</strong>（排序時 a-h 先到、b-c 到時已成環），
+        <strong>從 a 出發的 Prim 收 b-c</strong>（長到 b 時 b-c 先進樹）。兩棵都是 MST、總權重同為 37——
+        平手邊讓 MST 不唯一，呼應 P00 的 quiz。
+      </div>
+      <p>成本：binary heap 版 <strong>O(E lg V)</strong>（E 次 DECREASE-KEY 主導）；Fibonacci heap 可到 O(E + V lg V)（補充頁）。</p>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctPrim">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctPrim','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctPrim','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctPrim','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">MST-PRIM</span>(G, w, r)</div>
+            <span class="line"><span class="ln">1</span>所有 key = ∞；key[r] = 0；全部進 Q</span>
+            <span class="line"><span class="ln">2</span><span class="kw">while</span> Q 非空</span>
+            <span class="line"><span class="ln">3</span>  u = <span class="fn">EXTRACT-MIN</span>(Q)　<span class="com">// 切割的 light edge</span></span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">for</span> v ∈ Adj[u]：<span class="kw">if</span> v ∈ Q <span class="kw">and</span> w(u,v) &lt; key[v]</span>
+            <span class="line"><span class="ln">5</span>    π[v] = u；key[v] = w(u,v)　<span class="com">// DECREASE-KEY</span></span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// lazy deletion 版：不寫 decrease-key，重複入列、出列時過濾</span></span><span class="line">key[<span class="num">0</span>] = <span class="num">0</span>; Q.push({<span class="num">0</span>, <span class="num">0</span>});</span><span class="line"><span class="kw">while</span> (!Q.empty()) {</span><span class="line">    <span class="kw">auto</span> [k, u] = Q.top(); Q.pop();</span><span class="line">    <span class="kw">if</span> (inMST[u]) <span class="kw">continue</span>;      <span class="com">// 過期項目</span></span><span class="line">    inMST[u] = <span class="kw">true</span>; total += k;</span><span class="line">    <span class="kw">for</span> (<span class="kw">auto</span> [v, w] : adj[u])</span><span class="line">        <span class="kw">if</span> (!inMST[v] &amp;&amp; w &lt; key[v]) {</span><span class="line">            key[v] = w; parent[v] = u; Q.push({w, v});</span><span class="line">        }</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（從 a 出發）</span><pre>Prim MST：   a-b(4) b-c(8) c-d(7) d-e(9) c-f(4) f-g(2) g-h(1) c-i(2)
+  總權重 = 37</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 21/mst.py（MIT License）</span></span><span class="line">P = prim(G, <span class="num">0</span>)　<span class="com"># 從頂點 a 出發</span></span><span class="line">get_total_weight(P)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>MST 邊 = {a-b, b-c, c-d, c-f, c-i, d-e, f-g, g-h}
+總權重 = 37</pre></div>
+          <div class="ct-note">官方版用 Chapter 6 的 MinHeapPriorityQueue 做真正的 decrease-key；我們的 C++ 用 lazy deletion——兩種都是 O(E lg V)。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · lazy deletion</div>
+    <p>C++ 版沒寫 decrease-key，同一頂點可能在 priority_queue 裡出現多次。為什麼答案還是對的？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。同頂點的多個項目中，key 最小的那筆一定最先被彈出並定案（inMST = true）；之後彈出的舊項目全被 if (inMST[u]) continue 過濾。堆裡最多 E 筆 → 仍是 O(E lg E) = O(E lg V)。Dijkstra 的 lazy 版同理。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 最小的那筆先出列定案，過期項目被 continue 濾掉</div>
+      <div class="quiz-opt" data-correct="false" data-fb="重複項目確實存在（不是不會發生）——關鍵在它們出列時已「過期」，被 inMST 檢查擋下。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> priority_queue 會自動去除重複</div>
+      <div class="quiz-opt" data-correct="false" data-fb="結果不是近似——lazy deletion 與 decrease-key 版輸出完全相同的 MST，只是空間多用一點。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 答案是近似值，剛好誤差為零</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="bellman">
+  <div class="section-number">P03 · BELLMAN-FORD</div>
+  <h2>鬆弛與 Bellman-Ford：負權也不怕 <span class="sec-badge">§22.1</span></h2>
+  <p>單源最短路徑的核心動作只有一個：<strong>RELAX(u, v, w)</strong>——若 d[u] + w(u,v) &lt; d[v] 就更新 d[v] 與 π[v]。
+  所有 SSSP 演算法都只是「用什麼順序鬆弛」的差別。Bellman-Ford 最暴力也最寬容：
+  <strong>|V|−1 輪、每輪鬆弛所有邊</strong>，允許負權；再多跑一輪，還能鬆就回報「有負環」。
+  按單步看 CLRS 圖 22.4（含負權邊）逐輪的 d 值：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="adj-list" id="bfTable" style="font-family:'JetBrains Mono',monospace;"></div>
+      <div class="status-banner" id="bfStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」執行一輪（鬆弛全部 10 條邊）。∞ = 尚未觸及。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="bfPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="bfPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="bfPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctBf">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctBf','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctBf','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctBf','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">BELLMAN-FORD</span>(G, w, s)</div>
+            <span class="line"><span class="ln">1</span><span class="fn">INIT</span>：d[s]=0，其餘 ∞</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> |V| − 1</span>
+            <span class="line"><span class="ln">3</span>  <span class="kw">for</span> 每條邊 (u, v)：<span class="fn">RELAX</span>(u, v, w)</span>
+            <span class="line"><span class="ln">4</span><span class="kw">for</span> 每條邊 (u, v)　<span class="com">// 第 |V| 輪：驗收</span></span>
+            <span class="line"><span class="ln">5</span>  <span class="kw">if</span> d[v] &gt; d[u] + w(u,v)：<span class="kw">return</span> <span class="kw">FALSE</span></span>
+            <span class="line"><span class="ln">6</span><span class="kw">return</span> <span class="kw">TRUE</span>　<span class="com">// 無負環，d = δ</span></span>
+          </div>
+          <div class="ct-note">成本 O(VE)。比 Dijkstra 慢，換來兩個超能力：負權沒問題、能偵測負環。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> round = <span class="num">1</span>; round &lt;= <span class="num">4</span>; ++round)   <span class="com">// |V|-1 輪</span></span><span class="line">    <span class="kw">for</span> (<span class="kw">const</span> Edge&amp; e : E)</span><span class="line">        <span class="kw">if</span> (d[e.u] != INF &amp;&amp; d[e.u] + e.w &lt; d[e.v])</span><span class="line">            d[e.v] = d[e.u] + e.w;      <span class="com">// RELAX</span></span><span class="line"><span class="kw">bool</span> ok = <span class="kw">true</span>;                  <span class="com">// 第 |V| 輪：還能鬆 = 負環</span></span><span class="line"><span class="kw">for</span> (<span class="kw">const</span> Edge&amp; e : E)</span><span class="line">    <span class="kw">if</span> (d[e.u] != INF &amp;&amp; d[e.u] + e.w &lt; d[e.v]) ok = <span class="kw">false</span>;</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/sssp.cpp，CLRS 圖 22.4）</span><pre>Bellman-Ford（源點 s）回傳 TRUE：s:0 t:2 x:4 y:7 z:-2</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 22/bellman_ford.py（MIT License）</span></span><span class="line">B = AdjacencyListGraph(<span class="num">5</span>, directed=<span class="kw">True</span>, weighted=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 22.4 …</span></span><span class="line">d, pi, no_neg_cycle = bellman_ford(B, <span class="num">0</span>)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出（s t x y z）</span><pre>d = [0, 2, 4, 7, -2]，no_neg_cycle = True</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 為什麼 |V|−1 輪就夠</div>
+    <p>Bellman-Ford 跑恰好 |V|−1 輪的理由是？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。無負環時最短路徑必是簡單路徑，至多 |V|−1 條邊。路徑鬆弛性質：只要 p 的邊按順序各被鬆過一次（中間夾其他鬆弛也無妨），d[終點] 就定案。第 i 輪全邊鬆弛保證「≤ i 條邊的最短路徑」全部到位 → |V|−1 輪蓋掉所有可能長度。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 最短路徑至多 |V|−1 條邊；第 i 輪後「用 ≤ i 條邊」的最短路已正確</div>
+      <div class="quiz-opt" data-correct="false" data-fb="輪數和邊數無關——每「輪」本來就掃過全部 E 條邊，總成本才是 O(VE)。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 因為邊數上限是 |V|−1</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Bellman-Ford 不猜也不隨機——輪數是由「簡單路徑長度上限」推出的確定保證。動畫裡第 4 輪其實已無變化，提前收斂是常態，但保證需要 |V|−1。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 經驗上跑這麼多輪通常會收斂</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="dijkstra">
+  <div class="section-number">P04 · DIJKSTRA</div>
+  <h2>Dijkstra 的證明：貪婪為什麼能定案 <span class="sec-badge">§22.3</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>非負權時可以貪婪加速：像 Prim 一樣用 min-priority queue，每次取出 <strong>d 最小的未定案頂點 u</strong>，
+      宣布 d[u] 定案（塗黑），再鬆弛它的出邊。成本 O((V+E) lg V)，海放 Bellman-Ford 的 O(VE)。</p>
+      <div class="thm-box proof">
+        <div class="thm-label">正確性不變量（定理 22.6）</div>
+        <div style="font-size:.86rem;line-height:1.7;">
+        取出 u 的當下 d[u] = δ(s,u)。反證：若有更短路徑 p，它必先穿出「已定案集合 S」——設跨出點為 y（前驅 x ∈ S）。
+        x 定案時鬆過 (x,y) ⟹ d[y] = δ(s,y)；<strong>權重非負</strong> ⟹ δ(s,y) ≤ δ(s,u) &lt; d[u]，
+        那 queue 該先彈 y 而不是 u，矛盾。∎</div>
+      </div>
+      <div class="warn-box">
+        <div class="wb-title">⚠ 負權為什麼會壞</div>
+        證明用了「路徑越走越長」（w ≥ 0）。反例：s→a 權 1、s→b 權 2、b→a 權 −2。
+        Dijkstra 先定案 a（d=1），之後才發現 s→b→a 只要 0——但 a 已定案不回頭，輸出錯的 1。
+        負權請回頭找 Bellman-Ford；有負環時「最短」根本無定義（繞一圈更短，繞到 −∞）。
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctDij">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctDij','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctDij','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctDij','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">DIJKSTRA</span>(G, w, s)</div>
+            <span class="line"><span class="ln">1</span><span class="fn">INIT</span>：d[s]=0，其餘 ∞；S = ∅；全部進 Q</span>
+            <span class="line"><span class="ln">2</span><span class="kw">while</span> Q 非空</span>
+            <span class="line"><span class="ln">3</span>  u = <span class="fn">EXTRACT-MIN</span>(Q)；S = S ∪ {u}　<span class="com">// 定案</span></span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">for</span> v ∈ Adj[u]：<span class="fn">RELAX</span>(u, v, w)</span>
+          </div>
+          <div class="ct-note">和 Prim 幾乎同款——差在比較的量：Prim 比「單邊權 key」，Dijkstra 比「從 s 出發的累積距離 d」。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">dist[s] = <span class="num">0</span>; Q.push({<span class="num">0</span>, s});</span><span class="line"><span class="kw">while</span> (!Q.empty()) {</span><span class="line">    <span class="kw">auto</span> [du, u] = Q.top(); Q.pop();</span><span class="line">    <span class="kw">if</span> (du &gt; dist[u]) <span class="kw">continue</span>;   <span class="com">// 過期項目跳過</span></span><span class="line">    <span class="kw">for</span> (<span class="kw">auto</span> [v, w] : adj[u])</span><span class="line">        <span class="kw">if</span> (dist[u] + w &lt; dist[v]) {</span><span class="line">            dist[v] = dist[u] + w; Q.push({dist[v], v});</span><span class="line">        }</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/sssp.cpp，CLRS 圖 22.6）</span><pre>Dijkstra（源點 s）：s:0 t:8 x:9 y:5 z:7</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 22/dijkstra.py（MIT License）</span></span><span class="line">D = AdjacencyListGraph(<span class="num">5</span>, directed=<span class="kw">True</span>, weighted=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 22.6 …</span></span><span class="line">d, pi = dijkstra(D, <span class="num">0</span>)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出（s t x y z）</span><pre>d = [0, 8, 9, 5, 7]</pre></div>
+          <div class="ct-note">官方版用 MinHeapPriorityQueue 的 decrease_key；輸出與 C++ lazy 版一致。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 選演算法</div>
+    <p>圖有少量負權邊（但確定無負環），要單源最短路徑。用哪個？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。負權一出現，Dijkstra 的「定案不回頭」立刻失效（見反例）；Bellman-Ford 的 O(VE) 是為負權付的保險費。無負環的前提下它保證收斂到正確 δ。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> Bellman-Ford</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「少量」也不行——一條負權邊就足以做出反例。Dijkstra 的正確性證明整段依賴 w ≥ 0。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> Dijkstra（負邊不多沒關係）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="把所有邊權加常數 c 會改變答案：邊數多的路徑被加得比較多，最短路徑可能換人——這是經典陷阱（習題 22.1-4 的精神）。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 全部邊權加一個常數變非負，再跑 Dijkstra</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="apsp">
+  <div class="section-number">P05 · FLOYD-WARSHALL</div>
+  <h2>APSP：Floyd-Warshall，DP 回到圖上 <span class="sec-badge">§23.2</span></h2>
+  <p>要「所有點對」的最短路徑，可以跑 V 次 SSSP；但 Floyd-Warshall 用一個漂亮的 DP 一次全解。
+  子問題定義是精髓（Ch14 四步驟的第 1 步）：</p>
+  <div class="info-box purple">
+    <span class="info-label">子問題：中繼點受限的最短路徑</span>
+    d<sub>ij</sub><sup>(k)</sup> = 「中繼頂點只准用 {1, …, k}」時 i→j 的最短路徑權重。<br>
+    遞迴：d<sub>ij</sub><sup>(k)</sup> = min( d<sub>ij</sub><sup>(k−1)</sup>，d<sub>ik</sub><sup>(k−1)</sup> + d<sub>kj</sub><sup>(k−1)</sup> )
+    ——「不經過 k」對上「經過 k（進 k 一段＋出 k 一段）」。<br>
+    k 從 0 疊到 n：三層迴圈、O(V³)、五行寫完。允許負權（不允許負環）。
+  </div>
+  <div class="code-tabs" id="ctFw">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctFw','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctFw','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctFw','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">FLOYD-WARSHALL</span>(W, n)</div>
+        <span class="line"><span class="ln">1</span>D = W　<span class="com">// 直達邊權矩陣，對角 0</span></span>
+        <span class="line"><span class="ln">2</span><span class="kw">for</span> k = 1 <span class="kw">to</span> n</span>
+        <span class="line"><span class="ln">3</span>  <span class="kw">for</span> i = 1 <span class="kw">to</span> n</span>
+        <span class="line"><span class="ln">4</span>    <span class="kw">for</span> j = 1 <span class="kw">to</span> n</span>
+        <span class="line"><span class="ln">5</span>      d<sub>ij</sub> = min(d<sub>ij</sub>, d<sub>ik</sub> + d<sub>kj</sub>)</span>
+      </div>
+      <div class="ct-note">可以就地更新單一矩陣：第 k 回合中 d<sub>ik</sub>、d<sub>kj</sub> 不會被這回合改動（經過 k 兩次沒有好處），習題 23.2-4。</div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> k = <span class="num">0</span>; k &lt; n; ++k)      <span class="com">// 中繼點只能用 {1..k}</span></span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; ++i)</span><span class="line">        <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; n; ++j)</span><span class="line">            <span class="kw">if</span> (d[i][k] &lt; INF &amp;&amp; d[k][j] &lt; INF)</span><span class="line">                d[i][j] = std::min(d[i][j], d[i][k] + d[k][j]);</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/floyd_warshall.cpp，CLRS 圖 23.1 → 圖 23.4 的 D⁽⁵⁾）</span><pre>D（所有點對最短路徑權重）：
+   0   1  -3   2  -4
+   3   0  -4   1  -1
+   7   4   0   5   3
+   2  -1  -5   0  -2
+   8   5   1   6   0</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 23/floyd_warshall.py（MIT License）</span></span><span class="line">W = np.array([[<span class="num">0</span>,<span class="num">3</span>,<span class="num">8</span>,inf,-<span class="num">4</span>], [inf,<span class="num">0</span>,inf,<span class="num">1</span>,<span class="num">7</span>], [inf,<span class="num">4</span>,<span class="num">0</span>,inf,inf],</span><span class="line">              [<span class="num">2</span>,inf,-<span class="num">5</span>,<span class="num">0</span>,inf], [inf,inf,inf,<span class="num">6</span>,<span class="num">0</span>]])</span><span class="line">D = floyd_warshall(W, <span class="num">5</span>)</span></div>
+      <div class="expected-out"><span class="eo-tag">輸出</span><pre>[[ 0  1 -3  2 -4]
+ [ 3  0 -4  1 -1]
+ [ 7  4  0  5  3]
+ [ 2 -1 -5  0 -2]
+ [ 8  5  1  6  0]]</pre></div>
+      <div class="ct-note">另一條 APSP 路線：Johnson 演算法（Bellman-Ford 重賦權 + V 次 Dijkstra），稀疏圖 O(VE + V² lg V) 更快——官方 johnson.py。</div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05 · 子問題的意義</div>
+    <p>Floyd-Warshall 中 d<sub>ij</sub><sup>(k)</sup> 的正確解讀是？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="false" data-fb="路徑長度（邊數）受限的是另一個 DP（矩陣乘法觀點的 extend-shortest-paths，§23.1）——那個是 O(V⁴)／O(V³ lg V)。FW 限的是「中繼站的身分」，不是步數。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> i→j 至多走 k 條邊的最短路徑</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。限制的是「中途停靠站」只能是編號 ≤ k 的頂點（起訖點 i、j 不算中繼）。k = 0 就是直達邊，k = n 解禁全部 → 答案。遞迴的兩個分支＝「新開放的 k 用不用」。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 中繼頂點只准用編號 ≤ k 的頂點時，i→j 的最短路徑</div>
+      <div class="quiz-opt" data-correct="false" data-fb="FW 一次算的就是全點對——(i, j) 全組合都在矩陣裡，不是只算到第 k 對。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 前 k 對頂點之間的最短路徑</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+</section>
+
+<section id="maxflow">
+  <div class="section-number">P06 · MAX FLOW</div>
+  <h2>最大流概覽：殘餘網路與增廣路徑 <span class="sec-badge">Ch 24 概覽</span></h2>
+  <p>流網路：邊有<strong>容量</strong>，要從源點 s 灌最多的流到匯點 t（守恆：中間頂點進出相等）。
+  Ford-Fulkerson 方法三個詞就講完：</p>
+  <div class="info-box green">
+    <span class="info-label">FORD-FULKERSON 方法</span>
+    ① <strong>殘餘網路 G<sub>f</sub></strong>：還剩多少容量可推——正向剩 c−f，反向多一條容量 f 的「反悔邊」。<br>
+    ② <strong>增廣路徑</strong>：G<sub>f</sub> 裡 s→t 的任一條路，沿路推「瓶頸」單位的流。<br>
+    ③ 重複到 G<sub>f</sub> 沒有 s→t 路徑為止。用 BFS 找路 = <strong>Edmonds-Karp</strong>，O(VE²) 保證收斂。
+  </div>
+  <div class="thm-box">
+    <div class="thm-label">Max-flow min-cut 定理（定理 24.7）</div>
+    <div style="font-size:.86rem;line-height:1.7;">
+    三件事等價：f 是最大流 ⟺ G<sub>f</sub> 無增廣路徑 ⟺ 存在切割 (S, T) 其容量 = |f|。
+    最大流的值恰等於<strong>最小切割容量</strong>——「瓶頸」的嚴格數學版。下例：切割 ({s,v₁,v₂,v₄}, {v₃,t}) 的容量
+    12 + 7 + 4 = 23，正是最大流。</div>
+  </div>
+  <div class="code-tabs" id="ctFlow">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctFlow','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctFlow','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctFlow','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">FORD-FULKERSON</span>(G, s, t)</div>
+        <span class="line"><span class="ln">1</span>所有邊 f = 0</span>
+        <span class="line"><span class="ln">2</span><span class="kw">while</span> G<sub>f</sub> 存在 s→t 增廣路徑 p</span>
+        <span class="line"><span class="ln">3</span>  c<sub>f</sub>(p) = p 上最小殘餘容量　<span class="com">// 瓶頸</span></span>
+        <span class="line"><span class="ln">4</span>  沿 p 增流 c<sub>f</sub>(p)（反向邊則退流）</span>
+      </div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// Edmonds-Karp：BFS 在殘餘網路找路（cap[u][v] &gt; 0 才能走）</span></span><span class="line"><span class="kw">int</span> f = <span class="num">1e9</span>;   <span class="com">// 瓶頸 = 路徑上最小殘餘容量</span></span><span class="line"><span class="kw">for</span> (<span class="kw">int</span> v = t; v != s; v = parent[v]) f = std::min(f, cap[parent[v]][v]);</span><span class="line"><span class="kw">for</span> (<span class="kw">int</span> v = t; v != s; v = parent[v]) {</span><span class="line">    cap[parent[v]][v] -= f;   <span class="com">// 正向扣</span></span><span class="line">    cap[v][parent[v]] += f;   <span class="com">// 反悔邊加</span></span><span class="line">}</span><span class="line">maxFlow += f;</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/max_flow.cpp，CLRS 圖 24.2 Lucky Puck）</span><pre>增廣路徑：s→v1→v3→t，推 12 單位
+增廣路徑：s→v2→v4→t，推 4 單位
+增廣路徑：s→v2→v4→v3→t，推 7 單位
+最大流 |f*| = 23</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 24/ford_fulkerson.py（MIT License）</span></span><span class="line">G = FlowNetwork(<span class="num">6</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 24.2（容量 16,13,12,4,14,9,20,7,4）…</span></span><span class="line">edmonds_karp(G, <span class="num">0</span>, <span class="num">5</span>)</span></div>
+      <div class="expected-out"><span class="eo-tag">輸出</span><pre>23</pre></div>
+      <div class="ct-note">應用：二分圖最大匹配可化約成最大流（官方 maximum_bipartite_matching.py）——「化約」正是下一章 NP 的主角。</div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P06 · 反悔邊的角色</div>
+    <p>殘餘網路裡的反向邊（容量 = 目前流量 f）是做什麼用的？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。反向邊允許後續的增廣路徑「退掉」先前不理想的流量分配——上例第三條路 s→v2→v4→v3→t 就走了 v4→v3，等於把 v4 原本要直送 t 的流改道。沒有反悔機制，貪婪推流可能卡在非最大流。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> 讓後續路徑能「退流改道」，修正先前的分配</div>
+      <div class="quiz-opt" data-correct="false" data-fb="反向邊不是實體管線——它是「可以反悔多少」的帳目。實際網路裡不存在那條邊。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> 表示網路裡真的有一條反向管線</div>
+      <div class="quiz-opt" data-correct="false" data-fb="偵測負環是 Bellman-Ford 的事；max flow 的圖沒有負權概念（容量非負）。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 用來偵測負環</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>組合拳</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 應用選型</div>
+    <p>電信公司要用最少的光纖總長度把 50 個機房全部連通。用哪個工具？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。「全部連通＋總長最小」正是 MST 的定義——Kruskal 或 Prim 都行，O(E lg V)。注意它不保證任兩機房之間走最短路——那是最短路徑樹的事，兩者常被混淆。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> MST（Kruskal 或 Prim）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Dijkstra 給「單一源點到各處的最短路徑」——它的樹總長通常比 MST 長（它優化的是每條路徑，不是總和）。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> Dijkstra 最短路徑樹</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Floyd-Warshall 算所有點對距離，O(V³)，但算完不會告訴你要鋪哪些線——問題根本不是距離查詢。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> Floyd-Warshall</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 匯率套利</div>
+    <p>給各幣別間匯率 r(u,v)，想偵測「換一圈回來變多」的套利機會。怎麼建模？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。乘積 > 1 ⟺ Σ(−lg r) < 0：取邊權 w = −lg r(u,v)，套利圈變成負權重環——Bellman-Ford 第 |V| 輪還能鬆弛就是它。這是負環偵測最著名的應用（CLRS 習題 22-2 精神）。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> 邊權取 −lg r，用 Bellman-Ford 偵測負環</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Dijkstra 處理不了負權，而且「乘積最大」也不是它的目標函數；取對數轉加法後問題本質是找負環。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 對每個幣別跑 Dijkstra</div>
+      <div class="quiz-opt" data-correct="false" data-fb="MST 連「環」的概念都沒有——生成樹恰好無環，跟套利圈完全對不上。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 建 MST 看剩下的邊</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章速查表</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>演算法</th><th>問題</th><th>成本</th><th>前提</th><th>關鍵機制</th></tr></thead>
+    <tbody>
+      <tr><td>Kruskal</td><td>MST</td><td class="best">O(E lg V)</td><td>連通無向</td><td>排序邊＋union-find 擋環</td></tr>
+      <tr><td>Prim</td><td>MST</td><td class="best">O(E lg V)</td><td>連通無向</td><td>min-heap 挑切割 light edge</td></tr>
+      <tr><td>Bellman-Ford</td><td>SSSP</td><td>O(VE)</td><td>可負權（無負環）</td><td>|V|−1 輪全邊鬆弛＋負環偵測</td></tr>
+      <tr><td>Dijkstra</td><td>SSSP</td><td class="best">O((V+E) lg V)</td><td>w ≥ 0</td><td>貪婪定案＋不變量證明</td></tr>
+      <tr><td>Floyd-Warshall</td><td>APSP</td><td>O(V³)</td><td>可負權（無負環）</td><td>DP：中繼點 ≤ k</td></tr>
+      <tr><td>Edmonds-Karp</td><td>max flow</td><td>O(VE²)</td><td>容量非負</td><td>BFS 增廣＋殘餘網路</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① MST 正確性全靠切割性質：橫跨切割的 light edge 永遠安全（交換論證）。<br>
+    ② Kruskal＝排序＋union-find；Prim＝Dijkstra 的表親（比單邊權，不比累積距離）。<br>
+    ③ 鬆弛是 SSSP 唯一的動作；Bellman-Ford 拿 O(VE) 換負權與負環偵測。<br>
+    ④ Dijkstra 的貪婪靠 w ≥ 0 才能「定案不回頭」。<br>
+    ⑤ Floyd-Warshall：子問題＝「中繼點編號 ≤ k」，三層迴圈 O(V³)。<br>
+    ⑥ max flow：殘餘網路（含反悔邊）＋增廣路徑；max-flow = min-cut。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch8.json · 14 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="graphs1.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">Disjoint Set 與圖的走訪</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="np_approx.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">NP-Completeness 與近似</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 08 章 Minimum Spanning Trees, Shortest Paths &amp; Max Flow（CLRS 4e Ch 21–24）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"最小生成樹（Minimum Spanning Tree）","back":"連通無向帶權圖中，連接所有頂點且邊權總和最小的樹；恰有 |V|−1 條邊。邊權互異時唯一。"},
+  {"front":"切割與輕邊（Cut & Light Edge）","back":"切割 (S, V−S) 把頂點分兩堆；橫跨切割且權重最小的邊叫 light edge。定理 21.1：切割尊重 A 時，light edge 對 A 安全。"},
+  {"front":"安全邊（Safe Edge）","back":"加入後 A 仍是某 MST 子集的邊。泛型 MST 方法＝重複加安全邊；Kruskal 與 Prim 是找安全邊的兩種策略，正確性同出於切割性質。"},
+  {"front":"Kruskal 演算法","back":"邊按權重遞增掃描，FIND-SET 不同才收邊並 UNION（同集合＝成環）。O(E lg E) = O(E lg V)，排序主導；union-find 部分 O(m α(n))。"},
+  {"front":"Prim 演算法","back":"從根長一棵樹，min-priority queue 以 key（連進樹的最便宜邊權）取樹外頂點——每步都是切割的 light edge。Binary heap 版 O(E lg V)。"},
+  {"front":"鬆弛（Relaxation）","back":"RELAX(u,v,w)：若 d[u]+w(u,v) < d[v] 則更新 d[v]、π[v]=u。所有單源最短路徑演算法的唯一核心動作，差別只在鬆弛順序。"},
+  {"front":"Bellman-Ford 演算法","back":"|V|−1 輪、每輪鬆弛全部邊，O(VE)；允許負權。第 |V| 輪仍能鬆弛 ⟹ 回報 FALSE（有負環）。"},
+  {"front":"負權重環（Negative-Weight Cycle）","back":"總權重 < 0 的環。從 s 可達的負環讓「最短路徑」無定義（繞圈到 −∞）。Bellman-Ford 能偵測；應用：匯率套利（邊權取 −lg r）。"},
+  {"front":"路徑鬆弛性質（Path-Relaxation Property）","back":"若最短路徑 p = ⟨v₀,…,v_k⟩ 的邊按順序各被鬆弛一次（中間夾其他鬆弛無妨），則 d[v_k] = δ(s,v_k)。Bellman-Ford 輪數保證的理論根據。"},
+  {"front":"Dijkstra 演算法","back":"w ≥ 0 時的貪婪 SSSP：每次取 d 最小的未定案頂點定案並鬆弛出邊。不變量：取出時 d[u] = δ(s,u)。O((V+E) lg V)。"},
+  {"front":"Floyd-Warshall 演算法","back":"APSP 的 DP：d_ij^(k) = 中繼點限用 {1..k} 的最短路徑；遞迴 min(不經過 k, 經過 k)。三層迴圈 O(V³)，允許負權無負環。"},
+  {"front":"流網路（Flow Network）","back":"邊有容量 c 的有向圖＋源點 s、匯點 t。流需守恆（中間頂點流入=流出）且 0 ≤ f ≤ c；目標最大化 |f| = 離開 s 的淨流量。"},
+  {"front":"殘餘網路與增廣路徑（Residual Network & Augmenting Path）","back":"G_f：正向剩 c−f、反向有容量 f 的反悔邊。增廣路徑 = G_f 中 s→t 的路，可再推「瓶頸」單位的流。BFS 找路 = Edmonds-Karp，O(VE²)。"},
+  {"front":"最大流最小割定理（Max-Flow Min-Cut Theorem）","back":"f 是最大流 ⟺ G_f 無增廣路徑 ⟺ 某切割容量 = |f|。最大流的值等於最小切割容量——瓶頸的數學化。"}
+];
+
+/* ---------- P01 Kruskal 動畫 ---------- */
+function krFrames() {
+  const name = 'abcdefghi';
+  const E = [[0,1,4],[0,7,8],[1,7,11],[1,2,8],[2,8,2],[2,5,4],[2,3,7],
+             [3,5,14],[3,4,9],[4,5,10],[5,6,2],[6,8,6],[6,7,1],[7,8,7]];
+  const order = E.map((e, i) => i).sort((a, b) => E[a][2] - E[b][2] || a - b);
+  const p = [...Array(9).keys()];
+  function find(x) { while (p[x] !== x) x = p[x]; return x; }
+  const decided = [];
+  let total = 0;
+  const frames = [{decided: [], p: [...p], total: 0,
+    msg: '9 個 MAKE-SET 完成。邊已排序：g-h(1) c-i(2) f-g(2) a-b(4) c-f(4) g-i(6) c-d(7) h-i(7) a-h(8) b-c(8) d-e(9) e-f(10) b-h(11) d-f(14)。'}];
+  order.forEach(idx => {
+    const [u, v, w] = E[idx];
+    const ru = find(u), rv = find(v);
+    const label = `${name[u]}-${name[v]}(${w})`;
+    let take = ru !== rv;
+    if (take) { p[rv] = ru; total += w; }
+    decided.push({label, take});
+    frames.push({decided: [...decided], p: [...p], total,
+      msg: take ? `${label}：FIND(${name[u]}) ≠ FIND(${name[v]}) → 收！UNION 合併，累計 ${total}。`
+                : `${label}：兩端已同集合（加了會成環）→ 丟。`});
+  });
+  frames.push({decided: [...decided], p: [...p], total,
+    msg: `完成：收了 8 條邊（|V|−1），MST 總權重 = ${total}。`});
+  return frames;
+}
+function krApply(f) {
+  const name = 'abcdefghi';
+  const el = $('krEdges'); el.innerHTML = '';
+  f.decided.forEach((d, i) => {
+    const t = document.createElement('div');
+    t.className = 'tok' + (d.take ? '' : ' tok-op') + (i === f.decided.length - 1 ? ' tok-new' : '');
+    t.textContent = (d.take ? '✓' : '✗') + d.label;
+    el.appendChild(t);
+  });
+  function find(x) { let g = 0; while (f.p[x] !== x && g++ < 20) x = f.p[x]; return x; }
+  const groups = {};
+  for (let v = 0; v < 9; v++) {
+    const r = find(v);
+    (groups[r] = groups[r] || []).push(name[v]);
+  }
+  const comps = $('krComps'); comps.innerHTML = '';
+  const row = document.createElement('div'); row.className = 'adj-row';
+  row.innerHTML = `<span class="adj-key">元件</span><span class="adj-arrow">→</span>` +
+    Object.values(groups).map(g => `<span class="adj-neighbor">{${g.join(',')}}</span>`).join('');
+  comps.appendChild(row);
+  setStatus('krStatus', f.msg + `（目前總權重 ${f.total}）`);
+}
+const krPlayer = new Player({frames: krFrames(), apply: krApply, delayInput: null});
+krPlayer.reset();
+
+/* ---------- P03 Bellman-Ford 逐輪動畫 ---------- */
+function bfFrames() {
+  const name = 'stxyz';
+  const E = [[0,1,6],[0,3,7],[1,2,5],[1,3,8],[1,4,-4],
+             [2,1,-2],[3,2,-3],[3,4,9],[4,2,7],[4,0,2]];
+  const INF = Infinity;
+  let d = [0, INF, INF, INF, INF];
+  const frames = [{d: [...d], changed: [], round: 0,
+    msg: 'INIT：d[s] = 0，其餘 ∞。接著每輪按固定順序鬆弛全部 10 條邊。'}];
+  for (let round = 1; round <= 4; round++) {
+    const before = [...d];
+    for (const [u, v, w] of E)
+      if (d[u] + w < d[v]) d[v] = d[u] + w;
+    const changed = [];
+    for (let v = 0; v < 5; v++) if (d[v] !== before[v]) changed.push(v);
+    frames.push({d: [...d], changed, round,
+      msg: changed.length
+        ? `第 ${round} 輪：更新了 ${changed.map(v => name[v]).join('、')}——「至多 ${round} 條邊」的最短路徑已全部正確。`
+        : `第 ${round} 輪：無任何更新——其實已提前收斂（保證仍需 |V|−1 = 4 輪）。`});
+  }
+  let ok = true;
+  for (const [u, v, w] of E) if (d[u] + w < d[v]) ok = false;
+  frames.push({d: [...d], changed: [], round: 5,
+    msg: `驗收輪：全部邊都鬆不動 → 回傳 ${ok ? 'TRUE' : 'FALSE'}。最終 δ：t=2（s→y→x→t）、z=−2（s→y→x→t→z，經負權邊 t→z）。`});
+  return frames;
+}
+function bfApply(f) {
+  const name = 'stxyz';
+  const el = $('bfTable'); el.innerHTML = '';
+  const row = document.createElement('div'); row.className = 'adj-row';
+  row.innerHTML = `<span class="adj-key">${f.round === 0 ? 'INIT' : f.round === 5 ? '驗收' : '第' + f.round + '輪'}</span><span class="adj-arrow">d =</span>` +
+    f.d.map((x, v) => `<span class="adj-neighbor"${f.changed.includes(v) ? ' style="background:#f39c12;color:#fff;"' : ''}>${name[v]}:${x === Infinity ? '∞' : x}</span>`).join('');
+  el.appendChild(row);
+  setStatus('bfStatus', f.msg);
+}
+const bfPlayer = new Player({frames: bfFrames(), apply: bfApply, delayInput: null});
+bfPlayer.reset();
+</script>

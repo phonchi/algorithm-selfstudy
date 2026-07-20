@@ -1,0 +1,58 @@
+[
+ {
+  "front": "最小生成樹（Minimum Spanning Tree）",
+  "back": "連通無向帶權圖中，連接所有頂點且邊權總和最小的樹；恰有 |V|−1 條邊。邊權互異時唯一。"
+ },
+ {
+  "front": "切割與輕邊（Cut & Light Edge）",
+  "back": "切割 (S, V−S) 把頂點分兩堆；橫跨切割且權重最小的邊叫 light edge。定理 21.1：切割尊重 A 時，light edge 對 A 安全。"
+ },
+ {
+  "front": "安全邊（Safe Edge）",
+  "back": "加入後 A 仍是某 MST 子集的邊。泛型 MST 方法＝重複加安全邊；Kruskal 與 Prim 是找安全邊的兩種策略，正確性同出於切割性質。"
+ },
+ {
+  "front": "Kruskal 演算法",
+  "back": "邊按權重遞增掃描，FIND-SET 不同才收邊並 UNION（同集合＝成環）。O(E lg E) = O(E lg V)，排序主導；union-find 部分 O(m α(n))。"
+ },
+ {
+  "front": "Prim 演算法",
+  "back": "從根長一棵樹，min-priority queue 以 key（連進樹的最便宜邊權）取樹外頂點——每步都是切割的 light edge。Binary heap 版 O(E lg V)。"
+ },
+ {
+  "front": "鬆弛（Relaxation）",
+  "back": "RELAX(u,v,w)：若 d[u]+w(u,v) < d[v] 則更新 d[v]、π[v]=u。所有單源最短路徑演算法的唯一核心動作，差別只在鬆弛順序。"
+ },
+ {
+  "front": "Bellman-Ford 演算法",
+  "back": "|V|−1 輪、每輪鬆弛全部邊，O(VE)；允許負權。第 |V| 輪仍能鬆弛 ⟹ 回報 FALSE（有負環）。"
+ },
+ {
+  "front": "負權重環（Negative-Weight Cycle）",
+  "back": "總權重 < 0 的環。從 s 可達的負環讓「最短路徑」無定義（繞圈到 −∞）。Bellman-Ford 能偵測；應用：匯率套利（邊權取 −lg r）。"
+ },
+ {
+  "front": "路徑鬆弛性質（Path-Relaxation Property）",
+  "back": "若最短路徑 p = ⟨v₀,…,v_k⟩ 的邊按順序各被鬆弛一次（中間夾其他鬆弛無妨），則 d[v_k] = δ(s,v_k)。Bellman-Ford 輪數保證的理論根據。"
+ },
+ {
+  "front": "Dijkstra 演算法",
+  "back": "w ≥ 0 時的貪婪 SSSP：每次取 d 最小的未定案頂點定案並鬆弛出邊。不變量：取出時 d[u] = δ(s,u)。O((V+E) lg V)。"
+ },
+ {
+  "front": "Floyd-Warshall 演算法",
+  "back": "APSP 的 DP：d_ij^(k) = 中繼點限用 {1..k} 的最短路徑；遞迴 min(不經過 k, 經過 k)。三層迴圈 O(V³)，允許負權無負環。"
+ },
+ {
+  "front": "流網路（Flow Network）",
+  "back": "邊有容量 c 的有向圖＋源點 s、匯點 t。流需守恆（中間頂點流入=流出）且 0 ≤ f ≤ c；目標最大化 |f| = 離開 s 的淨流量。"
+ },
+ {
+  "front": "殘餘網路與增廣路徑（Residual Network & Augmenting Path）",
+  "back": "G_f：正向剩 c−f、反向有容量 f 的反悔邊。增廣路徑 = G_f 中 s→t 的路，可再推「瓶頸」單位的流。BFS 找路 = Edmonds-Karp，O(VE²)。"
+ },
+ {
+  "front": "最大流最小割定理（Max-Flow Min-Cut Theorem）",
+  "back": "f 是最大流 ⟺ G_f 無增廣路徑 ⟺ 某切割容量 = |f|。最大流的值等於最小切割容量——瓶頸的數學化。"
+ }
+]
