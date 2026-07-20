@@ -85,9 +85,10 @@ function renderBoxQueue(containerId, items, opts={}) {
   el.appendChild(rear);
 }
 
-/* floating nav scroll spy */
-(function setupNav() {
+/* floating nav scroll spy（共用 JS 先於 body 載入，等 DOM 齊了再抓元素） */
+document.addEventListener('DOMContentLoaded', function setupNav() {
   const nav = $('floatNav');
+  if (!nav) return;
   const links = nav.querySelectorAll('a[data-target]');
   const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
   function update() {
@@ -98,4 +99,4 @@ function renderBoxQueue(containerId, items, opts={}) {
   }
   window.addEventListener('scroll', update, { passive: true });
   update();
-})();
+});
