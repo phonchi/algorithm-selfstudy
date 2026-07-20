@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>現代主題概覽：ML 演算法與 Metaheuristics — Modern Topics（CLRS Ch33）</title>
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+  --node-white:#ffffff;--node-gray:#bdc3c7;--node-black:#34495e;
+  --node-current:#f39c12;--node-found:#16a085;--node-start:#9b59b6;
+  --edge-default:#95a5a6;--edge-tree:#27ae60;--edge-explore:#f39c12;--edge-mst:#1a6b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+
+/* Hero */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden;background:linear-gradient(170deg,#1a1a2e 0%,#2c3e7a 40%,#1a6b4a 100%);}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0%,transparent 40%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);}
+.hero-content{position:relative;z-index:1;max-width:860px;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#fff;letter-spacing:.04em;line-height:1.3;margin-bottom:1rem;}
+.hero h1 .green{color:#2ecc71;}
+.hero h1 .blue{color:#5dade2;}
+.hero h1 .orange{color:#f39c12;}
+.hero h1 .purple{color:#bb8fce;}
+.hero .subtitle{font-size:clamp(.95rem,2.2vw,1.2rem);color:rgba(255,255,255,.65);font-weight:300;margin-bottom:2rem;}
+.hero .big-formula{color:#2ecc71;background:rgba(0,0,0,.3);padding:.8rem 2rem;border-radius:12px;display:inline-block;border:1px solid rgba(255,255,255,.1);margin-bottom:2rem;backdrop-filter:blur(4px);font-size:1.05rem;}
+.scroll-hint{color:rgba(255,255,255,.4);font-size:.9rem;animation:bounce 2s infinite;}
+.scroll-hint span{display:block;font-size:1.4rem;margin-top:.3rem;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+
+/* Hero mini-graph illustration */
+.hero-graph{position:absolute;right:5%;top:50%;transform:translateY(-50%);opacity:.18;pointer-events:none;}
+@media(max-width:900px){.hero-graph{display:none;}}
+
+/* Layout */
+.container{max-width:1180px;margin:0 auto;padding:3rem 1.5rem;}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;line-height:1.4;}
+h3{font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:var(--accent2);margin:1.4rem 0 .8rem;}
+section{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--card-border);}
+section:last-of-type{border-bottom:none;}
+p{margin-bottom:1rem;}
+code{font-family:'JetBrains Mono',monospace;font-size:.92em;background:rgba(44,62,122,.08);padding:1px 6px;border-radius:4px;color:var(--accent2);}
+strong{color:var(--ink);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0 2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.toc-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.7rem;}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem .8rem;}
+.toc-grid a{color:var(--accent2);text-decoration:none;font-size:.9rem;padding:.3rem 0;display:flex;align-items:center;gap:.4rem;transition:color .2s;}
+.toc-grid a:hover{color:var(--accent);}
+.toc-grid a .toc-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);min-width:34px;}
+
+/* Viz layout */
+.viz-layout{display:grid;grid-template-columns:1fr 320px;gap:1.3rem;margin:1.2rem 0;align-items:start;}
+@media(max-width:900px){.viz-layout{grid-template-columns:1fr;}}
+
+.viz-panel{background:linear-gradient(160deg,#fffdf7 0%,#f4efe3 100%);border:1px solid var(--card-border);border-radius:12px;padding:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06);position:relative;}
+
+/* Graph SVG canvas */
+.graph-canvas{position:relative;width:100%;height:380px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #ececec;}
+.graph-canvas svg{width:100%;height:100%;display:block;}
+
+/* SVG elements styles */
+.graph-edge{stroke:var(--edge-default);stroke-width:2;fill:none;transition:stroke .25s, stroke-width .25s;}
+.graph-edge.tree{stroke:var(--edge-tree);stroke-width:3.5;}
+.graph-edge.exploring{stroke:var(--edge-explore);stroke-width:3.5;stroke-dasharray:5 4;animation:dash 1s linear infinite;}
+.graph-edge.mst{stroke:var(--edge-mst);stroke-width:4;}
+.graph-edge.path{stroke:var(--accent);stroke-width:4;}
+.graph-edge.dotted{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+.edge-label{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;fill:var(--ink);pointer-events:none;}
+.edge-label-bg{fill:#fafafa;stroke:#ececec;stroke-width:1;}
+
+.graph-node{cursor:pointer;}
+.graph-node circle{fill:var(--node-white);stroke:var(--ink);stroke-width:2;transition:fill .25s, stroke .25s, r .2s;}
+.graph-node.gray circle{fill:var(--node-gray);}
+.graph-node.black circle{fill:var(--node-black);stroke:var(--node-black);}
+.graph-node.current circle{fill:var(--node-current);stroke:#d68910;stroke-width:3;}
+.graph-node.start circle{fill:var(--node-start);stroke:#7d3c98;stroke-width:3;}
+.graph-node.found circle{fill:var(--node-found);stroke:#117a65;stroke-width:3;}
+.graph-node.in-mst circle{fill:#82e0aa;stroke:var(--accent3);stroke-width:3;}
+.graph-node text.node-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.graph-node.black text.node-key{fill:#fff;}
+.graph-node.current text.node-key{fill:#fff;}
+.graph-node.start text.node-key{fill:#fff;}
+.graph-node.found text.node-key{fill:#fff;}
+.graph-node text.node-meta{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;fill:var(--accent);text-anchor:middle;pointer-events:none;}
+
+/* Status banner */
+.status-banner{margin-top:.8rem;padding:.7rem 1rem;background:var(--code-bg);color:#fff;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;min-height:42px;display:flex;align-items:center;gap:.6rem;}
+.status-banner .status-icon{color:#2ecc71;font-weight:700;}
+.status-banner .status-text{flex:1;}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--card-border);}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-play{background:var(--accent3);color:#fff;}
+.btn-play:hover{background:#22845c;}
+.btn-play.active{background:var(--accent);}
+.btn-step{background:var(--accent2);color:#fff;}
+.btn-step:hover{background:#1f2e5f;}
+.btn-step:disabled{background:#ccc;cursor:not-allowed;}
+.btn-reset{background:var(--card-border);color:var(--ink);}
+.btn-reset:hover{background:#ccc;}
+.btn-toggle{background:var(--accent2);color:#fff;}
+.btn-toggle:hover{background:#1f2e5f;}
+.btn-toggle.off{background:#bbb;color:#555;}
+.btn-shuffle{background:#8e44ad;color:#fff;}
+.btn-shuffle:hover{background:#6c3485;}
+
+/* Slider row */
+.slider-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:var(--paper);border-radius:8px;margin-bottom:.5rem;}
+.slider-row .slider-label{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent2);font-weight:600;min-width:60px;}
+.slider-row input[type="range"]{flex:1;accent-color:var(--accent3);height:5px;cursor:pointer;}
+.slider-row .slider-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:600;min-width:60px;text-align:right;}
+
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:.85rem;}
+.info-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:.85rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.info-card .ic-title{font-size:.72rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;border-bottom:1px solid var(--card-border);padding-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;}
+.info-card .ic-title .ic-badge{font-size:.7rem;color:#fff;background:var(--accent3);padding:1px 7px;border-radius:3px;letter-spacing:.05em;font-weight:700;}
+.info-card .ic-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.83rem;padding:.2rem 0;}
+.info-card .ic-label{color:var(--muted);}
+.info-card .ic-value{color:var(--ink);font-weight:600;}
+.info-card .ic-value.highlight{color:var(--accent);}
+.info-card .ic-value.big{font-size:1.4rem;color:var(--accent2);}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.4rem;}
+.stat-tile{background:var(--paper);border-radius:8px;padding:.5rem .7rem;text-align:center;}
+.stat-tile .stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.stat-tile .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent2);}
+
+/* Queue / Stack / PQ visualization */
+.ds-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--paper);border-radius:6px;padding:.5rem .7rem;min-height:36px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px dashed var(--card-border);}
+.ds-display .ds-empty{color:var(--muted);font-style:italic;}
+.ds-item{background:var(--accent2);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+.ds-item.front{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.top{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.pq{background:var(--accent3);}
+.ds-item.pq.min{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-arrow{color:var(--muted);}
+
+/* Pseudo code */
+.pseudo-code{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;overflow-x:auto;}
+.pseudo-code .line{padding:1px 4px;border-radius:3px;display:block;white-space:pre;}
+.pseudo-code .line.active{background:rgba(243,156,18,.3);color:#fff;border-left:3px solid var(--node-current);padding-left:6px;}
+.pseudo-code .kw{color:#ff79c6;}
+.pseudo-code .fn{color:#50fa7b;}
+.pseudo-code .num{color:#bd93f9;}
+.pseudo-code .com{color:#6272a4;font-style:italic;}
+.pseudo-code .str{color:#f1fa8c;}
+
+/* Adjacency table */
+.adj-display{margin:.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.adj-matrix{border-collapse:collapse;margin:.5rem auto;}
+.adj-matrix td,.adj-matrix th{border:1px solid var(--card-border);padding:6px 10px;text-align:center;min-width:34px;background:#fff;}
+.adj-matrix th{background:var(--accent2);color:#fff;font-weight:700;}
+.adj-matrix td.zero{color:#ccc;}
+.adj-matrix td.nonzero{background:#eafaf1;color:var(--accent3);font-weight:700;}
+.adj-matrix td.highlight{background:#fff3cd;}
+.adj-list{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:.7rem 1rem;}
+.adj-list .adj-row{padding:3px 0;border-bottom:1px dashed var(--card-border);}
+.adj-list .adj-row:last-child{border-bottom:none;}
+.adj-list .adj-key{color:var(--accent);font-weight:700;display:inline-block;min-width:32px;}
+.adj-list .adj-arrow{color:var(--muted);margin:0 6px;}
+.adj-list .adj-neighbor{background:#eef2ff;color:var(--accent2);padding:1px 8px;border-radius:4px;margin:1px 3px;display:inline-block;font-weight:600;}
+
+/* Chess board for Knight's tour */
+.chess-board{display:grid;background:#fff;border:2px solid var(--ink);border-radius:6px;overflow:hidden;margin:.5rem auto;width:fit-content;}
+.chess-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:700;position:relative;transition:background .2s;}
+.chess-cell.light{background:#f0d9b5;color:#666;}
+.chess-cell.dark{background:#b58863;color:#fff;}
+.chess-cell.visited{background:#27ae60 !important;color:#fff;}
+.chess-cell.current{background:#f39c12 !important;color:#fff;box-shadow:inset 0 0 0 3px #d68910;}
+.chess-cell.start{background:#9b59b6 !important;color:#fff;}
+.chess-cell .knight{font-size:1.4em;line-height:1;}
+.chess-cell .step-num{font-size:.7em;}
+
+/* Info box */
+.info-box{background:#eef2ff;border:2px solid var(--accent2);border-radius:10px;padding:1.1rem 1.4rem;margin:1.3rem 0;position:relative;}
+.info-box .info-label{position:absolute;top:-11px;left:14px;background:var(--accent2);color:#fff;font-size:.74rem;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em;}
+.info-box.warm{background:#fef5e7;border-color:#d68910;}
+.info-box.warm .info-label{background:#d68910;}
+.info-box.green{background:#eafaf1;border-color:var(--accent3);}
+.info-box.green .info-label{background:var(--accent3);}
+.info-box.purple{background:#f4ecf7;border-color:#8e44ad;}
+.info-box.purple .info-label{background:#8e44ad;}
+
+/* Pill labels */
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:4px;margin:0 .15rem;vertical-align:1px;}
+.pill-blue{background:rgba(41,128,185,.12);color:#2980b9;border:1px solid rgba(41,128,185,.3);}
+.pill-red{background:rgba(192,57,43,.12);color:var(--accent);border:1px solid rgba(192,57,43,.3);}
+.pill-green{background:rgba(39,174,96,.12);color:var(--accent3);border:1px solid rgba(39,174,96,.3);}
+.pill-orange{background:rgba(243,156,18,.12);color:#d68910;border:1px solid rgba(243,156,18,.3);}
+.pill-purple{background:rgba(142,68,173,.12);color:#8e44ad;border:1px solid rgba(142,68,173,.3);}
+.pill-gray{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid rgba(0,0,0,.12);}
+
+/* Comparison table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.86rem;margin:.8rem 0;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.cmp-table th{background:var(--accent2);color:#fff;padding:.6rem .8rem;text-align:center;font-weight:600;font-size:.82rem;}
+.cmp-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--card-border);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.cmp-table td:first-child{font-family:'Noto Sans TC',sans-serif;color:var(--accent2);font-weight:600;text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:nth-child(even){background:rgba(0,0,0,.015);}
+.cmp-table .best{color:var(--accent3);font-weight:700;}
+.cmp-table .worst{color:var(--accent);font-weight:700;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+.legend-item{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;background:var(--paper);border-radius:5px;}
+.legend-item .lg-swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink);}
+.legend-item .lg-edge{width:18px;height:3px;border-radius:2px;}
+
+/* Quiz */
+.quiz-box{background:var(--card);border:2px solid var(--accent2);border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0;}
+.quiz-box .quiz-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0;}
+.quiz-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;background:var(--paper);border:2px solid var(--card-border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+.quiz-opt:hover{border-color:var(--accent2);}
+.quiz-opt .opt-letter{font-weight:700;color:var(--accent2);min-width:22px;}
+.quiz-opt.correct{background:#eafaf1;border-color:var(--accent3);}
+.quiz-opt.correct .opt-letter{color:var(--accent3);}
+.quiz-opt.wrong{background:#fef5e7;border-color:var(--accent);}
+.quiz-opt.wrong .opt-letter{color:var(--accent);}
+.quiz-feedback{margin-top:.7rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.correct{background:#eafaf1;color:var(--accent3);border-left:4px solid var(--accent3);}
+.quiz-feedback.wrong{background:#fef5e7;color:var(--accent);border-left:4px solid var(--accent);}
+
+/* Floating sidebar navigation */
+.float-nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px;background:rgba(255,253,250,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--card-border);border-radius:12px;padding:10px 7px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-family:'JetBrains Mono',monospace;max-height:88vh;overflow-y:auto;transition:padding .25s ease;}
+.float-nav .fn-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.68rem;color:var(--accent2);text-align:center;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--card-border);max-width:0;overflow:hidden;transition:max-width .25s ease;}
+.float-nav:hover .fn-title{max-width:220px;}
+.float-nav a{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;white-space:nowrap;transition:all .2s ease;border-left:3px solid transparent;}
+.float-nav a .fn-num{font-weight:700;font-size:.66rem;color:var(--muted);letter-spacing:.4px;flex-shrink:0;width:30px;text-align:left;}
+.float-nav a .fn-name{font-family:'Noto Sans TC',sans-serif;font-size:.76rem;font-weight:500;max-width:0;overflow:hidden;transition:max-width .25s ease,padding .25s ease;padding:0;}
+.float-nav:hover a .fn-name{max-width:220px;padding-left:2px;}
+.float-nav a:hover{background:var(--card);}
+.float-nav a.active{background:var(--accent2);color:#fff;border-left-color:var(--accent);box-shadow:0 2px 6px rgba(192,57,43,.25);}
+.float-nav a.active .fn-num{color:rgba(255,255,255,.85);}
+.float-nav a.active .fn-name{color:#fff;}
+.float-nav .fn-top{margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);justify-content:center;}
+.float-nav .fn-top .fn-num{width:auto;color:var(--accent2);font-size:.78rem;}
+@media(max-width:768px){
+  .float-nav{right:8px;top:auto;bottom:14px;transform:none;padding:6px 5px;max-height:70vh;}
+  .float-nav .fn-title{display:none;}
+  .float-nav a{padding:4px 7px;}
+  .float-nav a .fn-num{width:26px;font-size:.62rem;}
+}
+
+footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+
+/* Distance / table inside graph viz */
+.vert-table{margin-top:.6rem;width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.vert-table th,.vert-table td{padding:4px 6px;text-align:center;border:1px solid var(--card-border);}
+.vert-table th{background:var(--accent2);color:#fff;font-weight:600;font-size:.74rem;}
+.vert-table td.tcell-current{background:#fff3cd;font-weight:700;color:var(--accent);}
+.vert-table td.tcell-done{background:#eafaf1;color:var(--accent3);}
+.vert-table td.tcell-inf{color:#ccc;}
+.sec-badge{font-size:.6em;color:var(--muted);border:1px solid var(--card-border);background:var(--card);padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:.6rem;font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.02em;white-space:nowrap;}
+
+/* Phase 8 shared widgets */
+.bs-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:4px;min-height:180px;justify-content:flex-start;padding:.6rem;}
+.bs-item{width:110px;text-align:center;padding:.4rem .6rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.bs-hl{background:#f39c12;}
+.bs-toplabel,.bq-label{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bq-row{display:flex;align-items:center;gap:6px;min-height:64px;flex-wrap:wrap;padding:.4rem;}
+.bq-item{min-width:52px;text-align:center;padding:.45rem .5rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.char-strip{display:flex;gap:3px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;padding:.4rem 0;}
+.char-cell{min-width:30px;text-align:center;padding:.35rem .25rem;border:1px solid var(--card-border);border-radius:5px;background:var(--card);}
+.char-cur{background:#f39c12;color:#fff;border-color:#f39c12;}
+.char-done{background:#e8f5ec;color:#1a6b4a;border-color:#bfe3cd;}
+.char-bad{background:#c0392b;color:#fff;border-color:#c0392b;}
+.token-out{display:flex;gap:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;min-height:40px;padding:.3rem 0;}
+.tok{padding:.3rem .55rem;border-radius:5px;background:#2c3e7a;color:#fff;font-weight:600;}
+.tok-op{background:#8e44ad;}
+.tok-new{outline:3px solid #f39c12;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+<style>
+/* ===== 網站化附加樣式（study-guide / flashcards / chapter-nav）===== */
+.study-guide{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.2rem 1.4rem;margin:0 0 2.2rem;}
+.study-guide .sg-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.5rem;}
+.study-guide p{font-size:.92rem;margin-bottom:.5rem;}
+.study-guide .sg-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.study-guide .sg-links a{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;color:var(--accent2);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .85rem;text-decoration:none;transition:all .2s;}
+.study-guide .sg-links a:hover{background:var(--accent2);color:#fff;}
+.fc-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0 1.2rem;}
+.fc-controls button{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:1px solid var(--card-border);cursor:pointer;background:var(--card);color:var(--ink);transition:all .2s;}
+.fc-controls button:hover{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:.9rem;}
+.fc-card{perspective:900px;height:170px;cursor:pointer;}
+.fc-card .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+.fc-card .fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.9rem;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.fc-card .fc-front{background:linear-gradient(150deg,var(--accent2),var(--ink));color:#fff;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;letter-spacing:.02em;flex-direction:column;gap:.4rem;}
+.fc-card .fc-front .fc-hint{font-size:.62rem;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.1em;}
+.fc-card .fc-back{background:var(--card);border:2px solid var(--accent3);color:var(--ink);font-size:.78rem;line-height:1.55;transform:rotateY(180deg);overflow-y:auto;}
+.chapter-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:stretch;margin:2.5rem 0 1rem;}
+.chapter-nav a{display:block;border:1px solid var(--card-border);border-radius:12px;padding:.8rem 1.1rem;text-decoration:none;color:var(--ink);background:var(--card);transition:all .2s;}
+.chapter-nav a:hover{border-color:var(--accent2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.chapter-nav .nav-dir{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.2rem;}
+.chapter-nav .nav-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.95rem;color:var(--accent2);}
+.chapter-nav a.next{text-align:right;}
+.chapter-nav a.home{display:flex;flex-direction:column;justify-content:center;text-align:center;}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr;}}
+</style>
+<style>
+/* ===== 講義範例卡 ===== */
+.deck-extra{margin:1.2rem 0;}
+.deck-extra .dx-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:.4rem;}
+.deck-extra .dx-note{font-size:.9rem;margin-top:.6rem;}
+.expected-out{background:var(--card);border:1px solid var(--card-border);border-left:4px solid var(--accent3);border-radius:0 8px 8px 0;padding:.5rem .9rem;margin-top:.5rem;}
+.expected-out .eo-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--accent3);display:block;margin-bottom:.2rem;}
+.expected-out pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre-wrap;margin:0;}
+.warn-box{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.25);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem 1rem;margin:.8rem 0;font-size:.9rem;}
+.warn-box b{color:var(--accent);}
+</style>
+<style>
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
+</style>
+</head>
+<body>
+<script>
+/* ============ shared utilities ============ */
+const $ = id => document.getElementById(id);
+
+function quizCheck(quizId, optEl) {
+  const isCorrect = optEl.dataset.correct === 'true';
+  optEl.parentElement.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct','wrong'));
+  optEl.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = $(quizId + 'Feedback');
+  fb.classList.remove('correct','wrong');
+  fb.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  fb.innerHTML = (isCorrect ? '<strong>正確 ✓</strong> ' : '<strong>不對 ✗</strong> ') + (optEl.dataset.fb || '');
+}
+
+function hlLine(rootId, n) {
+  const root = $(rootId);
+  if (!root) return;
+  root.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+  if (n != null) {
+    const line = root.querySelector(`.line[data-l="${n}"]`);
+    if (line) line.classList.add('active');
+  }
+}
+
+/* step player: frames = [{...}], apply(frame) renders */
+class Player {
+  constructor({frames, apply, delayInput, onDone}) {
+    this.frames = frames; this.apply = apply;
+    this.delayInput = delayInput; this.i = -1; this.timer = null;
+    this.onDone = onDone || (()=>{});
+  }
+  step() {
+    if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+    this.i += 1; this.apply(this.frames[this.i]);
+  }
+  play() {
+    this.stop();
+    const tick = () => {
+      if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+      this.step();
+      this.timer = setTimeout(tick, this.delayInput ? parseInt(this.delayInput.value,10) : 700);
+    };
+    tick();
+  }
+  stop() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  reset() { this.stop(); this.i = -1; if (this.frames.length) this.apply(this.frames[0]); }
+}
+
+function setStatus(id, html) {
+  const el = $(id); if (el) el.querySelector('.status-text').innerHTML = html;
+}
+
+/* vertical box stack renderer (DOM) */
+function renderBoxStack(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  const hl = opts.highlight ?? -1;   // index from top (0 = top)
+  el.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bs-toplabel';
+  label.textContent = items.length ? 'top ↓' : '(empty)';
+  el.appendChild(label);
+  items.slice().reverse().forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bs-item' + (idx === hl ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+
+/* horizontal queue renderer: front at left */
+function renderBoxQueue(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  el.innerHTML = '';
+  const front = document.createElement('div');
+  front.className = 'bq-label'; front.textContent = items.length ? 'front →' : '(empty)';
+  el.appendChild(front);
+  items.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item' + (idx === (opts.highlight ?? -1) ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  const rear = document.createElement('div');
+  rear.className = 'bq-label'; rear.textContent = items.length ? '← rear' : '';
+  el.appendChild(rear);
+}
+
+/* floating nav scroll spy（共用 JS 先於 body 載入，等 DOM 齊了再抓元素） */
+document.addEventListener('DOMContentLoaded', function setupNav() {
+  const nav = $('floatNav');
+  if (!nav) return;
+  const links = nav.querySelectorAll('a[data-target]');
+  const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
+  function update() {
+    const y = window.scrollY + window.innerHeight * 0.3;
+    let active = sections[0]?.id;
+    for (const s of sections) if (s.offsetTop <= y) active = s.id;
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+});
+</script>
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#kmeans" data-target="kmeans"><span class="fn-num">P00</span><span class="fn-name">k-means</span></a>
+  <a href="#gd" data-target="gd"><span class="fn-num">P01</span><span class="fn-name">梯度下降</span></a>
+  <a href="#weights" data-target="weights"><span class="fn-num">P02</span><span class="fn-name">乘法權重</span></a>
+  <a href="#meta" data-target="meta"><span class="fn-num">P03</span><span class="fn-name">metaheuristics</span></a>
+  <a href="#aco" data-target="aco"><span class="fn-num">P04</span><span class="fn-name">ACO × TSP</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="purple">現代主題</span>概覽：<span class="green">ML 演算法與 metaheuristics</span></h1>
+    <div class="subtitle">第 10 章 — Machine-Learning Algorithms &amp; Metaheuristics（CLRS 4e Ch 33＋課程 TSP 作業線）</div>
+    <div class="big-formula">k-means｜梯度下降｜學習率｜乘法權重｜模擬退火｜ACO 費洛蒙</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 33＋概覽週）</div>
+  <p>① 這是概覽週：CLRS 4e 新收的 Ch33 說明「機器學習裡的演算法長什麼樣」——與前面最大的差異是<strong>放棄最壞情況保證</strong>，換取大規模問題上的實用性能。
+  ② k-means 與梯度下降是現代 ML 的兩塊地基，務必動手跑一次互動動畫。
+  ③ metaheuristics 一節直通<strong>課程 TSP 四連作業</strong>：窮舉 → 貪婪 → Held-Karp DP → ACO——每個方法都是前面章節思想的化身。
+  ④ 對照上一章：近似演算法「有證明的保證」、metaheuristic「無保證但常常很好」——兩者的分野是考點。
+  ⑤ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#kmeans"><span class="toc-num">P00</span>k-means 分群</a>
+    <a href="#gd"><span class="toc-num">P01</span>梯度下降與學習率</a>
+    <a href="#weights"><span class="toc-num">P02</span>乘法權重（專家建議）</a>
+    <a href="#meta"><span class="toc-num">P03</span>metaheuristics 地圖</a>
+    <a href="#aco"><span class="toc-num">P04</span>ACO × TSP（作業主線）</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="kmeans">
+  <div class="section-number">P00 · K-MEANS</div>
+  <h2>k-means：兩步迭代的分群引擎 <span class="sec-badge">§33.1</span></h2>
+  <p>把 n 個點分成 k 群，最小化「各點到所屬群中心的距離平方和」。精確解是 NP-hard；
+  Lloyd 演算法用兩步迭代逼近：<strong>指派步</strong>（每點歸最近中心）⇄ <strong>更新步</strong>（中心移到群平均）。
+  按單步看 8 個點、k = 2：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <svg id="kmSvg" viewBox="0 0 320 260" style="width:100%;max-width:420px;background:rgba(255,255,255,.03);border-radius:10px;"></svg>
+      <div class="status-banner" id="kmStatus"><span class="status-icon">▸</span><span class="status-text">初始中心＝前兩個點（故意選很爛的初始）。按「單步」。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="kmPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="kmPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="kmPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctKm">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctKm','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctKm','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctKm','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">K-MEANS</span>(P, k)（Lloyd）</div>
+            <span class="line"><span class="ln">1</span>任選 k 個初始中心</span>
+            <span class="line"><span class="ln">2</span><span class="kw">repeat</span></span>
+            <span class="line"><span class="ln">3</span>  指派：每點歸最近的中心</span>
+            <span class="line"><span class="ln">4</span>  更新：每個中心 = 該群平均</span>
+            <span class="line"><span class="ln">5</span><span class="kw">until</span> 指派不再變動</span>
+          </div>
+          <div class="ct-note">兩步都不會讓目標函數變大 ⟹ 必收斂；但收斂點是<strong>局部</strong>最佳，跟初始中心有關（實務跑多組初始取最好，k-means++ 改進初始化）。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; ++i) {          <span class="com">// 指派步</span></span><span class="line">    <span class="kw">int</span> best = <span class="num">0</span>; <span class="kw">double</span> bd = <span class="num">1e18</span>;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; k; ++j) { <span class="com">/* 最近中心 */</span> }</span><span class="line">    assign[i] = best;</span><span class="line">}</span><span class="line"><span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; k; ++j)              <span class="com">// 更新步</span></span><span class="line">    c[j] = 群 j 的座標平均;</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/modern/kmeans.cpp）</span><pre>iter 1：分群 01111111，中心 (1, 1) (4.28571, 4)
+iter 2：分群 00001111，中心 (1.375, 1.625) (6.375, 5.625)
+iter 3：分群 00001111，中心 (1.375, 1.625) (6.375, 5.625)
+指派不再變動，收斂。</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 自寫簡例（Ch33 官方 clrsPython 無程式）</span></span><span class="line"><span class="kw">for</span> it <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">11</span>):</span><span class="line">    assign = [min(range(k), key=<span class="kw">lambda</span> j: hypot(p[<span class="num">0</span>]-c[j][<span class="num">0</span>], p[<span class="num">1</span>]-c[j][<span class="num">1</span>]))</span><span class="line">              <span class="kw">for</span> p <span class="kw">in</span> P]</span><span class="line">    c = [群 j 平均 <span class="kw">for</span> j <span class="kw">in</span> range(k)]</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>iter 1 [0, 1, 1, 1, 1, 1, 1, 1] [(1.0, 1.0), (4.286, 4.0)]
+iter 2 [0, 0, 0, 0, 1, 1, 1, 1] [(1.375, 1.625), (6.375, 5.625)]
+iter 3 [0, 0, 0, 0, 1, 1, 1, 1] （不再變動，收斂）</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · 收斂到哪</div>
+    <p>k-means（Lloyd）迭代保證的是？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。指派步與更新步都只會讓「群內平方和」下降或持平，狀態有限 ⟹ 必定收斂；但停在哪個局部最佳由初始中心決定——爛初始能收斂到爛答案。實務：多組隨機初始取最好、或 k-means++ 挑初始。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> 一定收斂，但只到局部最佳，品質看初始中心</div>
+      <div class="quiz-opt" data-correct="false" data-fb="全域最佳的 k-means 分群是 NP-hard——如果 Lloyd 保證全域最佳就 P = NP 了。它只是快又好用的啟發式。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 收斂到全域最佳分群</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不會震盪不停：每步目標函數單調不增、可能的指派只有有限種 ⟹ 有限步內停。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 可能永遠震盪不收斂</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="gd">
+  <div class="section-number">P01 · GRADIENT DESCENT</div>
+  <h2>梯度下降：沿著最陡的下坡走 <span class="sec-badge">§33.3</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>連續參數的最佳化引擎，訓練神經網路的心臟：<strong>x ← x − η·∇f(x)</strong>——
+      往梯度反方向（最陡下坡）走一步，步伐大小由<strong>學習率 η</strong> 控制。
+      凸函數＋合適的 η 保證收斂到全域最小；深度學習的損失面不凸，但它依然是實務首選。</p>
+      <div class="warn-box">
+        <div class="wb-title">⚠ 學習率是雙面刃</div>
+        右邊實測 f(x) = (x−3)² + 2 從 x₀ = −2 出發：<strong>η = 0.1</strong> 穩穩滑向 3；
+        <strong>η = 0.9</strong> 在谷底兩側左右跳但仍收斂（|1−2η| &lt; 1）；
+        <strong>η = 1.1</strong> 每步反而離谷底更遠——發散。η 是 ML 實務中第一個要調的超參數。
+      </div>
+      <p style="font-size:.9rem;color:var(--muted);">大資料集算全梯度太貴時用<strong>隨機梯度下降（SGD）</strong>：每步只抽一小批樣本估計梯度——用雜訊換速度，Ch33.3 的重點應用。</p>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctGd">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctGd','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctGd','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctGd','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">GRADIENT-DESCENT</span>(f, x₀, η, T)</div>
+            <span class="line"><span class="ln">1</span>x = x₀</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> t = 1 <span class="kw">to</span> T</span>
+            <span class="line"><span class="ln">3</span>  x = x − η·∇f(x)</span>
+            <span class="line"><span class="ln">4</span><span class="kw">return</span> x</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">auto</span> df = [](<span class="kw">double</span> x) { <span class="kw">return</span> <span class="num">2</span> * (x - <span class="num">3</span>); };</span><span class="line"><span class="kw">for</span> (<span class="kw">double</span> eta : {<span class="num">0.1</span>, <span class="num">0.9</span>, <span class="num">1.1</span>}) {</span><span class="line">    <span class="kw">double</span> x = -<span class="num">2</span>;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> t = <span class="num">1</span>; t &lt;= <span class="num">30</span>; ++t)</span><span class="line">        x = x - eta * df(x);   <span class="com">// x ← x − η∇f</span></span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/modern/gradient_descent.cpp）</span><pre>η = 0.1：x = -2.0000 → -1.0000 → -0.2000 → 0.4400 → … → 2.9938，f(x) = 2.0000
+η = 0.9：x = -2.0000 → 7.0000 → -0.2000 → 5.5600 → … → 2.9938，f(x) = 2.0000
+η = 1.1：x = -2.0000 → 9.0000 → -4.2000 → 11.6400 → … → -1183.8816，f(x) = 1408689.8588
+η 太小走得慢、剛好收斂快、太大在谷底兩側越盪越遠。</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 自寫簡例</span></span><span class="line">x = -<span class="num">2.0</span></span><span class="line"><span class="kw">for</span> t <span class="kw">in</span> range(<span class="num">30</span>):</span><span class="line">    x = x - <span class="num">0.1</span> * <span class="num">2</span> * (x - <span class="num">3</span>)</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>x = 2.9938，f(x) = 2.0</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 診斷發散</div>
+    <p>訓練時 loss 不降反升、數值越來越大。最可能的原因與對策是？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。η 太大時每步跨過谷底、離最低點越來越遠（實測 η=1.1 三十步就衝到 -1183）——標準對策是調小學習率（或用自適應方法）。這是 ML 工程每天都在做的診斷。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 學習率太大，調小 η</div>
+      <div class="quiz-opt" data-correct="false" data-fb="η 太小的症狀是「降得極慢」，不是爆炸——方向還是往下的，只是步子小。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 學習率太小，調大 η</div>
+      <div class="quiz-opt" data-correct="false" data-fb="局部最佳的症狀是「卡住不動」，不是發散——梯度在局部最小處趨近 0，數值不會爆。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 卡在局部最佳，多跑幾輪就好</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="weights">
+  <div class="section-number">P02 · MULTIPLICATIVE WEIGHTS</div>
+  <h2>乘法權重：聽誰的專家建議 <span class="sec-badge">§33.2</span></h2>
+  <p>每天 N 位專家各給預測，你要當場決定跟誰；事後才知道對錯。
+  <strong>weighted-majority</strong>：每位專家一個權重（初始 1），按<strong>加權多數</strong>做決定；
+  某專家猜錯就把他的權重<strong>乘 1/2</strong>。</p>
+  <div class="thm-box proof">
+    <div class="thm-label">錯誤上界（不需任何統計假設！）</div>
+    <div style="font-size:.86rem;line-height:1.7;">
+    你的總錯誤數 ≤ <strong>2.41·(最佳專家的錯誤數) + O(lg N)</strong>。<br>
+    直覺：你每錯一次，至少一半的權重被砍半 → 總權重掉得快；
+    最佳專家的權重只在他錯時才掉 → 總權重又不能掉太多（≥ 最佳專家的權重）。兩邊夾出上界。
+    把「乘 1/2」改成「乘 (1−ε)」可把常數壓到 (2+ε)，這個框架（multiplicative weights update）
+    在線上學習、賽局、LP 求解裡到處出現。</div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">關鍵詞是「線上（online）」：資料一筆筆到、當場決策不能反悔——與前面「拿到整個輸入再算」的離線世界完全不同的賽制。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 保證的形狀</div>
+    <p>weighted-majority 的錯誤上界厲害在哪？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。上界拿「事後才知道的最佳專家」當基準（competitive/regret 型保證），而且對「任意的、甚至惡意的結果序列」都成立——不需要任何機率假設。這是線上演算法分析的招牌姿勢。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 對任意（甚至對抗性）序列成立，且以事後最佳專家為基準</div>
+      <div class="quiz-opt" data-correct="false" data-fb="它不保證比最佳專家好——上界是最佳專家錯誤數的常數倍加 lg N；「不會比事後冠軍差太多」已經是無假設下能要到的極限。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 保證比最好的專家犯更少錯</div>
+      <div class="quiz-opt" data-correct="false" data-fb="完全不需要獨立同分布假設——這正是它與統計學習的差異：對抗性序列也照樣成立。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 只在專家預測互相獨立時成立</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="meta">
+  <div class="section-number">P03 · METAHEURISTICS</div>
+  <h2>metaheuristics 地圖：無保證但常常很好 <span class="sec-badge">概覽</span></h2>
+  <p>NPC 問題太大、近似比又不夠用時，工程實務的第三條路：<strong>metaheuristic</strong>——
+  通用的搜尋策略框架，不證明品質、靠設計好的「探索 vs 利用」平衡在大空間裡找好解。</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>方法</th><th>靈感</th><th>逃離局部最佳的機制</th></tr></thead>
+    <tbody>
+      <tr><td>hill climbing</td><td>爬山</td><td class="best">沒有——最容易卡住，當 baseline</td></tr>
+      <tr><td>simulated annealing</td><td>金屬退火</td><td>以溫度控制的機率接受「變差的移動」，逐步降溫</td></tr>
+      <tr><td>tabu search</td><td>短期記憶</td><td>禁忌清單擋住走回頭路</td></tr>
+      <tr><td>genetic algorithm</td><td>演化</td><td>族群＋交配＋突變維持多樣性</td></tr>
+      <tr><td>ACO（蟻群）</td><td>螞蟻覓食</td><td>費洛蒙蒸發遺忘舊路＋機率性探索</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box purple" style="margin-top:1rem;">
+    <span class="info-label">課程 TSP 四連作業——一條題目走完整學期</span>
+    同一個 TSP，四種武器輪番上：
+    ① <strong>窮舉</strong> O(n!)——n 稍大就爆炸（複雜度的體感）；
+    ② <strong>貪婪</strong>（最近鄰）——快但無保證（Ch15 的極限）；
+    ③ <strong>Held–Karp DP</strong> O(2ⁿn²)——指數但遠勝窮舉（Ch14 位元 DP 實戰）；
+    ④ <strong>ACO</strong>——大 n 的實務解（本節）。做完你就親手量過「理論 vs 實務」的每一格。
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 分野</div>
+    <p>metaheuristic（如 ACO）與上一章的近似演算法（如 MST 2-近似）最本質的差別是？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。近似演算法附帶可證明的品質保證（ρ 倍以內）；metaheuristic 沒有任何保證——可能找到全域最佳（本頁 ACO 就命中了），也可能很差。工程上常兩者並用：近似解當 baseline 兜底，metaheuristic 往上衝。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 有無「可證明的解品質保證」</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩者通常都是多項式時間（ACO 每輪 O(ants·n²)）——差別不在速度，在保證。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> metaheuristic 比較慢</div>
+      <div class="quiz-opt" data-correct="false" data-fb="隨機性不是本質差別——隨機化的近似演算法也存在（如 MAX-3-CNF 的 7/8 期望近似，§35.4）；分野在「有沒有品質證明」。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> metaheuristic 用隨機數、近似演算法不用</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="aco">
+  <div class="section-number">P04 · ACO × TSP</div>
+  <h2>蟻群演算法：費洛蒙上的集體智慧 <span class="sec-badge">作業主線</span></h2>
+  <p>每隻螞蟻用機率走一圈 TSP：選下一城的機率 ∝ <strong>τ<sup>α</sup>·(1/d)<sup>β</sup></strong>
+  （τ = 費洛蒙、1/d = 能見度）。全部走完後：費洛蒙先<strong>蒸發</strong>（×(1−ρ)），
+  再讓每隻螞蟻在走過的邊<strong>沉積 Q/成本</strong>——短導覽留味濃。好路越走越香、爛路自然淡忘。
+  按單步看 8 城（與上一章 TSP 同一組點）、每輪 8 隻螞蟻：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <svg id="acoSvg" viewBox="0 0 320 260" style="width:100%;max-width:420px;background:rgba(255,255,255,.03);border-radius:10px;"></svg>
+      <div class="status-banner" id="acoStatus"><span class="status-icon">▸</span><span class="status-text">初始：所有邊費洛蒙 τ = 1（一樣粗）。按「單步」跑一輪（8 隻螞蟻）。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="acoPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="acoPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="acoPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctAco">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctAco','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctAco','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctAco','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">ACO-TSP</span>（每輪）</div>
+            <span class="line"><span class="ln">1</span><span class="kw">for</span> 每隻螞蟻：從起點逐城移動</span>
+            <span class="line"><span class="ln">2</span>  P(v) ∝ τ(u,v)<sup>α</sup> · (1/d(u,v))<sup>β</sup></span>
+            <span class="line"><span class="ln">3</span>全部 τ ← (1−ρ)·τ　<span class="com">// 蒸發</span></span>
+            <span class="line"><span class="ln">4</span><span class="kw">for</span> 每隻螞蟻的導覽（成本 c）</span>
+            <span class="line"><span class="ln">5</span>  走過的每條邊 τ += Q/c　<span class="com">// 沉積</span></span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// 機率輪盤選下一城</span></span><span class="line">w[v] = std::pow(tau[u][v], alpha)</span><span class="line">     * std::pow(<span class="num">1.0</span> / dist(u, v), beta);</span><span class="line"><span class="com">// 蒸發＋沉積</span></span><span class="line"><span class="kw">for</span> (<span class="kw">auto</span>&amp; row : tau) <span class="kw">for</span> (<span class="kw">double</span>&amp; t : row) t *= (<span class="num">1</span> - rho);</span><span class="line">tau[u][v] += Q / c; tau[v][u] += Q / c;</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/modern/aco_tsp.cpp，LCG seed=42）</span><pre>iter 1：目前最佳 = 16.0843
+iter 5：目前最佳 = 14.7148
+iter 40：目前最佳 = 14.7148
+ACO 最佳導覽：cbadegfh，成本 = 14.7148（暴力最佳 14.7148）</pre></div>
+          <div class="ct-note">找到的環 c→b→a→d→e→g→f→h 就是全域最佳環的旋轉＋反向——這組 8 城 ACO 五輪內直接命中最佳解。</div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 自寫簡例（random.seed(3) 重現）</span></span><span class="line">w = [tau[u][v]**alpha * (<span class="num">1</span>/d[u][v])**beta <span class="kw">for</span> v <span class="kw">in</span> cand]</span><span class="line">tour.append(random.choices(cand, w)[<span class="num">0</span>])</span><span class="line"><span class="com"># 蒸發 → 沉積同 C++</span></span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>iter 1 best 19.1553
+iter 5 best 14.7148
+iter 40 best 14.7148
+tour: abchfged cost 14.7148</pre></div>
+          <div class="ct-note">不同語言、不同亂數序，殊途同歸 14.7148——metaheuristic 沒有保證，但這組實例上表現漂亮。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 蒸發的必要性</div>
+    <p>把蒸發拿掉（ρ = 0，費洛蒙只增不減）會發生什麼？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。早期靠運氣走出的次佳路徑會累積費洛蒙、吸引更多螞蟻、又累積更多——正回饋鎖死（早熟收斂），再也探索不出去。蒸發是「遺忘機制」：舊資訊持續衰減，搜尋才保有翻盤空間。探索 vs 利用的平衡是所有 metaheuristic 的靈魂。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 早期的次佳路徑被正回饋鎖死，族群早熟收斂</div>
+      <div class="quiz-opt" data-correct="false" data-fb="方向相反——沒有蒸發不是「找不到路」，而是「太快全押一條路」；τ 只增不減時舊路徑的優勢永不消退。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> 螞蟻永遠隨機亂走，無法收斂</div>
+      <div class="quiz-opt" data-correct="false" data-fb="演算法照樣能跑（機率式選擇仍有效），品質才是受害者——這不是正確性問題，是搜尋動力學問題。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 程式會除以零而當掉</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>組合拳</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 規模決定武器</div>
+    <p>TSP 實例分別有 n = 10、n = 20、n = 1000 三種規模，各用什麼解？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。n=10：9!/2 ≈ 18 萬條，窮舉秒殺（還能拿來驗證其他方法）；n=20：2²⁰×400 ≈ 4×10⁸，Held–Karp 可行而 19! 天文數字；n=1000：只剩近似（有保證兜底）＋ metaheuristic（往上衝）。作業四連正是這條決策樹。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> 窮舉／Held–Karp DP／2-近似＋ACO</div>
+      <div class="quiz-opt" data-correct="false" data-fb="n=1000 跑 Held–Karp 需要 2¹⁰⁰⁰ 級的狀態——DP 的指數在 n≈25 就到頂了。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> 三種規模都用 Held–Karp DP</div>
+      <div class="quiz-opt" data-correct="false" data-fb="n=10 用 ACO 是殺雞用牛刀還不保證最佳——窮舉能直接拿到正解；小規模的精確解也用來當大規模方法的品質對照組。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 三種規模都用 ACO</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 認出引擎</div>
+    <p>「推薦系統每天線上更新：使用者點了 A 沒點 B，模型參數立刻小步調整。」這最接近哪個引擎？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。一筆一筆資料到、每筆做小步參數更新 = 隨機梯度下降（線上學習形態）；「以事後最佳為基準」的分析框架則是乘法權重那套 regret 理論。現代 ML 系統的日常就是這兩個引擎。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> 隨機梯度下降（線上更新）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="k-means 是批次分群——把一堆點分組，不是逐筆更新參數的線上學習。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> k-means</div>
+      <div class="quiz-opt" data-correct="false" data-fb="ACO 解的是組合最佳化（找路徑），不是連續參數的線上調整。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 蟻群演算法</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章速查表</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>方法</th><th>類型</th><th>保證</th><th>典型戰場</th></tr></thead>
+    <tbody>
+      <tr><td>k-means（Lloyd）</td><td>迭代啟發式</td><td>收斂到局部最佳</td><td>分群、向量量化</td></tr>
+      <tr><td>梯度下降／SGD</td><td>一階連續最佳化</td><td class="best">凸函數→全域最小</td><td>訓練 ML 模型</td></tr>
+      <tr><td>乘法權重</td><td>線上學習</td><td class="best">≤ 2.41·最佳專家 + O(lg N)</td><td>專家聚合、賽局、LP</td></tr>
+      <tr><td>simulated annealing／tabu／GA</td><td>metaheuristic</td><td>無</td><td>大型組合最佳化</td></tr>
+      <tr><td>ACO</td><td>metaheuristic</td><td>無</td><td>路徑類問題（TSP、routing）</td></tr>
+      <tr><td>對照：2-近似（Ch35）</td><td>近似演算法</td><td class="best">≤ 2·OPT 有證明</td><td>要品質下限時兜底</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① k-means 兩步迭代目標單調不增 ⟹ 收斂；品質看初始。<br>
+    ② 梯度下降 x ← x − η∇f；η 太大直接發散，太小龜速。<br>
+    ③ 乘法權重：錯了砍半；對任意序列有 regret 型保證。<br>
+    ④ metaheuristic vs 近似演算法 = 無保證 vs 有證明。<br>
+    ⑤ ACO：τ^α·(1/d)^β 輪盤選路；蒸發防早熟、沉積強化好路。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch10.json · 13 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="np_approx.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">NP-Completeness 與近似</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="advanced.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">進階主題（補充）</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 10 章 Machine-Learning Algorithms &amp; Metaheuristics（CLRS 4e Ch 33＋TSP 作業線）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"k-means（Lloyd 演算法）","back":"重複「指派：每點歸最近中心」與「更新：中心=群平均」直到不變。目標＝群內距離平方和；單調不增故必收斂，但只到局部最佳。"},
+  {"front":"k-means 初始化敏感","back":"收斂點由初始中心決定；爛初始→爛分群。實務：多組隨機初始取最好，或 k-means++（依距離平方加權挑初始，有 O(lg k) 期望近似保證）。"},
+  {"front":"梯度下降（Gradient Descent）","back":"x ← x − η·∇f(x)：沿最陡下坡小步走。凸函數＋合適 η 收斂到全域最小；非凸（深度學習）仍是實務首選。"},
+  {"front":"學習率（Learning Rate η）","back":"每步的步伐。太小收斂慢；太大在谷底兩側越盪越遠直接發散（實測 η=1.1 三十步衝到千位數）。ML 第一個要調的超參數。"},
+  {"front":"隨機梯度下降（SGD）","back":"每步只用一小批樣本估計梯度——雜訊換速度，大資料集的標準作法。線上一筆一筆更新的形態就是它。"},
+  {"front":"weighted-majority（乘法權重）","back":"N 位專家各持權重（初始 1），加權多數決策；專家錯→權重×1/2。總錯 ≤ 2.41·最佳專家＋O(lg N)，對任意序列成立。"},
+  {"front":"regret 型保證","back":"以「事後才知道的最佳單一策略」為基準的效能保證——不需統計假設、對對抗性輸入也成立。線上學習的招牌分析。"},
+  {"front":"metaheuristic","back":"通用搜尋策略框架（SA、tabu、GA、ACO…）：多項式時間、無品質保證，靠探索/利用平衡在大空間找好解。與近似演算法的分野＝有無證明。"},
+  {"front":"simulated annealing（模擬退火）","back":"以「溫度」控制接受變差移動的機率、逐步降溫——高溫廣探索、低溫細收斂，藉此逃離局部最佳。"},
+  {"front":"ACO（蟻群最佳化）","back":"螞蟻按 τ^α·(1/d)^β 輪盤選下一城；每輪費洛蒙先蒸發 ×(1−ρ) 再由各導覽沉積 Q/成本。短路留味濃→正回饋強化好路。"},
+  {"front":"費洛蒙蒸發（Evaporation）","back":"τ ← (1−ρ)τ：遺忘機制。沒有它，早期次佳路徑被正回饋鎖死（早熟收斂）；有它，搜尋保有翻盤與探索空間。"},
+  {"front":"探索 vs 利用（Exploration vs Exploitation）","back":"利用＝加碼目前最好的方向；探索＝嘗試未知方向。所有 metaheuristic 的核心平衡：全利用→早熟收斂，全探索→隨機亂走。"},
+  {"front":"TSP 求解工具箱（依 n 選）","back":"n≲12 窮舉 O(n!)；n≲25 Held–Karp DP O(2ⁿn²)；更大→metric 2-近似兜底＋ACO/2-opt 等 metaheuristic 往上衝。課程四連作業的主線。"}
+];
+
+/* ---------- P00 k-means 動畫 ---------- */
+const KM_P = [[1,1],[1.5,2],[2,1.5],[1,2],[6,5],[6.5,6],[7,5.5],[6,6]];
+function kmXY(p) { return [30 + p[0] * 38, 245 - p[1] * 36]; }
+function kmFrames() {
+  const k = 2;
+  let c = [KM_P[0].slice(), KM_P[1].slice()];
+  let assign = new Array(8).fill(-1);
+  const frames = [{c: c.map(x => x.slice()), assign: [...assign],
+    msg: '初始中心 ✕ = 前兩個點（同在左下角——故意的爛初始）。'}];
+  for (let it = 1; it <= 6; it++) {
+    const na = KM_P.map(p => {
+      let b = 0, bd = 1e18;
+      for (let j = 0; j < k; j++) {
+        const d = Math.hypot(p[0] - c[j][0], p[1] - c[j][1]);
+        if (d < bd) { bd = d; b = j; }
+      }
+      return b;
+    });
+    const changed = na.some((v, i) => v !== assign[i]);
+    assign = na;
+    frames.push({c: c.map(x => x.slice()), assign: [...assign],
+      msg: `iter ${it} 指派步：每點塗上最近中心的顏色${changed ? '' : '（沒人換隊——收斂！）'}。`});
+    if (!changed) break;
+    c = [0, 1].map(j => {
+      const pts = KM_P.filter((_, i) => assign[i] === j);
+      return [pts.reduce((s, p) => s + p[0], 0) / pts.length,
+              pts.reduce((s, p) => s + p[1], 0) / pts.length];
+    });
+    frames.push({c: c.map(x => x.slice()), assign: [...assign],
+      msg: `iter ${it} 更新步：中心 ✕ 移到自家群的平均位置。`});
+  }
+  return frames;
+}
+function kmApply(f) {
+  const col = ['#61afef', '#e5c07b'];
+  let s = '';
+  KM_P.forEach((p, i) => {
+    const [x, y] = kmXY(p);
+    s += `<circle cx="${x}" cy="${y}" r="7" fill="${f.assign[i] < 0 ? '#555' : col[f.assign[i]]}" opacity=".85"/>`;
+  });
+  f.c.forEach((cc, j) => {
+    const [x, y] = kmXY(cc);
+    s += `<path d="M${x-7} ${y-7} L${x+7} ${y+7} M${x-7} ${y+7} L${x+7} ${y-7}" stroke="${col[j]}" stroke-width="3.5" fill="none"/>`;
+  });
+  $('kmSvg').innerHTML = s;
+  setStatus('kmStatus', f.msg);
+}
+const kmPlayer = new Player({frames: kmFrames(), apply: kmApply, delayInput: null});
+kmPlayer.reset();
+
+/* ---------- P04 ACO 動畫（費洛蒙粗細＋每輪最佳）---------- */
+const ACO_P = [[1,4],[1,2],[0,1],[3,4],[4,3],[3,2],[5,2],[2,0]];
+const ACO_N = 'abcdefgh';
+function acoXY(i) { return [30 + ACO_P[i][0] * 52, 230 - ACO_P[i][1] * 50]; }
+function mulberry32(a) {
+  return function() {
+    var t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function acoFrames() {
+  const rnd = mulberry32(42);
+  const n = 8, ants = 8, rho = 0.5, Q = 10;
+  const dist = (i, j) => Math.hypot(ACO_P[i][0] - ACO_P[j][0], ACO_P[i][1] - ACO_P[j][1]);
+  let tau = Array.from({length: n}, () => new Array(n).fill(1));
+  let best = Infinity, bestTour = null;
+  const frames = [{tau: tau.map(r => [...r]), best: null, bestTour: null,
+    msg: '初始：全部邊 τ = 1。每輪：8 隻螞蟻各走一圈 → 蒸發 → 沉積。'}];
+  for (let it = 1; it <= 15; it++) {
+    const tours = [];
+    for (let a = 0; a < ants; a++) {
+      const tour = [a % n], vis = new Set(tour);
+      while (tour.length < n) {
+        const u = tour[tour.length - 1];
+        const cand = [], w = [];
+        let tot = 0;
+        for (let v = 0; v < n; v++)
+          if (!vis.has(v)) {
+            const wv = tau[u][v] * Math.pow(1 / dist(u, v), 2);
+            cand.push(v); w.push(wv); tot += wv;
+          }
+        let r = rnd() * tot, pick = cand[cand.length - 1];
+        for (let x = 0; x < cand.length; x++) { r -= w[x]; if (r <= 0) { pick = cand[x]; break; } }
+        tour.push(pick); vis.add(pick);
+      }
+      tours.push(tour);
+    }
+    tau = tau.map(row => row.map(t => t * (1 - rho)));
+    for (const tour of tours) {
+      let c = 0;
+      for (let i = 0; i < n; i++) c += dist(tour[i], tour[(i + 1) % n]);
+      if (c < best) { best = c; bestTour = tour; }
+      for (let i = 0; i < n; i++) {
+        const u = tour[i], v = tour[(i + 1) % n];
+        tau[u][v] += Q / c; tau[v][u] += Q / c;
+      }
+    }
+    frames.push({tau: tau.map(r => [...r]), best, bestTour: [...bestTour],
+      msg: `第 ${it} 輪後：目前最佳 = ${best.toFixed(4)}${best < 14.7149 ? '（= 暴力最佳 14.7148 ✓）' : '（暴力最佳 14.7148）'}。邊越粗費洛蒙越濃。`});
+  }
+  return frames;
+}
+function acoApply(f) {
+  let maxT = 0.01;
+  for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) maxT = Math.max(maxT, f.tau[i][j]);
+  let s = '';
+  for (let i = 0; i < 8; i++)
+    for (let j = i + 1; j < 8; j++) {
+      const [x1, y1] = acoXY(i), [x2, y2] = acoXY(j);
+      const wgt = f.tau[i][j] / maxT;
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#5a5a7a" stroke-width="${(0.3 + 3.2 * wgt).toFixed(2)}" opacity="${(0.15 + 0.6 * wgt).toFixed(2)}"/>`;
+    }
+  if (f.bestTour) {
+    for (let i = 0; i < 8; i++) {
+      const [x1, y1] = acoXY(f.bestTour[i]), [x2, y2] = acoXY(f.bestTour[(i + 1) % 8]);
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e5c07b" stroke-width="1.6" stroke-dasharray="5 3"/>`;
+    }
+  }
+  for (let i = 0; i < 8; i++) {
+    const [x, y] = acoXY(i);
+    s += `<circle cx="${x}" cy="${y}" r="9" fill="#282c34" stroke="#98c379" stroke-width="2"/>` +
+         `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="11" fill="#e6e6e6" font-family="JetBrains Mono,monospace">${ACO_N[i]}</text>`;
+  }
+  $('acoSvg').innerHTML = s;
+  setStatus('acoStatus', f.msg);
+}
+const acoPlayer = new Player({frames: acoFrames(), apply: acoApply, delayInput: null});
+acoPlayer.reset();
+</script>
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>
