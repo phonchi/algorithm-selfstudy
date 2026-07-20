@@ -1,0 +1,54 @@
+[
+ {
+  "front": "O 記號（Big-O Notation）",
+  "back": "漸近上界：f(n) = O(g(n)) ⟺ 存在正常數 c 與 n₀，使所有 n ≥ n₀ 都有 0 ≤ f(n) ≤ c·g(n)。只承諾「不超過」，不承諾「達到」。"
+ },
+ {
+  "front": "Ω 記號（Big-Omega）",
+  "back": "漸近下界：存在 c、n₀ 使 n ≥ n₀ 時 f(n) ≥ c·g(n) ≥ 0。與 O 合起來（定理 3.1）就是 Θ。"
+ },
+ {
+  "front": "Θ 記號（Big-Theta）",
+  "back": "漸近緊界：c₁·g(n) ≤ f(n) ≤ c₂·g(n)（n ≥ n₀）。f 與 g 成長速率相同，兩邊都被常數夾住。"
+ },
+ {
+  "front": "o／ω 記號（小寫）",
+  "back": "嚴格版：f = o(g) 表示對每個正常數 c 都有 f(n) < c·g(n)（n 夠大時）——f 嚴格慢於 g。ω 為反向。大寫像 ≤/≥，小寫像 </>。"
+ },
+ {
+  "front": "遞迴式（Recurrence）",
+  "back": "用較小輸入上的自身值定義函數的等式，如 T(n) = 2T(n/2) + Θ(n)。演算法的遞迴結構直接翻譯成遞迴式。"
+ },
+ {
+  "front": "代換法（Substitution Method）",
+  "back": "解遞迴式第一把刀：先猜解的形式，再用數學歸納法找常數並證明。歸納步驟必須推出與猜測一字不差的不等式。"
+ },
+ {
+  "front": "遞迴樹（Recursion Tree）",
+  "back": "解遞迴式第二把刀：把每次呼叫的「自付成本」畫成節點，逐層加總再加總所有層。常用來產生猜測，再回頭用代換法補證。"
+ },
+ {
+  "front": "主定理（Master Theorem）",
+  "back": "解 T(n) = aT(n/b) + f(n) 的查表機：比較葉子總量 n^(log_b a) 與 f(n)，多項式差距決定 Case 1/3，打平（可帶 lgᵏn）走 Case 2。"
+ },
+ {
+  "front": "分水嶺函數（Watershed Function）",
+  "back": "主定理中的 n^(log_b a)：recursion tree 葉子數量的級別。f(n)（driving function）與它比大小決定誰主導總成本。"
+ },
+ {
+  "front": "Strassen 演算法",
+  "back": "矩陣乘法分治：用 7 次（而非 8 次）n/2 規模乘法完成 2×2 區塊乘法，T(n) = 7T(n/2) + Θ(n²) = Θ(n^log₂7) ≈ Θ(n²·⁸¹)。"
+ },
+ {
+  "front": "機率分析（Probabilistic Analysis）",
+  "back": "假設輸入服從某個分布（如隨機排列），計算執行時間的期望值。hiring problem 的期望雇用次數 Hₙ ≈ ln n 是代表例。"
+ },
+ {
+  "front": "指示隨機變數（Indicator Random Variable）",
+  "back": "Xᵢ = I{事件 A} ∈ {0,1}，且 E[Xᵢ] = Pr{A}（引理 5.1）。配合期望值線性（不需獨立性）可把複雜的期望拆成機率相加。"
+ },
+ {
+  "front": "隨機化演算法（Randomized Algorithm）",
+  "back": "行為由輸入與亂數共同決定的演算法：先隨機排列輸入再處理，使期望保證對任何輸入成立——沒有天生的最壞輸入。"
+ }
+]

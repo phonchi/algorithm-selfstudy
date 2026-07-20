@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>漸近分析、遞迴式與隨機化 — Analysis（CLRS Ch3–5）</title>
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+  --node-white:#ffffff;--node-gray:#bdc3c7;--node-black:#34495e;
+  --node-current:#f39c12;--node-found:#16a085;--node-start:#9b59b6;
+  --edge-default:#95a5a6;--edge-tree:#27ae60;--edge-explore:#f39c12;--edge-mst:#1a6b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+
+/* Hero */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden;background:linear-gradient(170deg,#1a1a2e 0%,#2c3e7a 40%,#1a6b4a 100%);}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0%,transparent 40%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);}
+.hero-content{position:relative;z-index:1;max-width:860px;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#fff;letter-spacing:.04em;line-height:1.3;margin-bottom:1rem;}
+.hero h1 .green{color:#2ecc71;}
+.hero h1 .blue{color:#5dade2;}
+.hero h1 .orange{color:#f39c12;}
+.hero h1 .purple{color:#bb8fce;}
+.hero .subtitle{font-size:clamp(.95rem,2.2vw,1.2rem);color:rgba(255,255,255,.65);font-weight:300;margin-bottom:2rem;}
+.hero .big-formula{color:#2ecc71;background:rgba(0,0,0,.3);padding:.8rem 2rem;border-radius:12px;display:inline-block;border:1px solid rgba(255,255,255,.1);margin-bottom:2rem;backdrop-filter:blur(4px);font-size:1.05rem;}
+.scroll-hint{color:rgba(255,255,255,.4);font-size:.9rem;animation:bounce 2s infinite;}
+.scroll-hint span{display:block;font-size:1.4rem;margin-top:.3rem;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+
+/* Hero mini-graph illustration */
+.hero-graph{position:absolute;right:5%;top:50%;transform:translateY(-50%);opacity:.18;pointer-events:none;}
+@media(max-width:900px){.hero-graph{display:none;}}
+
+/* Layout */
+.container{max-width:1180px;margin:0 auto;padding:3rem 1.5rem;}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;line-height:1.4;}
+h3{font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:var(--accent2);margin:1.4rem 0 .8rem;}
+section{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--card-border);}
+section:last-of-type{border-bottom:none;}
+p{margin-bottom:1rem;}
+code{font-family:'JetBrains Mono',monospace;font-size:.92em;background:rgba(44,62,122,.08);padding:1px 6px;border-radius:4px;color:var(--accent2);}
+strong{color:var(--ink);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0 2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.toc-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.7rem;}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem .8rem;}
+.toc-grid a{color:var(--accent2);text-decoration:none;font-size:.9rem;padding:.3rem 0;display:flex;align-items:center;gap:.4rem;transition:color .2s;}
+.toc-grid a:hover{color:var(--accent);}
+.toc-grid a .toc-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);min-width:34px;}
+
+/* Viz layout */
+.viz-layout{display:grid;grid-template-columns:1fr 320px;gap:1.3rem;margin:1.2rem 0;align-items:start;}
+@media(max-width:900px){.viz-layout{grid-template-columns:1fr;}}
+
+.viz-panel{background:linear-gradient(160deg,#fffdf7 0%,#f4efe3 100%);border:1px solid var(--card-border);border-radius:12px;padding:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06);position:relative;}
+
+/* Graph SVG canvas */
+.graph-canvas{position:relative;width:100%;height:380px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #ececec;}
+.graph-canvas svg{width:100%;height:100%;display:block;}
+
+/* SVG elements styles */
+.graph-edge{stroke:var(--edge-default);stroke-width:2;fill:none;transition:stroke .25s, stroke-width .25s;}
+.graph-edge.tree{stroke:var(--edge-tree);stroke-width:3.5;}
+.graph-edge.exploring{stroke:var(--edge-explore);stroke-width:3.5;stroke-dasharray:5 4;animation:dash 1s linear infinite;}
+.graph-edge.mst{stroke:var(--edge-mst);stroke-width:4;}
+.graph-edge.path{stroke:var(--accent);stroke-width:4;}
+.graph-edge.dotted{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+.edge-label{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;fill:var(--ink);pointer-events:none;}
+.edge-label-bg{fill:#fafafa;stroke:#ececec;stroke-width:1;}
+
+.graph-node{cursor:pointer;}
+.graph-node circle{fill:var(--node-white);stroke:var(--ink);stroke-width:2;transition:fill .25s, stroke .25s, r .2s;}
+.graph-node.gray circle{fill:var(--node-gray);}
+.graph-node.black circle{fill:var(--node-black);stroke:var(--node-black);}
+.graph-node.current circle{fill:var(--node-current);stroke:#d68910;stroke-width:3;}
+.graph-node.start circle{fill:var(--node-start);stroke:#7d3c98;stroke-width:3;}
+.graph-node.found circle{fill:var(--node-found);stroke:#117a65;stroke-width:3;}
+.graph-node.in-mst circle{fill:#82e0aa;stroke:var(--accent3);stroke-width:3;}
+.graph-node text.node-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.graph-node.black text.node-key{fill:#fff;}
+.graph-node.current text.node-key{fill:#fff;}
+.graph-node.start text.node-key{fill:#fff;}
+.graph-node.found text.node-key{fill:#fff;}
+.graph-node text.node-meta{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;fill:var(--accent);text-anchor:middle;pointer-events:none;}
+
+/* Status banner */
+.status-banner{margin-top:.8rem;padding:.7rem 1rem;background:var(--code-bg);color:#fff;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;min-height:42px;display:flex;align-items:center;gap:.6rem;}
+.status-banner .status-icon{color:#2ecc71;font-weight:700;}
+.status-banner .status-text{flex:1;}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--card-border);}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-play{background:var(--accent3);color:#fff;}
+.btn-play:hover{background:#22845c;}
+.btn-play.active{background:var(--accent);}
+.btn-step{background:var(--accent2);color:#fff;}
+.btn-step:hover{background:#1f2e5f;}
+.btn-step:disabled{background:#ccc;cursor:not-allowed;}
+.btn-reset{background:var(--card-border);color:var(--ink);}
+.btn-reset:hover{background:#ccc;}
+.btn-toggle{background:var(--accent2);color:#fff;}
+.btn-toggle:hover{background:#1f2e5f;}
+.btn-toggle.off{background:#bbb;color:#555;}
+.btn-shuffle{background:#8e44ad;color:#fff;}
+.btn-shuffle:hover{background:#6c3485;}
+
+/* Slider row */
+.slider-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:var(--paper);border-radius:8px;margin-bottom:.5rem;}
+.slider-row .slider-label{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent2);font-weight:600;min-width:60px;}
+.slider-row input[type="range"]{flex:1;accent-color:var(--accent3);height:5px;cursor:pointer;}
+.slider-row .slider-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:600;min-width:60px;text-align:right;}
+
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:.85rem;}
+.info-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:.85rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.info-card .ic-title{font-size:.72rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;border-bottom:1px solid var(--card-border);padding-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;}
+.info-card .ic-title .ic-badge{font-size:.7rem;color:#fff;background:var(--accent3);padding:1px 7px;border-radius:3px;letter-spacing:.05em;font-weight:700;}
+.info-card .ic-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.83rem;padding:.2rem 0;}
+.info-card .ic-label{color:var(--muted);}
+.info-card .ic-value{color:var(--ink);font-weight:600;}
+.info-card .ic-value.highlight{color:var(--accent);}
+.info-card .ic-value.big{font-size:1.4rem;color:var(--accent2);}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.4rem;}
+.stat-tile{background:var(--paper);border-radius:8px;padding:.5rem .7rem;text-align:center;}
+.stat-tile .stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.stat-tile .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent2);}
+
+/* Queue / Stack / PQ visualization */
+.ds-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--paper);border-radius:6px;padding:.5rem .7rem;min-height:36px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px dashed var(--card-border);}
+.ds-display .ds-empty{color:var(--muted);font-style:italic;}
+.ds-item{background:var(--accent2);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+.ds-item.front{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.top{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.pq{background:var(--accent3);}
+.ds-item.pq.min{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-arrow{color:var(--muted);}
+
+/* Pseudo code */
+.pseudo-code{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;overflow-x:auto;}
+.pseudo-code .line{padding:1px 4px;border-radius:3px;display:block;white-space:pre;}
+.pseudo-code .line.active{background:rgba(243,156,18,.3);color:#fff;border-left:3px solid var(--node-current);padding-left:6px;}
+.pseudo-code .kw{color:#ff79c6;}
+.pseudo-code .fn{color:#50fa7b;}
+.pseudo-code .num{color:#bd93f9;}
+.pseudo-code .com{color:#6272a4;font-style:italic;}
+.pseudo-code .str{color:#f1fa8c;}
+
+/* Adjacency table */
+.adj-display{margin:.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.adj-matrix{border-collapse:collapse;margin:.5rem auto;}
+.adj-matrix td,.adj-matrix th{border:1px solid var(--card-border);padding:6px 10px;text-align:center;min-width:34px;background:#fff;}
+.adj-matrix th{background:var(--accent2);color:#fff;font-weight:700;}
+.adj-matrix td.zero{color:#ccc;}
+.adj-matrix td.nonzero{background:#eafaf1;color:var(--accent3);font-weight:700;}
+.adj-matrix td.highlight{background:#fff3cd;}
+.adj-list{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:.7rem 1rem;}
+.adj-list .adj-row{padding:3px 0;border-bottom:1px dashed var(--card-border);}
+.adj-list .adj-row:last-child{border-bottom:none;}
+.adj-list .adj-key{color:var(--accent);font-weight:700;display:inline-block;min-width:32px;}
+.adj-list .adj-arrow{color:var(--muted);margin:0 6px;}
+.adj-list .adj-neighbor{background:#eef2ff;color:var(--accent2);padding:1px 8px;border-radius:4px;margin:1px 3px;display:inline-block;font-weight:600;}
+
+/* Chess board for Knight's tour */
+.chess-board{display:grid;background:#fff;border:2px solid var(--ink);border-radius:6px;overflow:hidden;margin:.5rem auto;width:fit-content;}
+.chess-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:700;position:relative;transition:background .2s;}
+.chess-cell.light{background:#f0d9b5;color:#666;}
+.chess-cell.dark{background:#b58863;color:#fff;}
+.chess-cell.visited{background:#27ae60 !important;color:#fff;}
+.chess-cell.current{background:#f39c12 !important;color:#fff;box-shadow:inset 0 0 0 3px #d68910;}
+.chess-cell.start{background:#9b59b6 !important;color:#fff;}
+.chess-cell .knight{font-size:1.4em;line-height:1;}
+.chess-cell .step-num{font-size:.7em;}
+
+/* Info box */
+.info-box{background:#eef2ff;border:2px solid var(--accent2);border-radius:10px;padding:1.1rem 1.4rem;margin:1.3rem 0;position:relative;}
+.info-box .info-label{position:absolute;top:-11px;left:14px;background:var(--accent2);color:#fff;font-size:.74rem;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em;}
+.info-box.warm{background:#fef5e7;border-color:#d68910;}
+.info-box.warm .info-label{background:#d68910;}
+.info-box.green{background:#eafaf1;border-color:var(--accent3);}
+.info-box.green .info-label{background:var(--accent3);}
+.info-box.purple{background:#f4ecf7;border-color:#8e44ad;}
+.info-box.purple .info-label{background:#8e44ad;}
+
+/* Pill labels */
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:4px;margin:0 .15rem;vertical-align:1px;}
+.pill-blue{background:rgba(41,128,185,.12);color:#2980b9;border:1px solid rgba(41,128,185,.3);}
+.pill-red{background:rgba(192,57,43,.12);color:var(--accent);border:1px solid rgba(192,57,43,.3);}
+.pill-green{background:rgba(39,174,96,.12);color:var(--accent3);border:1px solid rgba(39,174,96,.3);}
+.pill-orange{background:rgba(243,156,18,.12);color:#d68910;border:1px solid rgba(243,156,18,.3);}
+.pill-purple{background:rgba(142,68,173,.12);color:#8e44ad;border:1px solid rgba(142,68,173,.3);}
+.pill-gray{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid rgba(0,0,0,.12);}
+
+/* Comparison table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.86rem;margin:.8rem 0;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.cmp-table th{background:var(--accent2);color:#fff;padding:.6rem .8rem;text-align:center;font-weight:600;font-size:.82rem;}
+.cmp-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--card-border);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.cmp-table td:first-child{font-family:'Noto Sans TC',sans-serif;color:var(--accent2);font-weight:600;text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:nth-child(even){background:rgba(0,0,0,.015);}
+.cmp-table .best{color:var(--accent3);font-weight:700;}
+.cmp-table .worst{color:var(--accent);font-weight:700;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+.legend-item{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;background:var(--paper);border-radius:5px;}
+.legend-item .lg-swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink);}
+.legend-item .lg-edge{width:18px;height:3px;border-radius:2px;}
+
+/* Quiz */
+.quiz-box{background:var(--card);border:2px solid var(--accent2);border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0;}
+.quiz-box .quiz-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0;}
+.quiz-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;background:var(--paper);border:2px solid var(--card-border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+.quiz-opt:hover{border-color:var(--accent2);}
+.quiz-opt .opt-letter{font-weight:700;color:var(--accent2);min-width:22px;}
+.quiz-opt.correct{background:#eafaf1;border-color:var(--accent3);}
+.quiz-opt.correct .opt-letter{color:var(--accent3);}
+.quiz-opt.wrong{background:#fef5e7;border-color:var(--accent);}
+.quiz-opt.wrong .opt-letter{color:var(--accent);}
+.quiz-feedback{margin-top:.7rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.correct{background:#eafaf1;color:var(--accent3);border-left:4px solid var(--accent3);}
+.quiz-feedback.wrong{background:#fef5e7;color:var(--accent);border-left:4px solid var(--accent);}
+
+/* Floating sidebar navigation */
+.float-nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px;background:rgba(255,253,250,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--card-border);border-radius:12px;padding:10px 7px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-family:'JetBrains Mono',monospace;max-height:88vh;overflow-y:auto;transition:padding .25s ease;}
+.float-nav .fn-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.68rem;color:var(--accent2);text-align:center;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--card-border);max-width:0;overflow:hidden;transition:max-width .25s ease;}
+.float-nav:hover .fn-title{max-width:220px;}
+.float-nav a{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;white-space:nowrap;transition:all .2s ease;border-left:3px solid transparent;}
+.float-nav a .fn-num{font-weight:700;font-size:.66rem;color:var(--muted);letter-spacing:.4px;flex-shrink:0;width:30px;text-align:left;}
+.float-nav a .fn-name{font-family:'Noto Sans TC',sans-serif;font-size:.76rem;font-weight:500;max-width:0;overflow:hidden;transition:max-width .25s ease,padding .25s ease;padding:0;}
+.float-nav:hover a .fn-name{max-width:220px;padding-left:2px;}
+.float-nav a:hover{background:var(--card);}
+.float-nav a.active{background:var(--accent2);color:#fff;border-left-color:var(--accent);box-shadow:0 2px 6px rgba(192,57,43,.25);}
+.float-nav a.active .fn-num{color:rgba(255,255,255,.85);}
+.float-nav a.active .fn-name{color:#fff;}
+.float-nav .fn-top{margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);justify-content:center;}
+.float-nav .fn-top .fn-num{width:auto;color:var(--accent2);font-size:.78rem;}
+@media(max-width:768px){
+  .float-nav{right:8px;top:auto;bottom:14px;transform:none;padding:6px 5px;max-height:70vh;}
+  .float-nav .fn-title{display:none;}
+  .float-nav a{padding:4px 7px;}
+  .float-nav a .fn-num{width:26px;font-size:.62rem;}
+}
+
+footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+
+/* Distance / table inside graph viz */
+.vert-table{margin-top:.6rem;width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.vert-table th,.vert-table td{padding:4px 6px;text-align:center;border:1px solid var(--card-border);}
+.vert-table th{background:var(--accent2);color:#fff;font-weight:600;font-size:.74rem;}
+.vert-table td.tcell-current{background:#fff3cd;font-weight:700;color:var(--accent);}
+.vert-table td.tcell-done{background:#eafaf1;color:var(--accent3);}
+.vert-table td.tcell-inf{color:#ccc;}
+.sec-badge{font-size:.6em;color:var(--muted);border:1px solid var(--card-border);background:var(--card);padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:.6rem;font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.02em;white-space:nowrap;}
+
+/* Phase 8 shared widgets */
+.bs-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:4px;min-height:180px;justify-content:flex-start;padding:.6rem;}
+.bs-item{width:110px;text-align:center;padding:.4rem .6rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.bs-hl{background:#f39c12;}
+.bs-toplabel,.bq-label{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bq-row{display:flex;align-items:center;gap:6px;min-height:64px;flex-wrap:wrap;padding:.4rem;}
+.bq-item{min-width:52px;text-align:center;padding:.45rem .5rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.char-strip{display:flex;gap:3px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;padding:.4rem 0;}
+.char-cell{min-width:30px;text-align:center;padding:.35rem .25rem;border:1px solid var(--card-border);border-radius:5px;background:var(--card);}
+.char-cur{background:#f39c12;color:#fff;border-color:#f39c12;}
+.char-done{background:#e8f5ec;color:#1a6b4a;border-color:#bfe3cd;}
+.char-bad{background:#c0392b;color:#fff;border-color:#c0392b;}
+.token-out{display:flex;gap:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;min-height:40px;padding:.3rem 0;}
+.tok{padding:.3rem .55rem;border-radius:5px;background:#2c3e7a;color:#fff;font-weight:600;}
+.tok-op{background:#8e44ad;}
+.tok-new{outline:3px solid #f39c12;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+<style>
+/* ===== 網站化附加樣式（study-guide / flashcards / chapter-nav）===== */
+.study-guide{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.2rem 1.4rem;margin:0 0 2.2rem;}
+.study-guide .sg-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.5rem;}
+.study-guide p{font-size:.92rem;margin-bottom:.5rem;}
+.study-guide .sg-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.study-guide .sg-links a{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;color:var(--accent2);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .85rem;text-decoration:none;transition:all .2s;}
+.study-guide .sg-links a:hover{background:var(--accent2);color:#fff;}
+.fc-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0 1.2rem;}
+.fc-controls button{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:1px solid var(--card-border);cursor:pointer;background:var(--card);color:var(--ink);transition:all .2s;}
+.fc-controls button:hover{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:.9rem;}
+.fc-card{perspective:900px;height:170px;cursor:pointer;}
+.fc-card .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+.fc-card .fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.9rem;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.fc-card .fc-front{background:linear-gradient(150deg,var(--accent2),var(--ink));color:#fff;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;letter-spacing:.02em;flex-direction:column;gap:.4rem;}
+.fc-card .fc-front .fc-hint{font-size:.62rem;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.1em;}
+.fc-card .fc-back{background:var(--card);border:2px solid var(--accent3);color:var(--ink);font-size:.78rem;line-height:1.55;transform:rotateY(180deg);overflow-y:auto;}
+.chapter-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:stretch;margin:2.5rem 0 1rem;}
+.chapter-nav a{display:block;border:1px solid var(--card-border);border-radius:12px;padding:.8rem 1.1rem;text-decoration:none;color:var(--ink);background:var(--card);transition:all .2s;}
+.chapter-nav a:hover{border-color:var(--accent2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.chapter-nav .nav-dir{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.2rem;}
+.chapter-nav .nav-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.95rem;color:var(--accent2);}
+.chapter-nav a.next{text-align:right;}
+.chapter-nav a.home{display:flex;flex-direction:column;justify-content:center;text-align:center;}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr;}}
+</style>
+<style>
+/* ===== 講義範例卡 ===== */
+.deck-extra{margin:1.2rem 0;}
+.deck-extra .dx-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:.4rem;}
+.deck-extra .dx-note{font-size:.9rem;margin-top:.6rem;}
+.expected-out{background:var(--card);border:1px solid var(--card-border);border-left:4px solid var(--accent3);border-radius:0 8px 8px 0;padding:.5rem .9rem;margin-top:.5rem;}
+.expected-out .eo-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--accent3);display:block;margin-bottom:.2rem;}
+.expected-out pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre-wrap;margin:0;}
+.warn-box{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.25);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem 1rem;margin:.8rem 0;font-size:.9rem;}
+.warn-box b{color:var(--accent);}
+</style>
+<style>
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
+</style>
+</head>
+<body>
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#asymptotic" data-target="asymptotic"><span class="fn-num">P00</span><span class="fn-name">漸近符號</span></a>
+  <a href="#substitution" data-target="substitution"><span class="fn-num">P01</span><span class="fn-name">substitution</span></a>
+  <a href="#rectree" data-target="rectree"><span class="fn-num">P02</span><span class="fn-name">recursion tree</span></a>
+  <a href="#master" data-target="master"><span class="fn-num">P03</span><span class="fn-name">Master Theorem</span></a>
+  <a href="#strassen" data-target="strassen"><span class="fn-num">P04</span><span class="fn-name">Strassen</span></a>
+  <a href="#randomized" data-target="randomized"><span class="fn-num">P05</span><span class="fn-name">機率分析與隨機化</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="blue">漸近分析</span>、<span class="green">遞迴式</span>與<span class="orange">隨機化</span></h1>
+    <div class="subtitle">第 02 章 — Characterizing Running Times &amp; Divide-and-Conquer（CLRS 4e Ch 3–5）</div>
+    <div class="big-formula">O｜Ω｜Θ｜substitution｜recursion tree｜master theorem｜indicator RV</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 3–5）</div>
+  <p>① 資結課的 Big-O 是「直覺版」；本章給<strong>正式定義（帶 c 與 n₀ 的量詞敘述）</strong>，考試會要求你用定義證明。
+  ② 解遞迴式三把刀（substitution／recursion tree／master theorem）是這門課最常用的計算技能，P01–P03 每一節都要動手算。
+  ③ P05 的 indicator random variable 是 quicksort、hashing 期望分析的共同語言，務必弄懂 E[Xᵢ] 怎麼來。
+  ④ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#asymptotic"><span class="toc-num">P00</span>漸近符號</a>
+    <a href="#substitution"><span class="toc-num">P01</span>substitution method</a>
+    <a href="#rectree"><span class="toc-num">P02</span>recursion tree</a>
+    <a href="#master"><span class="toc-num">P03</span>Master Theorem</a>
+    <a href="#strassen"><span class="toc-num">P04</span>Strassen 矩陣乘法</a>
+    <a href="#randomized"><span class="toc-num">P05</span>機率分析與隨機化</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="asymptotic">
+  <div class="section-number">P00 · 漸近符號</div>
+  <h2>O、Ω、Θ 的正式定義：兩個常數撐起一切 <span class="sec-badge">§3.1–3.2</span></h2>
+  <p>資結課說「O(n²) 差不多就是成長不超過 n²」。現在把「差不多」換成可以上法庭的定義——每個符號都是一個<strong>函數集合</strong>：</p>
+  <div class="info-box">
+    <span class="info-label">三個定義（f、g 皆為漸近非負函數）</span>
+    <strong>O（上界）</strong>：f(n) ∈ O(g(n)) ⟺ 存在正常數 c、n₀，使得對所有 n ≥ n₀，0 ≤ f(n) ≤ c·g(n)。<br>
+    <strong>Ω（下界）</strong>：f(n) ∈ Ω(g(n)) ⟺ 存在正常數 c、n₀，使得對所有 n ≥ n₀，0 ≤ c·g(n) ≤ f(n)。<br>
+    <strong>Θ（緊界）</strong>：f(n) ∈ Θ(g(n)) ⟺ 存在正常數 c₁、c₂、n₀，使得對所有 n ≥ n₀，0 ≤ c₁·g(n) ≤ f(n) ≤ c₂·g(n)。
+    <br><em>定理 3.1：f(n) = Θ(g(n)) ⟺ f(n) = O(g(n)) 且 f(n) = Ω(g(n))。</em>
+  </div>
+  <p>拿 f(n) = 2n² + 3n 練手：取 c = 3、n₀ = 3，則 n ≥ 3 時 2n² + 3n ≤ 2n² + n² = 3n² ✓，所以 f(n) = O(n²)。
+  找到<strong>一組</strong>能用的 (c, n₀) 就贏了——不需要最小的。
+  也要注意慣用語的陷阱：「insertion sort 的執行時間是 O(n²)」是對的（上界對所有輸入成立），
+  但「是 Θ(n²)」只對<strong>最壞情況</strong>成立——已排序輸入只要 Θ(n)。</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="slider-row">
+        <span class="slider-label">n =</span>
+        <input type="range" id="growN" min="4" max="64" value="16" oninput="growRender()">
+        <span class="slider-val" id="growNVal">16</span>
+      </div>
+      <div style="overflow-x:auto;"><table class="cmp-table" style="margin:0;" id="growTable"></table></div>
+      <div class="status-banner" id="growStatus"><span class="status-icon">▸</span><span class="status-text">拉動滑桿，看六個成長級數的差距怎麼被 n 放大。</span></div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">讀表重點</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        ▸ n 從 16 → 64（×4）：n² 變 ×16，2ⁿ 直接爆炸。<br>
+        ▸ lg n 幾乎不動——這就是「對數很便宜」。<br>
+        ▸ n lg n 與 n² 的差距會隨 n 拉開：這是 merge sort 打敗 insertion sort 的本錢。</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">o 與 ω（小寫）</div>
+        <div style="font-size:.85rem;line-height:1.8;">o(g)：對<strong>每個</strong> c &gt; 0 都成立 f &lt; c·g（嚴格較慢，如 2n = o(n²)）；ω 反向。大寫是「≤ / ≥」，小寫是「&lt; / &gt;」。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · 定義操作</div>
+    <p>下列哪個敘述<strong>錯誤</strong>？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="false" data-fb="正確的敘述：取 c=1、n₀=1 即可，上界不必「緊」。O 只承諾不超過。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> n = O(n²)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="正確的敘述：100n² ≤ c·n² 取 c=100 就成立。常數被漸近符號吸收。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> 100n² = Θ(n²)</div>
+      <div class="quiz-opt" data-correct="true" data-fb="這是錯的。2ⁿ⁺¹ = 2·2ⁿ = O(2ⁿ)（c=2）沒問題，但 2²ⁿ = (2ⁿ)² 不是 O(2ⁿ)：比值 2ⁿ 無界，任何常數 c 都擋不住。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 2²ⁿ = O(2ⁿ)</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="substitution">
+  <div class="section-number">P01 · SUBSTITUTION</div>
+  <h2>substitution method：先猜答案，再用歸納法釘死 <span class="sec-badge">§4.3</span></h2>
+  <p>解遞迴式的第一把刀，兩步驟：<strong>① 猜一個解的形式；② 用數學歸納法找出常數並證明猜測成立</strong>。
+  以 T(n) = 2T(⌊n/2⌋) + n 為例，猜 T(n) = O(n lg n)，也就是要證 T(n) ≤ c·n lg n：</p>
+  <div class="thm-box proof">
+    <div class="thm-label">歸納步驟（假設對 ⌊n/2⌋ 成立）</div>
+    T(n) ≤ 2·(c·⌊n/2⌋ lg⌊n/2⌋) + n ≤ c·n·lg(n/2) + n = c·n·lg n − c·n·lg 2 + n = <strong>c·n lg n − (c − 1)n</strong>。<br>
+    只要 c ≥ 1，尾巴 −(c−1)n ≤ 0，於是 T(n) ≤ c·n lg n ✓。
+  </div>
+  <div class="warn-box"><b>經典陷阱：</b>證 T(n) = O(n) 時寫出 T(n) ≤ 2(c⌊n/2⌋) + n = cn + n = <b>O(n)</b>——這是<b>錯的</b>！
+  歸納法必須證出「T(n) ≤ cn」<em>一字不差</em>的形式；「≤ cn + n」不是「≤ cn」，多出來的 +n 沒有被吸收掉。
+  漸近符號不能在歸納中途偷換——歸納假設是含常數的精確不等式。</div>
+  <p>猜不準怎麼辦？先用下一節的 recursion tree 畫圖得到猜測，再回來用 substitution 補嚴謹證明——兩把刀本來就是搭配使用的。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 歸納紀律</div>
+    <p>用 substitution 證 T(n) = T(n−1) + n 是 O(n²)：歸納步驟得到 T(n) ≤ c(n−1)² + n = cn² − 2cn + c + n。下一步該？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。要證 T(n) ≤ cn²，即要求 −2cn + c + n ≤ 0；取 c ≥ 1 且 n ≥ 1 時 −2cn + c + n ≤ −2n + 1 + n = −n + 1 ≤ 0 ✓。把殘項壓成 ≤ 0 才算完成。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 挑選 c 使殘項 −2cn + c + n ≤ 0，得到 T(n) ≤ cn²</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「≈ cn²」不是證明——歸納要的是精確不等式 T(n) ≤ cn²，殘項必須被明確處理。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 宣告低次項可忽略，直接得 O(n²)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="換猜測是猜錯時的手段；這裡 O(n²) 是正確猜測，只差把常數處理完。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 放棄，改猜 O(n³)</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="rectree">
+  <div class="section-number">P02 · RECURSION TREE</div>
+  <h2>recursion tree：把遞迴攤開成「每層帳單」 <span class="sec-badge">§4.4</span></h2>
+  <p>第二把刀：把 T(n) = 2T(n/2) + cn 畫成一棵樹——每個節點寫「這一層呼叫自付的成本」，
+  然後<strong>逐層加總、再加總所有層</strong>。按「單步」逐層展開（n = 16）：</p>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div id="rtCanvas" style="min-height:230px;"></div>
+      <div class="status-banner" id="rtStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」展開下一層。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="rtPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="rtPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="rtPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">帳單 <span class="ic-badge">T(n)=2T(n/2)+cn</span></div>
+        <div class="ic-row"><span class="ic-label">每層成本</span><span class="ic-value">cn（恰好打平）</span></div>
+        <div class="ic-row"><span class="ic-label">層數</span><span class="ic-value">lg n + 1</span></div>
+        <div class="ic-row"><span class="ic-label">總計</span><span class="ic-value highlight">Θ(n lg n)</span></div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">層帳不打平時</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        ▸ 逐層<strong>遞減</strong>（如 T(n)=3T(n/4)+cn²）：首層主導，總和是等比級數 → Θ(n²)。<br>
+        ▸ 逐層<strong>遞增</strong>（如 T(n)=4T(n/2)+cn）：葉層主導 → Θ(n²)。<br>
+        樹不平衡（如 T(n)=T(n/3)+T(2n/3)+cn）也照畫：最深路徑決定層數上限。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 讀樹</div>
+    <p>T(n) = T(n/3) + T(2n/3) + cn 的 recursion tree：每一「完整層」成本仍是 cn，最深路徑沿 2n/3 走。總成本是？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="false" data-fb="Θ(n) 需要層成本遞減成等比級數；這裡每層都是滿滿的 cn。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> Θ(n)</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。層成本 ≤ cn、層數 ≤ log₃⸝₂ n = Θ(lg n)，得 O(n lg n)；配合完整層的下界得 Θ(n lg n)。不平衡只改變常數，不改變級別——quicksort 平均分析的核心直覺。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> Θ(n lg n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="沒有任何一層超過 cn，層數也只有對數級——湊不出 n²。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> Θ(n²)</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="master">
+  <div class="section-number">P03 · MASTER THEOREM</div>
+  <h2>Master Theorem：分治遞迴式的查表機 <span class="sec-badge">§4.5</span></h2>
+  <p>第三把刀處理標準形 <strong>T(n) = a·T(n/b) + f(n)</strong>（a ≥ 1、b &gt; 1）。
+  比較的是兩股勢力：<strong>葉子的總數 n^(log_b a)</strong>（watershed function）對上<strong>根部的工作 f(n)</strong>（driving function）——誰以「多項式差距」勝出誰就主導：</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table">
+    <thead><tr><th>情況</th><th>條件（ε &gt; 0）</th><th>解</th><th>直覺</th></tr></thead>
+    <tbody>
+      <tr><td>Case 1</td><td>f(n) = O(n^(log_b a − ε))</td><td class="best">T(n) = Θ(n^(log_b a))</td><td>葉子主導（成本逐層遞增）</td></tr>
+      <tr><td>Case 2（k ≥ 0）</td><td>f(n) = Θ(n^(log_b a) lgᵏn)</td><td class="best">T(n) = Θ(n^(log_b a) lgᵏ⁺¹n)</td><td>每層打平，共 lg n 層</td></tr>
+      <tr><td>Case 3</td><td>f(n) = Ω(n^(log_b a + ε)) 且正則性條件</td><td class="best">T(n) = Θ(f(n))</td><td>根部主導（成本逐層遞減）</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>4e 的 Case 2 比 3e 更強：允許 f(n) 帶 lgᵏn 因子（k ≥ 0）。Case 3 的正則性條件 a·f(n/b) ≤ c·f(n)（c &lt; 1）確保成本真的逐層縮小。
+  注意 master theorem <strong>不是萬能</strong>——f(n) 落在「差距不是多項式」的縫隙時（例如 f(n) = n^(log_b a)/lg n）三個 case 都不適用，得回去用前兩把刀。</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="controls-bar" style="border:none;padding:0;margin:0 0 .6rem;">
+        <span class="mono" style="font-size:.9rem;">T(n) =</span>
+        <select id="mtA" class="mono" onchange="mtEval()"><option>2</option><option>3</option><option selected>4</option><option>7</option><option>8</option><option>9</option></select>
+        <span class="mono" style="font-size:.9rem;">T(n /</span>
+        <select id="mtB" class="mono" onchange="mtEval()"><option selected>2</option><option>3</option><option>4</option></select>
+        <span class="mono" style="font-size:.9rem;">) + n^</span>
+        <select id="mtD" class="mono" onchange="mtEval()"><option>0</option><option>1</option><option selected>2</option><option>3</option></select>
+      </div>
+      <div class="status-banner" id="mtStatus"><span class="status-icon">▸</span><span class="status-text">選 a、b 與 f(n) = n^d 的次方 d，看落在哪個 case。</span></div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">判定過程</div>
+        <div class="ic-row"><span class="ic-label">log_b a</span><span class="ic-value" id="mtLog">—</span></div>
+        <div class="ic-row"><span class="ic-label">d（f 的次方）</span><span class="ic-value" id="mtDD">—</span></div>
+        <div class="ic-row"><span class="ic-label">Case</span><span class="ic-value highlight" id="mtCase">—</span></div>
+        <div class="ic-row"><span class="ic-label">T(n)</span><span class="ic-value big" id="mtAns">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 查表</div>
+    <p>merge sort 的 T(n) = 2T(n/2) + Θ(n) 用 master theorem 判是？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="false" data-fb="Case 1 要 f(n) 比 n^(log₂2) = n 小一個多項式級距；f(n) = Θ(n) 恰好打平，不是嚴格較小。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> Case 1，Θ(n)</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。log₂2 = 1，f(n) = Θ(n¹·lg⁰n) 命中 Case 2（k = 0）→ T(n) = Θ(n lg n)。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> Case 2，Θ(n lg n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Case 3 要 f(n) 比 n^(log_b a) 大一個多項式級距——f(n) = Θ(n) 沒有超過 n¹。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> Case 3，Θ(n)</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="strassen">
+  <div class="section-number">P04 · STRASSEN</div>
+  <h2>Strassen：少一次乘法，換一個新的指數 <span class="sec-badge">§4.1–4.2</span></h2>
+  <p>n×n 矩陣乘法：三重迴圈 Θ(n³)。分治版把矩陣切四塊，直觀作法要 <strong>8</strong> 次 n/2 規模的乘法：
+  T(n) = 8T(n/2) + Θ(n²)，由 Case 1 得 Θ(n^(log₂8)) = Θ(n³)——白忙一場，瓶頸在「8」。
+  Strassen 的魔術：用加減法拼出 <strong>7</strong> 個乘積 P₁…P₇ 就能組回四個象限：</p>
+  <div class="info-box purple">
+    <span class="info-label">Strassen 遞迴式</span>
+    T(n) = <strong>7</strong>T(n/2) + Θ(n²) → Case 1 → T(n) = Θ(n^(log₂7)) = <strong>Θ(n²·⁸¹)</strong>。
+    多的常數次加減法全被 Θ(n²) 吃掉；指數從 3 降到 2.81 靠的只是「8 變 7」。
+  </div>
+
+  <div class="code-tabs" id="ctStr">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctStr','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctStr','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctStr','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">STRASSEN</span>(A, B, n) <span class="com">— 摘要</span></div>
+        <span class="line"><span class="ln">1</span><span class="kw">if</span> n == 1：C = A·B，<span class="kw">return</span></span>
+        <span class="line"><span class="ln">2</span>把 A、B 各切成四個 n/2 × n/2 象限</span>
+        <span class="line"><span class="ln">3</span>P₁ = A₁₁·(B₁₂ − B₂₂)　　P₂ = (A₁₁ + A₁₂)·B₂₂</span>
+        <span class="line"><span class="ln">4</span>P₃ = (A₂₁ + A₂₂)·B₁₁　　P₄ = A₂₂·(B₂₁ − B₁₁)</span>
+        <span class="line"><span class="ln">5</span>P₅ = (A₁₁ + A₂₂)·(B₁₁ + B₂₂)</span>
+        <span class="line"><span class="ln">6</span>P₆ = (A₁₂ − A₂₂)·(B₂₁ + B₂₂)　　P₇ = (A₁₁ − A₂₁)·(B₁₁ + B₁₂)</span>
+        <span class="line"><span class="ln">7</span>C₁₁ = P₅ + P₄ − P₂ + P₆　　C₁₂ = P₁ + P₂</span>
+        <span class="line"><span class="ln">8</span>C₂₁ = P₃ + P₄　　C₂₂ = P₅ + P₁ − P₃ − P₇</span>
+      </div>
+      <div class="ct-note">7 次遞迴乘法（第 3–6 行）＋ 常數次矩陣加減。每個 Pᵢ 都是 n/2 規模。</div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code"><span class="line"><span class="com">// 核心片段（完整可編譯版見 src/analysis/strassen.cpp）</span></span><span class="line">Mat <span class="fn">strassen</span>(<span class="kw">const</span> Mat&amp; A, <span class="kw">const</span> Mat&amp; B) {</span><span class="line">    std::size_t n = A.size();</span><span class="line">    <span class="kw">if</span> (n == <span class="num">1</span>) <span class="kw">return</span> {{A[<span class="num">0</span>][<span class="num">0</span>] * B[<span class="num">0</span>][<span class="num">0</span>]}};</span><span class="line">    std::size_t h = n / <span class="num">2</span>;</span><span class="line">    <span class="com">// 取象限 A11..A22、B11..B22 後：7 次遞迴乘法</span></span><span class="line">    Mat P1 = <span class="fn">strassen</span>(A11, <span class="fn">add</span>(B12, B22, -<span class="num">1</span>));</span><span class="line">    Mat P2 = <span class="fn">strassen</span>(<span class="fn">add</span>(A11, A12), B22);</span><span class="line">    Mat P3 = <span class="fn">strassen</span>(<span class="fn">add</span>(A21, A22), B11);</span><span class="line">    Mat P4 = <span class="fn">strassen</span>(A22, <span class="fn">add</span>(B21, B11, -<span class="num">1</span>));</span><span class="line">    Mat P5 = <span class="fn">strassen</span>(<span class="fn">add</span>(A11, A22), <span class="fn">add</span>(B11, B22));</span><span class="line">    Mat P6 = <span class="fn">strassen</span>(<span class="fn">add</span>(A12, A22, -<span class="num">1</span>), <span class="fn">add</span>(B21, B22));</span><span class="line">    Mat P7 = <span class="fn">strassen</span>(<span class="fn">add</span>(A11, A21, -<span class="num">1</span>), <span class="fn">add</span>(B11, B12));</span><span class="line">    Mat C11 = <span class="fn">add</span>(<span class="fn">add</span>(<span class="fn">add</span>(P5, P4), P6), P2, -<span class="num">1</span>);</span><span class="line">    Mat C12 = <span class="fn">add</span>(P1, P2);</span><span class="line">    Mat C21 = <span class="fn">add</span>(P3, P4);</span><span class="line">    Mat C22 = <span class="fn">add</span>(<span class="fn">add</span>(P5, P1), <span class="fn">add</span>(P3, P7), -<span class="num">1</span>);</span><span class="line">    <span class="com">// 四象限組回 C</span></span><span class="line">}</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（4×4 測試，對照傳統三重迴圈）</span><pre>Strassen 與傳統乘法相符: true
+250 260 270 280
+618 644 670 696
+986 1028 1070 1112
+1354 1412 1470 1528</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 4/matrix_multiply.py（MIT License）— strassen 進入點</span></span><span class="line"><span class="kw">def</span> <span class="fn">strassen</span>(A, B, C, n):</span><span class="line">    <span class="com">"""Strassen's method: C = C + (A * B). n must be an exact power of 2."""</span></span><span class="line">    <span class="kw">return</span> strassen_aux(A, B, C, n, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>)</span><span class="line"></span><span class="line"><span class="com"># strassen_aux 以 (row, col) 起點＋大小 n 表示子矩陣（避免整塊複製），</span></span><span class="line"><span class="com"># 遞迴計算 P1..P7 後組合，結構與 pseudocode 相同。</span></span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（4×4 隨機矩陣，對照 numpy A @ B）</span><pre>Strassen 與 numpy 相符: True</pre></div>
+      <div class="ct-note">小提醒：官方檔把 <code>import numpy as np</code> 放在測試區塊，單獨 import 模組呼叫 strassen 前需自行補上（<code>mm.np = np</code>）。</div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · 指數的來源</div>
+    <p>若有人發明「把 n×n 矩陣切四塊、只用 <strong>6</strong> 次 n/2 乘法」的演算法，複雜度會變成？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。T(n) = 6T(n/2) + Θ(n²)，log₂6 ≈ 2.585 > 2，Case 1 → Θ(n^2.585)。乘法次數 a 直接決定指數 log₂a——這正是矩陣乘法研究至今仍在把指數往 2 逼近的原因（目前世界紀錄約 n^2.37）。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> Θ(n^(log₂6)) ≈ Θ(n²·⁵⁹)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="加減法的 Θ(n²) 只在 log₂a 掉到 2 以下才可能主導；log₂6 ≈ 2.585 仍大於 2。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> Θ(n²)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="8 次才是 n³；少用乘法正是為了把指數壓下來。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 仍是 Θ(n³)</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="randomized">
+  <div class="section-number">P05 · 機率分析與隨機化</div>
+  <h2>hiring problem：indicator random variable 初登場 <span class="sec-badge">Ch 5</span></h2>
+  <p>面試 n 位助理，每見到「比目前最佳者更好」就換人（雇用成本高）。最壞情況（一路變好）要雇 n 次；
+  但若候選人以<strong>隨機順序</strong>出現，期望雇幾次？這是<strong>機率分析（probabilistic analysis）</strong>的招牌例題，工具是：</p>
+  <div class="info-box green">
+    <span class="info-label">指示隨機變數（indicator random variable）</span>
+    令 Xᵢ = I{第 i 位被雇用} ∈ {0,1}。<strong>引理 5.1：E[Xᵢ] = Pr{事件發生}</strong>。
+    第 i 位被雇 ⟺ 他是前 i 位中最好的 ⟺ 機率 1/i（隨機順序下前 i 位誰是最佳等可能）。<br>
+    期望雇用次數 E[X] = E[Σ Xᵢ] = Σ E[Xᵢ] = Σᵢ₌₁ⁿ 1/i = <strong>Hₙ = ln n + O(1)</strong>。
+    期望值線性（linearity of expectation）<em>不需要獨立性</em>——這是整套技術最好用的地方。
+  </div>
+  <p>「假設輸入隨機」靠不住時，就<strong>自己製造隨機</strong>：先 RANDOMLY-PERMUTE 再跑——這就是<strong>隨機化演算法（randomized algorithm）</strong>，
+  期望值對<em>任何</em>輸入都成立，沒有哪個輸入是天生的最壞情況。下一章的 randomized quicksort 同一招。按按鈕實測：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="controls-bar" style="border:none;padding:0;margin-bottom:.6rem;">
+        <button class="btn btn-play" onclick="hireRun()">🎲 跑 200 次試驗（n = 100）</button>
+        <button class="btn btn-reset" onclick="hireReset()">↺ 歸零</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-tile"><div class="stat-label">試驗數</div><div class="stat-value" id="hireTrials">0</div></div>
+        <div class="stat-tile"><div class="stat-label">平均雇用</div><div class="stat-value" id="hireAvg">—</div></div>
+      </div>
+      <div class="status-banner" id="hireStatus"><span class="status-icon">▸</span><span class="status-text">理論值 H₁₀₀ = 5.187。多按幾次看平均值收斂。</span></div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctHire">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctHire','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctHire','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctHire','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code">
+            <div class="cc-title"><span class="fn">RANDOMIZED-HIRE</span>(n)</div>
+            <span class="line"><span class="ln">1</span>隨機排列候選人順序</span>
+            <span class="line"><span class="ln">2</span>best = 0</span>
+            <span class="line"><span class="ln">3</span><span class="kw">for</span> i = 1 <span class="kw">to</span> n</span>
+            <span class="line"><span class="ln">4</span>    <span class="kw">if</span> rank(i) &gt; best</span>
+            <span class="line"><span class="ln">5</span>        best = rank(i)；雇用 i</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code"><span class="line"><span class="kw">int</span> <span class="fn">hireCount</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; rank,</span><span class="line">              std::mt19937&amp; rng) {</span><span class="line">    std::shuffle(rank.begin(), rank.end(), rng);</span><span class="line">    <span class="kw">int</span> best = -<span class="num">1</span>, hires = <span class="num">0</span>;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> r : rank)</span><span class="line">        <span class="kw">if</span> (r &gt; best) { best = r; ++hires; }</span><span class="line">    <span class="kw">return</span> hires;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">10 萬次試驗輸出</span><pre>模擬平均雇用次數 = 5.19131（理論值 H_100 = 5.18738）</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code"><span class="line"><span class="com"># 洗牌用官方 randomly_permute（Ch 5，MIT License）</span></span><span class="line">A = list(range(<span class="num">1</span>, n + <span class="num">1</span>))</span><span class="line">randomly_permute(A, n)</span><span class="line">best, hires = <span class="num">0</span>, <span class="num">0</span></span><span class="line"><span class="kw">for</span> r <span class="kw">in</span> A:</span><span class="line">    <span class="kw">if</span> r &gt; best:</span><span class="line">        best, hires = r, hires + <span class="num">1</span></span></div>
+          <div class="expected-out"><span class="eo-tag">2 萬次試驗輸出</span><pre>模擬平均雇用次數 = 5.1773（理論值 H_100 = 5.1874）</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05 · indicator RV</div>
+    <p>E[Xᵢ] = 1/i 這步用到的關鍵事實是？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="false" data-fb="Xᵢ 之間其實不獨立（第 i 位是否最佳影響後面的門檻）——但期望值線性根本不需要獨立性，這正是這套工具的威力。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 各 Xᵢ 互相獨立</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。隨機排列下，前 i 位中誰是最佳完全對稱、各以機率 1/i 發生；配合引理 5.1（E[I{A}] = Pr{A}）得 E[Xᵢ] = 1/i。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 隨機順序下「第 i 位是前 i 位中最佳」的機率是 1/i</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Hₙ ≈ ln n 是最後一步的級數估計，不是 E[Xᵢ] = 1/i 的依據。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 調和級數發散</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>三把刀混合出題</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · 4e 版 Case 2</div>
+    <p>T(n) = 2T(n/2) + n lg n。3e 的 master theorem 對它無能為力（落在 Case 2 與 3 的縫隙），4e 呢？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。n^(log₂2) = n，f(n) = n·lg¹n 符合 4e Case 2（k = 1）→ T(n) = Θ(n lg²n)。這是 4e 把 Case 2 推廣到 lgᵏn 因子的直接紅利。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> Case 2（k=1）→ Θ(n lg²n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Case 3 要 f(n) = Ω(n^(1+ε))：n lg n 比任何 n^(1+ε) 都小（對數擠不進多項式差距）。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> Case 3 → Θ(n lg n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="4e 版本已經涵蓋：f(n) = Θ(n lgᵏn) 正是擴充後的 Case 2 能吃的形式。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 4e 也不適用，只能用 recursion tree</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · 選對工具</div>
+    <p>T(n) = T(n−1) + Θ(n)（例如最壞情況的 quicksort）。哪把刀<strong>不能</strong>直接用？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。master theorem 只吃 T(n) = aT(n/b) + f(n) 的「除法縮小」形；T(n−1) 是減法縮小，不合標準形。改用 recursion tree（一條長鏈，Σi = Θ(n²)）或 substitution 都很快。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> Master theorem</div>
+      <div class="quiz-opt" data-correct="false" data-fb="substitution 可以：猜 O(n²) 再歸納即可。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> Substitution method</div>
+      <div class="quiz-opt" data-correct="false" data-fb="recursion tree 可以：這棵「樹」是一條 n 層的鏈，每層成本 c·i，總和 Θ(n²)。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> Recursion tree</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章速查表</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.88rem;">
+    <thead><tr><th>工具</th><th>適用</th><th>強項</th><th>弱項</th></tr></thead>
+    <tbody>
+      <tr><td>O / Ω / Θ 定義</td><td>任何界的嚴謹陳述</td><td>找到一組 (c, n₀) 即可</td><td>不描述常數大小</td></tr>
+      <tr><td>substitution</td><td>任意遞迴式</td><td class="best">最嚴謹、什麼形都吃</td><td>要先會猜；歸納形式不能偷換</td></tr>
+      <tr><td>recursion tree</td><td>任意遞迴式</td><td class="best">產生猜測、圖像直覺</td><td>要小心加總；不夠嚴謹時需回頭補證</td></tr>
+      <tr><td>master theorem</td><td>T(n) = aT(n/b) + f(n)</td><td class="best">查表秒殺</td><td>標準形限定；縫隙 case 不適用</td></tr>
+      <tr><td>indicator RV</td><td>期望值分析</td><td class="best">線性期望免獨立性</td><td>只給期望，不給尾巴機率</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① O/Ω/Θ 是函數集合，定義靠 (c, n₀)；上界 ≠ 緊界。<br>
+    ② substitution = 猜 + 歸納，歸納必須證出一字不差的形式。<br>
+    ③ recursion tree 是「每層帳單」；打平 → 乘層數，遞減 → 首層主導，遞增 → 葉層主導。<br>
+    ④ master theorem 比的是 n^(log_b a) vs f(n)，要多項式差距才分勝負。<br>
+    ⑤ E[Σ Xᵢ] = Σ E[Xᵢ] 不需要獨立性；隨機化把「假設輸入隨機」變成「自己洗牌」。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch2.json · 13 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="foundations.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">演算法基礎</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="sorting.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">排序與順序統計</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 02 章 Analysis &amp; Recurrences（CLRS 4e Ch 3–5）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"O 記號（Big-O Notation）","back":"漸近上界：f(n) = O(g(n)) ⟺ 存在正常數 c 與 n₀，使所有 n ≥ n₀ 都有 0 ≤ f(n) ≤ c·g(n)。只承諾「不超過」，不承諾「達到」。"},
+  {"front":"Ω 記號（Big-Omega）","back":"漸近下界：存在 c、n₀ 使 n ≥ n₀ 時 f(n) ≥ c·g(n) ≥ 0。與 O 合起來（定理 3.1）就是 Θ。"},
+  {"front":"Θ 記號（Big-Theta）","back":"漸近緊界：c₁·g(n) ≤ f(n) ≤ c₂·g(n)（n ≥ n₀）。f 與 g 成長速率相同，兩邊都被常數夾住。"},
+  {"front":"o／ω 記號（小寫）","back":"嚴格版：f = o(g) 表示對每個正常數 c 都有 f(n) < c·g(n)（n 夠大時）——f 嚴格慢於 g。ω 為反向。大寫像 ≤/≥，小寫像 </>。"},
+  {"front":"遞迴式（Recurrence）","back":"用較小輸入上的自身值定義函數的等式，如 T(n) = 2T(n/2) + Θ(n)。演算法的遞迴結構直接翻譯成遞迴式。"},
+  {"front":"代換法（Substitution Method）","back":"解遞迴式第一把刀：先猜解的形式，再用數學歸納法找常數並證明。歸納步驟必須推出與猜測一字不差的不等式。"},
+  {"front":"遞迴樹（Recursion Tree）","back":"解遞迴式第二把刀：把每次呼叫的「自付成本」畫成節點，逐層加總再加總所有層。常用來產生猜測，再回頭用代換法補證。"},
+  {"front":"主定理（Master Theorem）","back":"解 T(n) = aT(n/b) + f(n) 的查表機：比較葉子總量 n^(log_b a) 與 f(n)，多項式差距決定 Case 1/3，打平（可帶 lgᵏn）走 Case 2。"},
+  {"front":"分水嶺函數（Watershed Function）","back":"主定理中的 n^(log_b a)：recursion tree 葉子數量的級別。f(n)（driving function）與它比大小決定誰主導總成本。"},
+  {"front":"Strassen 演算法","back":"矩陣乘法分治：用 7 次（而非 8 次）n/2 規模乘法完成 2×2 區塊乘法，T(n) = 7T(n/2) + Θ(n²) = Θ(n^log₂7) ≈ Θ(n²·⁸¹)。"},
+  {"front":"機率分析（Probabilistic Analysis）","back":"假設輸入服從某個分布（如隨機排列），計算執行時間的期望值。hiring problem 的期望雇用次數 Hₙ ≈ ln n 是代表例。"},
+  {"front":"指示隨機變數（Indicator Random Variable）","back":"Xᵢ = I{事件 A} ∈ {0,1}，且 E[Xᵢ] = Pr{A}（引理 5.1）。配合期望值線性（不需獨立性）可把複雜的期望拆成機率相加。"},
+  {"front":"隨機化演算法（Randomized Algorithm）","back":"行為由輸入與亂數共同決定的演算法：先隨機排列輸入再處理，使期望保證對任何輸入成立——沒有天生的最壞輸入。"}
+];
+
+/* ---------- P00 成長競賽 ---------- */
+function growFmt(v) {
+  if (v >= 1e12) return v.toExponential(1).replace('e+', '×10^');
+  return Math.round(v).toLocaleString('en-US');
+}
+function growRender() {
+  const n = parseInt($('growN').value, 10);
+  $('growNVal').textContent = n;
+  const rows = [
+    ['lg n', Math.log2(n)], ['√n', Math.sqrt(n)], ['n', n],
+    ['n lg n', n*Math.log2(n)], ['n²', n*n], ['2ⁿ', Math.pow(2, n)]
+  ];
+  $('growTable').innerHTML = '<thead><tr><th>f(n)</th><th>f(' + n + ')</th></tr></thead><tbody>' +
+    rows.map(r => `<tr><td>${r[0]}</td><td>${growFmt(r[1])}</td></tr>`).join('') + '</tbody>';
+  setStatus('growStatus', n >= 48
+    ? '2ⁿ 已是天文數字——指數級與多項式級是「本質不同」的兩個世界。'
+    : 'n 越大，各級數的差距越懸殊；漸近分析關心的正是這個趨勢。');
+}
+growRender();
+
+/* ---------- P02 recursion tree ---------- */
+function rtFrames() {
+  const n = 16, frames = [];
+  const levels = [];
+  for (let L = 0; (n >> L) >= 1; L++) {
+    levels.push({cnt: 1 << L, size: n >> L});
+    if ((n >> L) === 1) break;
+  }
+  for (let upto = 0; upto < levels.length; upto++) {
+    frames.push({upto, msg: upto === levels.length - 1
+      ? `葉層（大小 1 × ${n} 個）。共 lg n + 1 = ${levels.length} 層、每層成本 cn = ${n}c → T(n) = Θ(n lg n)。`
+      : `第 ${upto} 層：${levels[upto].cnt} 個節點 × 大小 ${levels[upto].size} = 成本 ${levels[upto].cnt * levels[upto].size}c——每層都打平在 cn。`});
+  }
+  return frames.map(f => ({...f, levels}));
+}
+function rtApply(f) {
+  const el = $('rtCanvas'); el.innerHTML = '';
+  f.levels.slice(0, f.upto + 1).forEach((lv, Li) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:4px;justify-content:center;margin:.35rem 0;flex-wrap:wrap;align-items:center;';
+    const tag = document.createElement('span');
+    tag.className = 'mono'; tag.style.cssText = 'font-size:.72rem;color:var(--muted);min-width:88px;text-align:right;margin-right:.4rem;';
+    tag.textContent = `L${Li}｜${lv.cnt}×c·${lv.size}`;
+    row.appendChild(tag);
+    for (let k = 0; k < lv.cnt; k++) {
+      const b = document.createElement('div');
+      b.className = 'bq-item';
+      b.style.cssText = `min-width:${Math.max(26, lv.size * 5)}px;font-size:.7rem;background:${Li === f.upto ? '#f39c12' : '#2c3e7a'};`;
+      b.textContent = 'c·' + lv.size;
+      row.appendChild(b);
+    }
+    const sum = document.createElement('span');
+    sum.className = 'mono'; sum.style.cssText = 'font-size:.74rem;color:var(--accent3);font-weight:700;margin-left:.4rem;';
+    sum.textContent = '= ' + (lv.cnt * lv.size) + 'c';
+    row.appendChild(sum);
+    el.appendChild(row);
+  });
+  setStatus('rtStatus', f.msg);
+}
+const rtPlayer = new Player({frames: rtFrames(), apply: rtApply, delayInput: null});
+rtPlayer.reset();
+
+/* ---------- P03 master theorem 查表機 ---------- */
+function mtEval() {
+  const a = parseInt($('mtA').value, 10), b = parseInt($('mtB').value, 10), d = parseInt($('mtD').value, 10);
+  const e = Math.log(a) / Math.log(b);
+  const eStr = Number.isInteger(e) ? e : e.toFixed(3);
+  $('mtLog').textContent = `log_${b} ${a} = ${eStr}`;
+  $('mtDD').textContent = d;
+  let cse, ans, why;
+  if (Math.abs(e - d) < 1e-9) {
+    cse = 'Case 2（k=0）'; ans = `Θ(n^${eStr} lg n)`; why = '打平：每層成本相同，乘上 lg n 層。';
+  } else if (e > d) {
+    cse = 'Case 1'; ans = `Θ(n^${eStr})`; why = '葉子主導：成本逐層放大，最後一層贏。';
+  } else {
+    cse = 'Case 3'; ans = `Θ(n^${d})`; why = '根部主導：f(n) = n^d 為多項式時正則性條件自動成立。';
+  }
+  $('mtCase').textContent = cse;
+  $('mtAns').textContent = ans;
+  setStatus('mtStatus', `T(n) = ${a}T(n/${b}) + n^${d}：比較 n^${eStr} 與 n^${d} → ${why}`);
+}
+mtEval();
+
+/* ---------- P05 hiring 模擬 ---------- */
+let hireTot = 0, hireN = 0;
+function hireRun() {
+  const n = 100;
+  for (let t = 0; t < 200; t++) {
+    const A = Array.from({length:n}, (_,k) => k+1);
+    for (let i = n-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [A[i],A[j]] = [A[j],A[i]]; }
+    let best = 0, h = 0;
+    for (const r of A) if (r > best) { best = r; h++; }
+    hireTot += h; hireN++;
+  }
+  $('hireTrials').textContent = hireN;
+  $('hireAvg').textContent = (hireTot / hireN).toFixed(3);
+  setStatus('hireStatus', `目前平均 ${(hireTot/hireN).toFixed(3)}，理論值 H₁₀₀ = 5.187——差距隨試驗數縮小。`);
+}
+function hireReset() {
+  hireTot = 0; hireN = 0;
+  $('hireTrials').textContent = '0'; $('hireAvg').textContent = '—';
+  setStatus('hireStatus', '理論值 H₁₀₀ = 5.187。多按幾次看平均值收斂。');
+}
+</script>
+<script>
+/* ============ shared utilities ============ */
+const $ = id => document.getElementById(id);
+
+function quizCheck(quizId, optEl) {
+  const isCorrect = optEl.dataset.correct === 'true';
+  optEl.parentElement.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct','wrong'));
+  optEl.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = $(quizId + 'Feedback');
+  fb.classList.remove('correct','wrong');
+  fb.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  fb.innerHTML = (isCorrect ? '<strong>正確 ✓</strong> ' : '<strong>不對 ✗</strong> ') + (optEl.dataset.fb || '');
+}
+
+function hlLine(rootId, n) {
+  const root = $(rootId);
+  if (!root) return;
+  root.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+  if (n != null) {
+    const line = root.querySelector(`.line[data-l="${n}"]`);
+    if (line) line.classList.add('active');
+  }
+}
+
+/* step player: frames = [{...}], apply(frame) renders */
+class Player {
+  constructor({frames, apply, delayInput, onDone}) {
+    this.frames = frames; this.apply = apply;
+    this.delayInput = delayInput; this.i = -1; this.timer = null;
+    this.onDone = onDone || (()=>{});
+  }
+  step() {
+    if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+    this.i += 1; this.apply(this.frames[this.i]);
+  }
+  play() {
+    this.stop();
+    const tick = () => {
+      if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+      this.step();
+      this.timer = setTimeout(tick, this.delayInput ? parseInt(this.delayInput.value,10) : 700);
+    };
+    tick();
+  }
+  stop() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  reset() { this.stop(); this.i = -1; if (this.frames.length) this.apply(this.frames[0]); }
+}
+
+function setStatus(id, html) {
+  const el = $(id); if (el) el.querySelector('.status-text').innerHTML = html;
+}
+
+/* vertical box stack renderer (DOM) */
+function renderBoxStack(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  const hl = opts.highlight ?? -1;   // index from top (0 = top)
+  el.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bs-toplabel';
+  label.textContent = items.length ? 'top ↓' : '(empty)';
+  el.appendChild(label);
+  items.slice().reverse().forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bs-item' + (idx === hl ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+
+/* horizontal queue renderer: front at left */
+function renderBoxQueue(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  el.innerHTML = '';
+  const front = document.createElement('div');
+  front.className = 'bq-label'; front.textContent = items.length ? 'front →' : '(empty)';
+  el.appendChild(front);
+  items.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item' + (idx === (opts.highlight ?? -1) ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  const rear = document.createElement('div');
+  rear.className = 'bq-label'; rear.textContent = items.length ? '← rear' : '';
+  el.appendChild(rear);
+}
+
+/* floating nav scroll spy */
+(function setupNav() {
+  const nav = $('floatNav');
+  const links = nav.querySelectorAll('a[data-target]');
+  const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
+  function update() {
+    const y = window.scrollY + window.innerHeight * 0.3;
+    let active = sections[0]?.id;
+    for (const s of sections) if (s.offsetTop <= y) active = s.id;
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>
