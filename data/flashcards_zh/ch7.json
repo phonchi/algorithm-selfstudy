@@ -1,0 +1,54 @@
+[
+ {
+  "front": "不相交集合（Disjoint Sets）",
+  "back": "維護一群互不相交的動態集合，支援 MAKE-SET、FIND-SET（回代表）、UNION。森林實作：每集合一棵樹、根為代表。"
+ },
+ {
+  "front": "union by rank",
+  "back": "合併時把 rank（高度上界）小的樹掛到大的下面；同 rank 任選並 +1。單獨使用即可保證樹高 O(lg n)。"
+ },
+ {
+  "front": "路徑壓縮（Path Compression）",
+  "back": "FIND-SET 回程時把沿途每個節點的父指標直接改指根——查一次、壓扁一路。與 by rank 合用達 O(m α(n))。"
+ },
+ {
+  "front": "反 Ackermann 函數 α(n)",
+  "back": "成長慢到荒謬的函數：對一切實際的 n（宇宙原子數量級）α(n) ≤ 4。union-find 兩優化合用的攤還成本 O(α(n))「幾乎常數」。"
+ },
+ {
+  "front": "BFS（廣度優先搜尋）",
+  "back": "用 queue 逐層擴散：白→灰（入列）→黑（鄰居掃完）。O(V+E)；無權圖中 d[v] = δ(s,v) 最短距離，π 串出 BFS tree。"
+ },
+ {
+  "front": "BFS queue 不變量",
+  "back": "佇列中的 d 值單調不減、最大 − 最小 ≤ 1——波前最多橫跨兩層。這是 BFS 最短距離正確性證明的支柱。"
+ },
+ {
+  "front": "DFS 時間戳（Timestamps）",
+  "back": "每頂點兩個戳記：發現 u.d（塗灰）與完成 u.f（塗黑），1 ≤ d < f ≤ 2V。DFS 所有結構性質都用它表達。"
+ },
+ {
+  "front": "括號定理（Parenthesis Theorem）",
+  "back": "任兩頂點的 [d, f] 區間要嘛不相交（無祖裔關係）、要嘛完整巢狀（後裔）——絕不交錯。"
+ },
+ {
+  "front": "邊分類（Edge Classification）",
+  "back": "探索 (u,v) 時看 v 的顏色：白 = tree、灰 = back（指祖先，代表有環）、黑 = forward/cross。無向圖只有 tree 與 back。"
+ },
+ {
+  "front": "拓撲排序（Topological Sort）",
+  "back": "DAG 的線性排序使所有邊由左指右：DFS 完成時間 f 遞減即為解。正確性：DAG 中每條邊 (u,v) 都有 v.f < u.f。O(V+E)。"
+ },
+ {
+  "front": "強連通元件（SCC）",
+  "back": "極大的互達頂點集。兩趟 DFS：G 上記 f → 建 Gᵀ → 按 f 遞減在 Gᵀ 上 DFS，每棵樹一個 SCC。O(V+E)。"
+ },
+ {
+  "front": "轉置圖（Transpose Graph）",
+  "back": "Gᵀ：所有邊反向。SCC(G) = SCC(Gᵀ)；第二趟 DFS 在 Gᵀ 上跑是為了堵住「流出 SCC」的邊，讓每棵樹不越界。"
+ },
+ {
+  "front": "元件圖（Component Graph）",
+  "back": "把每個 SCC 縮成一個頂點後的圖——必為 DAG（若兩個 SCC 互相可達就該合併成一個）。SCC 演算法的正確性架在它上面。"
+ }
+]

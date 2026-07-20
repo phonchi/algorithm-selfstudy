@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>貪婪演算法與攤還分析 — Greedy & Amortized（CLRS Ch15–16）</title>
+<title>Disjoint Set 與圖的走訪深化 — Graphs I（CLRS Ch19–20）</title>
 <script>
   MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
 </script>
@@ -367,11 +367,11 @@ footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border
 <body>
 <nav class="float-nav" id="floatNav" aria-label="章節導覽">
   <div class="fn-title">章節導覽</div>
-  <a href="#greedy" data-target="greedy"><span class="fn-num">P00</span><span class="fn-name">greedy 兩要素</span></a>
-  <a href="#activity" data-target="activity"><span class="fn-num">P01</span><span class="fn-name">activity selection</span></a>
-  <a href="#huffman" data-target="huffman"><span class="fn-num">P02</span><span class="fn-name">Huffman</span></a>
-  <a href="#knapsack" data-target="knapsack"><span class="fn-num">P03</span><span class="fn-name">背包對照</span></a>
-  <a href="#amortized" data-target="amortized"><span class="fn-num">P04</span><span class="fn-name">攤還三法</span></a>
+  <a href="#dsu" data-target="dsu"><span class="fn-num">P00</span><span class="fn-name">disjoint set</span></a>
+  <a href="#bfs" data-target="bfs"><span class="fn-num">P01</span><span class="fn-name">BFS 深化</span></a>
+  <a href="#dfs" data-target="dfs"><span class="fn-num">P02</span><span class="fn-name">DFS 時間戳</span></a>
+  <a href="#toposort" data-target="toposort"><span class="fn-num">P03</span><span class="fn-name">topological sort</span></a>
+  <a href="#scc" data-target="scc"><span class="fn-num">P04</span><span class="fn-name">SCC</span></a>
   <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
   <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
   <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
@@ -381,19 +381,19 @@ footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border
 <div class="hero" id="top">
   <div class="hero-grid"></div>
   <div class="hero-content">
-    <h1><span class="orange">貪婪演算法</span>與<span class="purple">攤還分析</span></h1>
-    <div class="subtitle">第 06 章 — Greedy Algorithms &amp; Amortized Analysis（CLRS 4e Ch 15–16）</div>
-    <div class="big-formula">greedy-choice｜exchange argument｜Huffman｜aggregate｜accounting｜potential</div>
+    <h1><span class="purple">Disjoint Set</span> 與<span class="green">圖的走訪深化</span></h1>
+    <div class="subtitle">第 07 章 — Data Structures for Disjoint Sets &amp; Elementary Graph Algorithms（CLRS 4e Ch 19–20）</div>
+    <div class="big-formula">union by rank｜path compression｜白灰黑｜時間戳｜topological sort｜SCC</div>
     <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
   </div>
 </div>
 
 <div class="container">
 <div class="study-guide">
-  <div class="sg-title">📌 本頁使用方式（CLRS Ch 15–16）</div>
-  <p>① greedy 是「每步選局部最好、永不回頭」——比 DP 簡單，但<strong>只在特定結構下正確</strong>；本章的重點是學會<strong>證明貪婪安全</strong>（exchange argument）與識破貪婪失敗（0/1 背包）。
-  ② 資結課的 vector 加倍你已聽過「攤還 O(1)」；P04 給它正式的三種語言：aggregate、accounting、potential。
-  ③ Huffman 建樹是手算大題常客——動畫看完自己畫一次。
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 19–20）</div>
+  <p>① 資結課你已會「用」BFS／DFS／topological sort；本章升級成「會證」：白灰黑三色、時間戳、括號定理、邊分類——這些是 SCC 與下一章 MST／最短路正確性的語言。
+  ② <strong>disjoint set 是全新內容</strong>，也是下一章 Kruskal 的引擎——union by rank ＋ path compression 兩個優化務必都能手畫。
+  ③ SCC 的兩趟 DFS 順序（G 的完成時間 → Gᵀ 反序）是考試最愛，P04 的 quiz 一定要做。
   ④ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
   <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
 </div>
@@ -401,272 +401,266 @@ footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border
 <div class="toc">
   <div class="toc-title">CONTENTS · 內容目錄</div>
   <div class="toc-grid">
-    <a href="#greedy"><span class="toc-num">P00</span>greedy 兩要素</a>
-    <a href="#activity"><span class="toc-num">P01</span>activity selection</a>
-    <a href="#huffman"><span class="toc-num">P02</span>Huffman coding</a>
-    <a href="#knapsack"><span class="toc-num">P03</span>0/1 vs 分數背包</a>
-    <a href="#amortized"><span class="toc-num">P04</span>攤還分析三法</a>
+    <a href="#dsu"><span class="toc-num">P00</span>disjoint set（union-find）</a>
+    <a href="#bfs"><span class="toc-num">P01</span>BFS 深化</a>
+    <a href="#dfs"><span class="toc-num">P02</span>DFS 時間戳與括號定理</a>
+    <a href="#toposort"><span class="toc-num">P03</span>topological sort</a>
+    <a href="#scc"><span class="toc-num">P04</span>強連通元件</a>
     <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
     <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
     <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
   </div>
 </div>
 
-<section id="greedy">
-  <div class="section-number">P00 · GREEDY</div>
-  <h2>貪婪何時安全？兩個要素、一種證法 <span class="sec-badge">§15.2</span></h2>
+<section id="dsu">
+  <div class="section-number">P00 · DISJOINT SET</div>
+  <h2>union-find：三個操作、兩個優化 <span class="sec-badge">Ch 19</span></h2>
+  <p>維護一群<strong>不相交集合</strong>，支援 MAKE-SET／FIND-SET（回傳代表）／UNION。
+  森林實作：每個集合一棵樹、根是代表。裸版最壞會退化成鏈；加上兩個優化後脫胎換骨：</p>
+  <div class="info-box purple">
+    <span class="info-label">兩個優化</span>
+    ① <strong>union by rank</strong>：矮樹掛到高樹下（rank 是高度上界），樹高 O(lg n)。<br>
+    ② <strong>path compression</strong>：FIND-SET 沿途把每個節點直接改指到根——查一次、修一路。<br>
+    兩者合用：m 次操作總成本 <strong>O(m·α(n))</strong>，α 是反 Ackermann 函數——宇宙尺寸的 n 也 ≤ 4，「幾乎常數」。（證明用 Ch16 的 potential method——攤還分析的實戰舞台。）
+  </div>
+
   <div class="viz-layout">
-    <div>
-      <p>DP 在每一步「枚舉所有選擇取最好」；greedy 直接<strong>做眼前看起來最好的那個選擇</strong>，
-      不解其他子問題。要讓這招正確，問題必須同時有：</p>
-      <div class="info-box warm">
-        <span class="info-label">兩個要素</span>
-        ① <strong>貪婪選擇性質（greedy-choice property）</strong>：存在一個「全域最佳解」包含「局部貪婪選擇」——
-        可以先做貪婪選擇再解剩下的子問題，不會錯過最佳解。<br>
-        ② <strong>最佳子結構</strong>：做完貪婪選擇後剩下的子問題，其最佳解與貪婪選擇合起來是原問題最佳解（與 DP 共用這條）。
+    <div class="viz-panel">
+      <div class="adj-list" id="dsuState" style="font-family:'JetBrains Mono',monospace;"></div>
+      <div class="status-banner" id="dsuStatus"><span class="status-icon">▸</span><span class="status-text">CLRS 圖 19.1 的例子：依序 union 建出連通元件。按「單步」。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="dsuPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="dsuPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="dsuPlayer.reset()">↺ 重來</button>
       </div>
-      <p>證明①的標準武器是<strong>交換論證（exchange argument）</strong>：
-      拿任何一個最佳解，把它「不貪婪」的部分換成貪婪選擇，證明<strong>換完不會變差</strong>——
-      所以存在包含貪婪選擇的最佳解。P01 立刻示範。</p>
     </div>
     <div class="side-panel">
-      <div class="info-card">
-        <div class="ic-title">DP vs Greedy 判斷順序</div>
-        <div style="font-size:.85rem;line-height:1.8;">先想 DP（枚舉選擇）→ 觀察是否「其實每次都選同一種」→ 若能證 exchange argument，降級成 greedy 拿更好的複雜度。反過來先猜 greedy 很容易踩到 0/1 背包型陷阱。</div>
+      <div class="code-tabs" id="ctDsu">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctDsu','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctDsu','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctDsu','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">FIND-SET</span>(x) <span class="com">// 含 path compression</span></div>
+            <span class="line"><span class="ln">1</span><span class="kw">if</span> x ≠ x.p</span>
+            <span class="line"><span class="ln">2</span>    x.p = <span class="fn">FIND-SET</span>(x.p)　<span class="com">// 沿途全改指根</span></span>
+            <span class="line"><span class="ln">3</span><span class="kw">return</span> x.p</span>
+          </div>
+          <div class="clrs-code" style="font-size:.75rem;margin-top:.6rem;">
+            <div class="cc-title"><span class="fn">UNION</span>(x, y) <span class="com">// by rank</span></div>
+            <span class="line"><span class="ln">1</span>rx = <span class="fn">FIND-SET</span>(x)；ry = <span class="fn">FIND-SET</span>(y)</span>
+            <span class="line"><span class="ln">2</span>矮的掛到高的下面；同高則任選並 rank+1</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">int</span> <span class="fn">findSet</span>(<span class="kw">int</span> x) {</span><span class="line">    <span class="kw">if</span> (p[x] != x) p[x] = <span class="fn">findSet</span>(p[x]);</span><span class="line">    <span class="kw">return</span> p[x];</span><span class="line">}</span><span class="line"><span class="kw">void</span> <span class="fn">unite</span>(<span class="kw">int</span> x, <span class="kw">int</span> y) {</span><span class="line">    <span class="kw">int</span> rx = <span class="fn">findSet</span>(x), ry = <span class="fn">findSet</span>(y);</span><span class="line">    <span class="kw">if</span> (rx == ry) <span class="kw">return</span>;</span><span class="line">    <span class="kw">if</span> (rank_[rx] &lt; rank_[ry]) std::swap(rx, ry);</span><span class="line">    p[ry] = rx;</span><span class="line">    <span class="kw">if</span> (rank_[rx] == rank_[ry]) ++rank_[rx];</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（CLRS 圖 19.1 的邊）</span><pre>SAME-COMPONENT(a, d) = 1
+SAME-COMPONENT(e, g) = 0</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 19/disjoint_set_forest.py（MIT License）</span></span><span class="line">nodes = {c: make_set(c) <span class="kw">for</span> c <span class="kw">in</span> <span class="str">'abcdefghij'</span>}</span><span class="line"><span class="kw">for</span> x, y <span class="kw">in</span> [(<span class="str">'b'</span>,<span class="str">'c'</span>), (<span class="str">'a'</span>,<span class="str">'c'</span>), (<span class="str">'a'</span>,<span class="str">'b'</span>), (<span class="str">'d'</span>,<span class="str">'c'</span>),</span><span class="line">             (<span class="str">'e'</span>,<span class="str">'f'</span>), (<span class="str">'g'</span>,<span class="str">'h'</span>), (<span class="str">'i'</span>,<span class="str">'j'</span>)]:</span><span class="line">    union(nodes[x], nodes[y])</span><span class="line">find_set(nodes[<span class="str">'a'</span>]) <span class="kw">is</span> find_set(nodes[<span class="str">'d'</span>])</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>same(a,d): True  same(e,g): False</pre></div>
+          <div class="ct-note">官方版是 ForestNode 物件（x.parent、x.rank），與課本 pseudocode 逐行對應。</div>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="quiz-box">
-    <div class="quiz-label">QUIZ P00 · 概念定位</div>
-    <p>greedy 與 DP 的本質差異是？</p>
+    <div class="quiz-label">QUIZ P00 · 優化的角色</div>
+    <p>只用 union by rank（不做 path compression），m 次操作的最壞總成本是？</p>
     <div class="quiz-options" id="q00Options">
-      <div class="quiz-opt" data-correct="true" data-fb="正確。DP 對每個狀態枚舉所有選擇、比較後取優（自底向上解所有子問題）；greedy 每步只做一個選擇、只留下一個子問題。所以 greedy 通常更快，但需要額外證明「這個唯一選擇不會錯」。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> DP 枚舉所有選擇；greedy 每步只做一個選擇、只剩一個子問題</div>
-      <div class="quiz-opt" data-correct="false" data-fb="兩者都需要最佳子結構——那是共同前提，不是差異。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> DP 需要最佳子結構，greedy 不需要</div>
-      <div class="quiz-opt" data-correct="false" data-fb="greedy 不一定比較不準——在滿足貪婪選擇性質的問題上它給出「精確最佳解」，不是近似。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> greedy 只能求近似解</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。by rank 保證樹高 O(lg n)，每次 FIND O(lg n) → 總 O(m lg n)。單獨用也是這個界；兩個優化合用才降到 O(m α(n))。反過來只用 path compression 也是近線性——兩者各自都夠好，合體幾乎完美。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> O(m lg n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="O(m α(n)) 需要兩個優化合用；只有 by rank 時樹不會被壓扁，FIND 仍要走 O(lg n)。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> O(m α(n))</div>
+      <div class="quiz-opt" data-correct="false" data-fb="O(m²) 是「兩個優化都不用」時可能退化成鏈的量級；by rank 已經把高度壓到對數。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> O(m²)</div>
     </div>
     <div class="quiz-feedback" id="q00Feedback"></div>
   </div>
 </section>
 
-<section id="activity">
-  <div class="section-number">P01 · ACTIVITY SELECTION</div>
-  <h2>活動選擇：永遠先選「最早結束」 <span class="sec-badge">§15.1</span></h2>
-  <p>n 個活動搶同一間教室，選最多個互不重疊的。貪婪規則：<strong>依結束時間排序，每次選「與已選相容、最早結束」的活動</strong>。
-  直覺：最早結束 = 留給後面最多的時間。按單步看 CLRS 圖 15.1 的 11 個活動：</p>
-
+<section id="bfs">
+  <div class="section-number">P01 · BFS</div>
+  <h2>BFS 深化：為什麼 d[v] 就是最短距離 <span class="sec-badge">§20.2</span></h2>
   <div class="viz-layout">
-    <div class="viz-panel">
-      <div id="actTimeline" style="position:relative;"></div>
-      <div class="status-banner" id="actStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」逐一檢視活動（已按結束時間排序）。</span></div>
-      <div class="controls-bar">
-        <button class="btn btn-play" onclick="actPlayer.play()">▶ 播放</button>
-        <button class="btn btn-step" onclick="actPlayer.step()">⏭ 單步</button>
-        <button class="btn btn-reset" onclick="actPlayer.reset()">↺ 重來</button>
+    <div>
+      <p>資結課會寫 BFS；本章補上三件武器：
+      ① <strong>白灰黑</strong>——白＝未發現、灰＝在 queue 裡（波前）、黑＝鄰居掃完。
+      ② <strong>BFS tree</strong>——π 指標串出的樹，樹上路徑就是最短路徑。
+      ③ <strong>正確性（定理 20.5）</strong>：對無權圖，BFS 結束時 d[v] = δ(s, v)（真實最短距離）。</p>
+      <div class="thm-box proof">
+        <div class="thm-label">證明骨架</div>
+        <div style="font-size:.86rem;line-height:1.7;">
+        上界：d[v] ≥ δ(s,v)（每次入列 d 都是「某條真實路徑」的長度）。<br>
+        Queue 不變量：佇列裡的 d 值單調不減、且首尾差 ≤ 1——波一層層擴散、不會跳層。<br>
+        反證：假設有 v 使 d[v] &gt; δ(s,v)，取 δ 最小的違規者，看它最短路徑上的前驅 u：v 由 u 鬆弛時必得 d[v] = d[u] + 1 = δ(s,v)，矛盾。∎</div>
       </div>
+      <p>成本 <strong>O(V + E)</strong>：每個頂點入列一次、每條邊掃一次——鄰接串列的紅利。</p>
     </div>
     <div class="side-panel">
-      <div class="thm-box proof" style="margin:0;">
-        <div class="thm-label">交換論證（定理 15.1 精神）</div>
-        <div style="font-size:.85rem;line-height:1.7;">設 OPT 是任一最佳解，aₘ 是「最早結束」的活動，aⱼ 是 OPT 中最早結束者。
-        把 OPT 的 aⱼ 換成 aₘ：因 f(aₘ) ≤ f(aⱼ)，aₘ 不會與 OPT 其他活動重疊 → 仍是可行解、大小不變。
-        <strong>∴ 存在含 aₘ 的最佳解</strong>——貪婪選擇安全，剩下的子問題遞迴同理。∎</div>
-      </div>
-      <div class="code-tabs" id="ctAct" style="margin-top:.8rem;">
+      <div class="code-tabs" id="ctBfs">
         <div class="ct-bar">
-          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctAct','pseudo',this)">Pseudo</button>
-          <button class="ct-btn" onclick="tabShow('ctAct','cpp',this)">C++</button>
-          <button class="ct-btn" onclick="tabShow('ctAct','py',this)">Python</button>
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctBfs','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctBfs','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctBfs','py',this)">Python</button>
         </div>
         <div class="ct-panel active" data-lang="pseudo">
           <div class="clrs-code" style="font-size:.75rem;">
-            <div class="cc-title"><span class="fn">GREEDY-ACTIVITY-SELECTOR</span>(s, f, n)</div>
-            <span class="line"><span class="ln">1</span>A = {a₁}；k = 1　<span class="com">// 已按 f 排序</span></span>
-            <span class="line"><span class="ln">2</span><span class="kw">for</span> m = 2 <span class="kw">to</span> n</span>
-            <span class="line"><span class="ln">3</span>  <span class="kw">if</span> s[m] ≥ f[k]　<span class="com">// 相容？</span></span>
-            <span class="line"><span class="ln">4</span>    A = A ∪ {aₘ}；k = m</span>
-            <span class="line"><span class="ln">5</span><span class="kw">return</span> A</span>
+            <div class="cc-title"><span class="fn">BFS</span>(G, s) <span class="com">— 核心</span></div>
+            <span class="line"><span class="ln">1</span>s 塗灰、d[s]=0、入列</span>
+            <span class="line"><span class="ln">2</span><span class="kw">while</span> Q 非空</span>
+            <span class="line"><span class="ln">3</span>  u = <span class="fn">DEQUEUE</span>(Q)</span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">for</span> v ∈ Adj[u]：<span class="kw">if</span> v 是白</span>
+            <span class="line"><span class="ln">5</span>    v 塗灰；d[v]=d[u]+1；π[v]=u；入列</span>
+            <span class="line"><span class="ln">6</span>  u 塗黑</span>
           </div>
         </div>
         <div class="ct-panel" data-lang="cpp">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">std::sort(acts.begin(), acts.end(),</span><span class="line">    [](<span class="kw">auto</span>&amp; a, <span class="kw">auto</span>&amp; b){ <span class="kw">return</span> a.f &lt; b.f; });</span><span class="line"><span class="kw">int</span> lastFinish = <span class="num">0</span>;</span><span class="line"><span class="kw">for</span> (<span class="kw">const auto</span>&amp; a : acts)</span><span class="line">    <span class="kw">if</span> (a.s &gt;= lastFinish) {</span><span class="line">        chosen.push_back(a.id);</span><span class="line">        lastFinish = a.f;</span><span class="line">    }</span></div>
-          <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>選了 4 個活動：a1 a4 a8 a11</pre></div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">std::vector&lt;<span class="kw">int</span>&gt; <span class="fn">bfs</span>(<span class="kw">const</span> Graph&amp; G, <span class="kw">int</span> s) {</span><span class="line">    std::vector&lt;<span class="kw">int</span>&gt; d(G.n, -<span class="num">1</span>);  <span class="com">// -1 = WHITE</span></span><span class="line">    std::queue&lt;<span class="kw">int</span>&gt; Q;</span><span class="line">    d[s] = <span class="num">0</span>; Q.push(s);</span><span class="line">    <span class="kw">while</span> (!Q.empty()) {</span><span class="line">        <span class="kw">int</span> u = Q.front(); Q.pop();</span><span class="line">        <span class="kw">for</span> (<span class="kw">int</span> v : G.adj[u])</span><span class="line">            <span class="kw">if</span> (d[v] &lt; <span class="num">0</span>) {</span><span class="line">                d[v] = d[u] + <span class="num">1</span>; Q.push(v);</span><span class="line">            }</span><span class="line">    }</span><span class="line">    <span class="kw">return</span> d;</span><span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（CLRS 圖 20.3，源點 s）</span><pre>BFS 距離：r:1 s:0 t:2 u:3 v:2 w:1 x:2 y:3</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 15/activity_selector.py（MIT License）</span></span><span class="line">s = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">0</span>, <span class="num">5</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">2</span>, <span class="num">12</span>]</span><span class="line">f = [<span class="num">0</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">9</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">11</span>, <span class="num">12</span>, <span class="num">14</span>, <span class="num">16</span>]</span><span class="line">A = greedy_activity_selector(s, f, len(s))</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出（雙向鏈結串列走訪）</span><pre>['activity1', 'activity4', 'activity8', 'activity11']</pre></div>
-          <div class="ct-note">官方版把結果存進 Ch10 的 DLLSentinel；索引 0 需放哨兵值（s[0]=f[0]=0）。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 20/bfs.py（MIT License）</span></span><span class="line">G = AdjacencyListGraph(<span class="num">8</span>, directed=<span class="kw">False</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 20.3 …</span></span><span class="line">d, pi = bfs(G, <span class="num">1</span>)　<span class="com"># 源點 s = 1</span></span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[1, 0, 2, 3, 2, 1, 2, 3]</pre></div>
+          <div class="ct-note">回傳 (d, pi)：距離與 BFS tree 前驅；print_path.py 可沿 π 印出最短路徑。</div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="quiz-box">
-    <div class="quiz-label">QUIZ P01 · 錯誤的貪婪規則</div>
-    <p>「每次選<strong>最短</strong>的活動」為什麼是錯的貪婪規則？</p>
+    <div class="quiz-label">QUIZ P01 · queue 不變量</div>
+    <p>BFS 執行中，queue 裡的 d 值序列<strong>不可能</strong>是下列哪個？</p>
     <div class="quiz-options" id="q01Options">
-      <div class="quiz-opt" data-correct="true" data-fb="正確。反例：⟨1,9⟩ 與 ⟨8,10⟩、⟨9,17⟩——最短的 ⟨8,10⟩ 一選就同時擋掉兩個，只得 1 個活動；最早結束規則選 ⟨1,9⟩＋⟨9,17⟩ 得 2 個。找一個小反例就足以擊斃一條貪婪規則——這是 quiz／作業的常見題型。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 存在反例：短活動可能橫跨中間、同時擋掉兩側</div>
-      <div class="quiz-opt" data-correct="false" data-fb="效率不是問題（一樣是排序＋掃描）；問題是答案會錯。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 它比較慢</div>
-      <div class="quiz-opt" data-correct="false" data-fb="貪婪規則不需要唯一——「最早結束」也可能平手（任選即可）。錯在「最短」證不出 exchange argument，且有具體反例。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 最短活動可能不唯一</div>
+      <div class="quiz-opt" data-correct="false" data-fb="⟨2,2,3,3⟩ 合法：單調不減、首尾差 1——正是波前跨兩層的樣子。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> ⟨2, 2, 3, 3⟩</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確，⟨2, 4⟩ 不可能。queue 不變量：值單調不減且最大 − 最小 ≤ 1。層與層之間不會跳——這正是「d[v] = 最短距離」證明的支柱。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> ⟨2, 4⟩</div>
+      <div class="quiz-opt" data-correct="false" data-fb="⟨3,3,3⟩ 合法：同一層的頂點排隊中。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> ⟨3, 3, 3⟩</div>
     </div>
     <div class="quiz-feedback" id="q01Feedback"></div>
   </div>
 </section>
 
-<section id="huffman">
-  <div class="section-number">P02 · HUFFMAN</div>
-  <h2>Huffman coding：反覆合併頻率最小的兩棵樹 <span class="sec-badge">§15.3</span></h2>
-  <p>給每個字元一個<strong>變動長度、前綴自由（prefix-free）</strong>的 0/1 編碼，讓總位元數最少。
-  貪婪規則：<strong>每次從 min-priority queue 取出頻率最小的兩棵樹合併</strong>（頻率相加），重複 n−1 次。
-  用 CLRS 圖 15.5 的頻率表（a:45、b:13、c:12、d:16、e:9、f:5，單位千次）：</p>
+<section id="dfs">
+  <div class="section-number">P02 · DFS</div>
+  <h2>DFS 時間戳與括號定理：一切證明的座標系 <span class="sec-badge">§20.3</span></h2>
+  <p>DFS 給每個頂點兩個時間戳：<strong>發現 u.d（塗灰）與完成 u.f（塗黑）</strong>。
+  按單步看穿衣 DAG 的 DFS 產生的「括號序列」：</p>
 
   <div class="viz-layout">
     <div class="viz-panel">
-      <div id="hufForest" style="min-height:90px;"></div>
-      <div class="status-banner" id="hufStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」執行下一次合併。</span></div>
+      <div class="token-out" id="dfsBrackets" style="min-height:56px;"></div>
+      <div class="status-banner" id="dfsStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」推進 DFS。( = 發現（塗灰）、) = 完成（塗黑）。</span></div>
       <div class="controls-bar">
-        <button class="btn btn-play" onclick="hufPlayer.play()">▶ 播放</button>
-        <button class="btn btn-step" onclick="hufPlayer.step()">⏭ 單步</button>
-        <button class="btn btn-reset" onclick="hufPlayer.reset()">↺ 重來</button>
+        <button class="btn btn-play" onclick="dfsPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="dfsPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="dfsPlayer.reset()">↺ 重來</button>
       </div>
-      <div style="overflow-x:auto;margin-top:.6rem;"><table class="cmp-table" style="font-size:.78rem;" id="hufCodes"></table></div>
     </div>
     <div class="side-panel">
-      <div class="code-tabs" id="ctHuf">
-        <div class="ct-bar">
-          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctHuf','pseudo',this)">Pseudo</button>
-          <button class="ct-btn" onclick="tabShow('ctHuf','cpp',this)">C++</button>
-          <button class="ct-btn" onclick="tabShow('ctHuf','py',this)">Python</button>
-        </div>
-        <div class="ct-panel active" data-lang="pseudo">
-          <div class="clrs-code" style="font-size:.75rem;">
-            <div class="cc-title"><span class="fn">HUFFMAN</span>(C, n)</div>
-            <span class="line"><span class="ln">1</span>Q = C　<span class="com">// min-PQ（按頻率）</span></span>
-            <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> n − 1</span>
-            <span class="line"><span class="ln">3</span>  x = <span class="fn">EXTRACT-MIN</span>(Q)</span>
-            <span class="line"><span class="ln">4</span>  y = <span class="fn">EXTRACT-MIN</span>(Q)</span>
-            <span class="line"><span class="ln">5</span>  z = 新節點：z.freq = x.freq + y.freq</span>
-            <span class="line"><span class="ln">6</span>  z.left = x；z.right = y；<span class="fn">INSERT</span>(Q, z)</span>
-            <span class="line"><span class="ln">7</span><span class="kw">return</span> <span class="fn">EXTRACT-MIN</span>(Q)　<span class="com">// 樹根</span></span>
-          </div>
-          <div class="ct-note">n−1 次合併 × O(lg n) 的 PQ 操作 = O(n lg n)。</div>
-        </div>
-        <div class="ct-panel" data-lang="cpp">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">std::priority_queue&lt;Node*, std::vector&lt;Node*&gt;, Cmp&gt; Q;</span><span class="line"><span class="kw">for</span> (<span class="kw">auto</span> [c, f] : freq) Q.push(<span class="kw">new</span> Node{c, f});</span><span class="line"><span class="kw">while</span> (Q.size() &gt; <span class="num">1</span>) {     <span class="com">// n−1 次合併</span></span><span class="line">    Node* x = Q.top(); Q.pop();</span><span class="line">    Node* y = Q.top(); Q.pop();</span><span class="line">    Q.push(<span class="kw">new</span> Node{<span class="str">'*'</span>, x-&gt;freq + y-&gt;freq, x, y});</span><span class="line">}</span><span class="line"><span class="fn">printCodes</span>(Q.top(), <span class="str">""</span>);  <span class="com">// 左 0 右 1 走到葉</span></span></div>
-          <div class="expected-out"><span class="eo-tag">執行輸出（同 CLRS 圖 15.5）</span><pre>a: 0
-c: 100
-b: 101
-f: 1100
-e: 1101
-d: 111</pre></div>
-        </div>
-        <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># heapq 簡例（官方 Chapter 15/huffman.py 是完整檔案壓縮器）</span></span><span class="line">h = [(f, c, c) <span class="kw">for</span> c, f <span class="kw">in</span> freq.items()]</span><span class="line">heapq.heapify(h)</span><span class="line"><span class="kw">while</span> len(h) &gt; <span class="num">1</span>:</span><span class="line">    f1, _, x = heapq.heappop(h)</span><span class="line">    f2, _, y = heapq.heappop(h)</span><span class="line">    tree[node] = (x, y)</span><span class="line">    heapq.heappush(h, (f1 + f2, node, node))</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>codes: {'a':'0','b':'101','c':'100',
- 'd':'111','e':'1101','f':'1100'}
-期望編碼長度: 224</pre></div>
-          <div class="ct-note">官方 huffman.py 可對真實檔案（附 moby-dick.txt）壓縮／解壓，行有餘力值得一讀。</div>
-        </div>
+      <div class="info-card">
+        <div class="ic-title">括號定理（定理 20.7）</div>
+        <div style="font-size:.85rem;line-height:1.75;">任兩頂點的 [d, f] 區間要嘛<strong>互不相交</strong>、要嘛<strong>完整巢狀</strong>——絕不交錯。
+        v 是 u 的後裔 ⟺ u.d &lt; v.d &lt; v.f &lt; u.f。</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">邊分類（用顏色判定）</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        探索邊 (u, v) 時看 v 的顏色：<br>
+        白 → <strong>tree edge</strong><br>
+        灰 → <strong>back edge</strong>（指向祖先 = 有環！）<br>
+        黑 → forward／cross edge<br>
+        <strong>有向圖無環 ⟺ DFS 無 back edge</strong>（引理 20.11）。</div>
       </div>
     </div>
   </div>
 
   <div class="quiz-box">
-    <div class="quiz-label">QUIZ P02 · 引理 15.2</div>
-    <p>頻率最小的兩個字元 x、y，在<strong>某個</strong>最佳前綴碼樹中一定是？</p>
+    <div class="quiz-label">QUIZ P02 · 括號定理</div>
+    <p>DFS 後得 u.d=3、u.f=8、v.d=5、v.f=7。下列何者正確？</p>
     <div class="quiz-options" id="q02Options">
-      <div class="quiz-opt" data-correct="true" data-fb="正確。引理 15.2 的交換論證：把最深層的兩個兄弟葉子與 x、y 對調，總成本不增（頻率小的放深處划算）→ 存在一個最佳樹讓 x、y 是最深的兄弟。這正是「先合併最小兩個」安全的原因。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 深度最大的一對兄弟葉子</div>
-      <div class="quiz-opt" data-correct="false" data-fb="反了——頻率小的要放深處（編碼長），頻率大的才靠近根（a:45 的編碼只有 1 位元）。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 最靠近根的兩個葉子</div>
-      <div class="quiz-opt" data-correct="false" data-fb="前綴碼樹的字元只出現在葉子（這正是「前綴自由」的來源）；內部節點只是頻率和。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 一個在葉子、一個在內部節點</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。[5,7] 完整巢在 [3,8] 內 → v 是 u 在 DFS 森林中的後裔（u 還灰著的時候發現了 v）。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> v 是 u 的後裔</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不相交才代表無祖裔關係；[5,7] ⊂ [3,8] 是巢狀。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> u、v 無祖裔關係</div>
+      <div class="quiz-opt" data-correct="false" data-fb="括號定理保證交錯（如 u.d < v.d < u.f < v.f）根本不會發生——這選項描述的是不可能的時間戳。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 這種時間戳不可能出現</div>
     </div>
     <div class="quiz-feedback" id="q02Feedback"></div>
   </div>
 </section>
 
-<section id="knapsack">
-  <div class="section-number">P03 · 背包對照</div>
-  <h2>同一題兩種版本：分數背包貪婪成功、0/1 失敗 <span class="sec-badge">§15.2</span></h2>
-  <p>經典對照組（CLRS 圖 15.2）：W = 50，物品 1（w=10, v=60）、物品 2（w=20, v=100）、物品 3（w=30, v=120）。
-  貪婪規則「按<strong>單位價值</strong> v/w 由高到低拿」：</p>
-  <div class="viz-layout">
-    <div>
-      <p><strong>分數背包（fractional）</strong>：可拿部分物品。單位價值 6 &gt; 5 &gt; 4，
-      拿滿物品 1、2，剩 20 容量拿物品 3 的 2/3 → 60 + 100 + 80 = <strong>240（最佳）</strong>。
-      交換論證成立：最佳解若沒裝滿單位價值最高者，把別的東西換掉一定不虧。</p>
-      <p><strong>0/1 背包</strong>：整件拿或不拿。同樣的貪婪拿物品 1、2 → 160；
-      但最佳解是物品 2 ＋ 3 = <strong>220</strong>。貪婪失敗的原因：拿了物品 1 之後<strong>剩餘容量被卡住</strong>——
-      「不可分割」讓局部最優的選擇擋住全域最優。0/1 版沒有貪婪選擇性質，必須用上一章的 DP（Θ(nW)）。</p>
-    </div>
-    <div class="side-panel">
-      <div class="info-card">
-        <div class="ic-title">CLRS 圖 15.2 數字</div>
-        <div class="ic-row"><span class="ic-label">貪婪（0/1）</span><span class="ic-value">160</span></div>
-        <div class="ic-row"><span class="ic-label">最佳（0/1）</span><span class="ic-value highlight">220 = 物品 2+3</span></div>
-        <div class="ic-row"><span class="ic-label">貪婪（分數）</span><span class="ic-value highlight">240 = 最佳</span></div>
-      </div>
-      <div class="info-card">
-        <div class="ic-title">判讀口訣</div>
-        <div style="font-size:.85rem;line-height:1.8;">「能不能只做一個選擇就丟掉其餘可能？」能證 → greedy；不能 → 回 DP。考試遇到新題先找反例，找不到再寫 exchange argument。</div>
-      </div>
-    </div>
+<section id="toposort">
+  <div class="section-number">P03 · TOPOLOGICAL SORT</div>
+  <h2>拓撲排序 = DFS 完成時間的反序 <span class="sec-badge">§20.4</span></h2>
+  <p>資結課的 optional 主題轉正：DAG 的線性排序，使每條邊都由左指右。作法一行話——
+  <strong>跑 DFS，頂點按完成時間 f 遞減排列</strong>（完成先後倒過來）。</p>
+  <div class="thm-box proof">
+    <div class="thm-label">為什麼對（定理 20.12）</div>
+    對任意邊 (u, v)：探索它時 v 不可能是灰的（灰 = 祖先 → back edge → 有環，DAG 排除）。
+    v 白則成為 u 的後裔 → v.f &lt; u.f；v 黑則 v 早就完成 → v.f &lt; u.f。
+    兩種情況都有 <strong>v.f &lt; u.f</strong> → 按 f 遞減排，u 一定排在 v 前面。∎
   </div>
+  <div class="expected-out"><span class="eo-tag">C++／官方 Python 相同輸出（CLRS 圖 20.7 穿衣 DAG）</span><pre>topological sort：錶 襪子 襯衫 領帶 內褲 褲子 鞋 皮帶 外套</pre></div>
+  <p style="font-size:.9rem;color:var(--muted);">同一個 DAG 可以有多個合法拓撲序；換 DFS 的起點順序會得到不同但同樣正確的結果。另一個常用做法是 Kahn 演算法（重複移除入度 0 的頂點）——課本習題 20.4-5。</p>
 
   <div class="quiz-box">
-    <div class="quiz-label">QUIZ P03 · 反例操作</div>
-    <p>0/1 背包中，「按單位價值貪婪」在上例只得 160。若改成「按<strong>總價值</strong>由高到低拿」呢？</p>
+    <div class="quiz-label">QUIZ P03 · 失敗模式</div>
+    <p>對<strong>有環</strong>的有向圖硬跑「DFS 完成時間反序」會怎樣？</p>
     <div class="quiz-options" id="q03Options">
-      <div class="quiz-opt" data-correct="true" data-fb="正確。按總價值先拿物品 3（120），再拿物品 2（100）→ 重量 50 恰好、價值 220 ——這例子上剛好等於最佳。但這不代表規則正確：換組數字（如 v=61,100,120 之類）仍能構造反例。0/1 背包對任何簡單貪婪規則都存在反例——它本質上需要 DP。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 這例子上得到 220，但該規則仍非普遍正確</div>
-      <div class="quiz-opt" data-correct="false" data-fb="按總價值：先 120（w=30）、再 100（w=20），總重 50 裝得下 → 220，不是 160。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 仍是 160</div>
-      <div class="quiz-opt" data-correct="false" data-fb="一個例子上答對 ≠ 規則正確——貪婪的正確性要靠證明，不能靠測資。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 得到 220，證明此規則對 0/1 背包永遠正確</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。演算法照樣跑完、輸出一個順序，但環上必有一條邊「由右指左」——拓撲序根本不存在（環的每個頂點都間接依賴自己）。所以工程上要先偵測 back edge（發現灰頂點）再宣告失敗，不能默默輸出。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 仍會輸出一個順序，但必有邊違反拓撲性質</div>
+      <div class="quiz-opt" data-correct="false" data-fb="DFS 不會無窮迴圈——顏色標記保證每個頂點只訪一次。問題出在輸出的意義，不是停機。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> DFS 會無窮迴圈</div>
+      <div class="quiz-opt" data-correct="false" data-fb="演算法不會自己丟例外——偵測環（back edge）是你要額外寫的邏輯。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 自動丟出「圖有環」的錯誤</div>
     </div>
     <div class="quiz-feedback" id="q03Feedback"></div>
   </div>
 </section>
 
-<section id="amortized">
-  <div class="section-number">P04 · AMORTIZED</div>
-  <h2>攤還分析：貴的操作讓便宜的操作分期付款 <span class="sec-badge">Ch 16</span></h2>
-  <p>問的不是「單次操作最壞多少」，而是「<strong>n 次操作的序列</strong>總共多少、平攤每次多少」——
-  <strong>沒有任何機率</strong>，是最壞情況保證。三種記帳語言，同一個真相：</p>
-  <p>示範例：<strong>k 位元二進位計數器 INCREMENT</strong>。單次最壞翻 k 個位元，但 n 次總共翻幾個？按單步看：</p>
-
-  <div class="viz-layout">
-    <div class="viz-panel">
-      <div class="bq-row" id="bcBits" style="justify-content:center;"></div>
-      <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;">
-        <div class="stat-tile"><div class="stat-label">本次翻轉</div><div class="stat-value" id="bcCost">—</div></div>
-        <div class="stat-tile"><div class="stat-label">累計翻轉</div><div class="stat-value" id="bcTotal">0</div></div>
-        <div class="stat-tile"><div class="stat-label">平均/次</div><div class="stat-value" id="bcAvg">—</div></div>
-      </div>
-      <div class="status-banner" id="bcStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」執行 INCREMENT。觀察平均值收斂到 2 以下。</span></div>
-      <div class="controls-bar">
-        <button class="btn btn-play" onclick="bcPlayer.play()">▶ 播放</button>
-        <button class="btn btn-step" onclick="bcPlayer.step()">⏭ 單步</button>
-        <button class="btn btn-reset" onclick="bcPlayer.reset()">↺ 重來</button>
+<section id="scc">
+  <div class="section-number">P04 · SCC</div>
+  <h2>強連通元件：兩趟 DFS 的魔術 <span class="sec-badge">§20.5</span></h2>
+  <p>SCC = 極大的「彼此互達」頂點集。把每個 SCC 縮成一點得到的 <strong>component graph 必是 DAG</strong>。演算法三行：</p>
+  <div class="info-box green">
+    <span class="info-label">STRONGLY-CONNECTED-COMPONENTS(G)</span>
+    ① 對 G 跑 DFS，記下每個頂點的完成時間 f。<br>
+    ② 建轉置圖 <strong>Gᵀ</strong>（所有邊反向）。<br>
+    ③ 對 Gᵀ 跑 DFS，但主迴圈<strong>按 f 遞減</strong>的順序取起點——每棵 DFS 樹恰是一個 SCC。
+  </div>
+  <p>直覺：f 最大的頂點位在 component graph 的「源頭」SCC；在 Gᵀ 裡從它出發，只能走回自己的 SCC（其他方向的邊都被反向堵住）——一棵樹收割一個元件，收割完換下一個源頭。</p>
+  <div class="code-tabs" id="ctScc">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctScc','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctScc','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctScc','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">SCC</span>(G)（CLRS 圖 20.9 例：a→b→c→d、b→e、e→a、…）</div>
+        <span class="line"><span class="ln">1</span><span class="fn">DFS</span>(G) 記 f</span>
+        <span class="line"><span class="ln">2</span>建 Gᵀ</span>
+        <span class="line"><span class="ln">3</span><span class="fn">DFS</span>(Gᵀ)，主迴圈按 f 遞減選起點</span>
+        <span class="line"><span class="ln">4</span>每棵第二趟 DFS 樹 = 一個 SCC</span>
       </div>
     </div>
-    <div class="side-panel">
-      <div class="info-card">
-        <div class="ic-title">三種方法看同一件事</div>
-        <div style="font-size:.83rem;line-height:1.75;">
-        <strong>① aggregate</strong>：bit 0 每次翻、bit 1 每 2 次、bit i 每 2ⁱ 次 → 總翻轉 Σ n/2ⁱ &lt; 2n → 每次攤還 O(1)。<br>
-        <strong>② accounting</strong>：每次 INCREMENT 收 2 元——1 元付「設成 1」，1 元存在該位元上，未來「清成 0」免費。存款永不透支 ⇒ 攤還成本 2。<br>
-        <strong>③ potential</strong>：Φ = 目前 1 的個數。攤還成本 = 實際成本 + ΔΦ = (t+1) + (1−t) = 2（t = 本次清掉的 1 數）。</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-title">回收資結課的懸案</div>
-        <div style="font-size:.83rem;line-height:1.75;">vector push_back 加倍搬家：accounting 版每次 push 收 3 元（1 放自己、1 搬自己、1 搬「前輩」）→ 攤還 O(1)。§16.4 的 potential 版：Φ = 2·num − size。</div>
-      </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">void</span> <span class="fn">dfs1</span>(<span class="kw">int</span> u) {          <span class="com">// 第一趟：記完成順序</span></span><span class="line">    visited[u] = <span class="num">1</span>;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> v : adj[u]) <span class="kw">if</span> (!visited[v]) <span class="fn">dfs1</span>(v);</span><span class="line">    order.push_back(u);</span><span class="line">}</span><span class="line"><span class="kw">void</span> <span class="fn">dfs2</span>(<span class="kw">int</span> u, <span class="kw">int</span> c) {   <span class="com">// 第二趟：在 Gᵀ 收割</span></span><span class="line">    comp[u] = c;</span><span class="line">    <span class="kw">for</span> (<span class="kw">int</span> v : radj[u]) <span class="kw">if</span> (comp[v] &lt; <span class="num">0</span>) <span class="fn">dfs2</span>(v, c);</span><span class="line">}</span><span class="line"><span class="com">// 主程式：dfs1 全圖 → 反向走 order → dfs2</span></span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（CLRS 圖 20.9）</span><pre>共 4 個 SCC：
+  { a b e }
+  { c d }
+  { f g }
+  { h }</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 20/strongly_connected_components.py</span></span><span class="line">H = AdjacencyListGraph(<span class="num">8</span>, directed=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 20.9 …</span></span><span class="line">strongly_connected_components(H)</span></div>
+      <div class="expected-out"><span class="eo-tag">輸出（頂點編號 a..h = 0..7）</span><pre>[[0, 4, 1], [2, 3], [6, 5], [7]]</pre></div>
+      <div class="ct-note">與 C++ 版一致：{a,e,b}、{c,d}、{g,f}、{h}。官方版內部用 Ch8 counting_sort 排完成時間。</div>
     </div>
   </div>
 
   <div class="quiz-box">
-    <div class="quiz-label">QUIZ P04 · MULTIPOP</div>
-    <p>堆疊支援 PUSH、POP、MULTIPOP(k)（彈出 min(k, s) 個）。n 次操作的序列，總成本為什麼是 O(n)？</p>
+    <div class="quiz-label">QUIZ P04 · 為何要轉置</div>
+    <p>第二趟 DFS 為什麼要在 <strong>Gᵀ</strong> 上跑（而不是再跑一次 G）？</p>
     <div class="quiz-options" id="q04Options">
-      <div class="quiz-opt" data-correct="true" data-fb="正確。每個元素一生最多被 push 一次、pop 一次——MULTIPOP 再貴也只是在「提領」之前 PUSH 存下的額度。accounting：PUSH 收 2 元（1 進 1 出）；potential：Φ = 堆疊大小。單次 MULTIPOP 最壞 O(n)，攤還 O(1)。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 每個元素最多被彈出一次，彈出的總量 ≤ push 的總量 ≤ n</div>
-      <div class="quiz-opt" data-correct="false" data-fb="MULTIPOP 單次可達 Θ(n)——攤還分析不是說單次便宜，是說序列總帳便宜。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> MULTIPOP 單次最壞也是 O(1)</div>
-      <div class="quiz-opt" data-correct="false" data-fb="攤還分析完全沒有機率——O(n) 是對任何操作序列的最壞情況保證，與期望值無關。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 因為平均而言使用者不會常呼叫 MULTIPOP</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。從源頭 SCC 出發在 G 裡會「流出去」把下游全染色（一棵樹蓋多個 SCC）；在 Gᵀ 裡，離開該 SCC 的邊全被反向 → 只能在自己的 SCC 裡打轉，一棵樹恰好收割一個元件。SCC(G) = SCC(Gᵀ) 保證答案不變。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 反向後「流出 SCC 的邊」被堵住，DFS 樹不會越界</div>
+      <div class="quiz-opt" data-correct="false" data-fb="Gᵀ 與 G 的 SCC 完全相同（互達關係對稱）——轉置不是為了改變答案，是為了困住 DFS。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> Gᵀ 的 SCC 比較容易找</div>
+      <div class="quiz-opt" data-correct="false" data-fb="成本一樣是 O(V+E)；差別在正確性——在 G 上第二趟會把多個 SCC 併進同一棵樹。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 在 Gᵀ 上 DFS 比較快</div>
     </div>
     <div class="quiz-feedback" id="q04Feedback"></div>
   </div>
@@ -674,24 +668,24 @@ d: 111</pre></div>
 
 <section id="exercises">
   <div class="section-number">EXERCISES · 綜合練習</div>
-  <h2>手算與證明</h2>
+  <h2>組合拳</h2>
   <div class="quiz-box">
-    <div class="quiz-label">EXERCISE 1 · Huffman 手算</div>
-    <p>頻率 {A:40, B:25, C:20, D:10, E:5}。Huffman 編碼下，E 的編碼長度是幾位元？</p>
+    <div class="quiz-label">EXERCISE 1 · 應用選型</div>
+    <p>課程相依（先修課）檢查系統：判斷「這組先修規定是否可行」並給出「一個可行的修課順序」。用哪組工具？</p>
     <div class="quiz-options" id="ex1Options">
-      <div class="quiz-opt" data-correct="true" data-fb="正確。合併順序：E+D=15 → 15+C=35 → B+35=60?（比較 35 與 B:25、A:40：取 25+35=60）→ 40+60=100。E 深度 4 → 4 位元。頻率最小者最深——引理 15.2 的直接體現。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> 4 位元</div>
-      <div class="quiz-opt" data-correct="false" data-fb="2 位元是 A 這種高頻字元的待遇；E 是最低頻，會被最先合併、壓到最深。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> 2 位元</div>
-      <div class="quiz-opt" data-correct="false" data-fb="固定長度編碼 5 字元才需要 3 位元全部；Huffman 的 E 在這組頻率下是 4 位元（樹深 4）。動手畫合併過程。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 3 位元</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。課 = 頂點、先修 = 邊；DFS 找 back edge 判環（有環 = 規定矛盾），無環則完成時間反序就是修課順序。一次 DFS 同時解決偵測與排序，O(V+E)。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> DFS：back edge 偵測環＋完成時間反序當順序</div>
+      <div class="quiz-opt" data-correct="false" data-fb="BFS 可以做 Kahn 拓撲排序（入度法），但「偵測環＋排序」用 DFS 一趟最直接；disjoint set 不處理方向性，無法表達「先修」。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> disjoint set 判連通</div>
+      <div class="quiz-opt" data-correct="false" data-fb="SCC 是重砲——先修圖若合法根本沒有非平凡 SCC；直接 DFS 判 back edge 就夠。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 先做 SCC 縮圖再排序</div>
     </div>
     <div class="quiz-feedback" id="ex1Feedback"></div>
   </div>
   <div class="quiz-box">
-    <div class="quiz-label">EXERCISE 2 · accounting 設計</div>
-    <p>動態表格只擴不縮（滿了就加倍搬家）。accounting method 中每次 INSERT 收 3 元的理由是？</p>
+    <div class="quiz-label">EXERCISE 2 · 動態連通性</div>
+    <p>社群網站的「加好友」與「兩人是否同一朋友圈」兩種請求交錯出現（各百萬次）。最合適的結構？</p>
     <div class="quiz-options" id="ex2Options">
-      <div class="quiz-opt" data-correct="true" data-fb="正確。1 元付自己插入；1 元存著付「下次搬家搬自己」；1 元幫「上半表已經花光存款的前輩」付搬家費。加倍後有 m/2 個新元素，每人帶 2 元存款，恰好覆蓋下次搬 m 個元素的成本——存款不透支，攤還 O(1)。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> 1 元插入自己＋1 元搬自己＋1 元幫前輩搬</div>
-      <div class="quiz-opt" data-correct="false" data-fb="收 1 元只夠付插入本身，搬家時存款不足——accounting 的鐵律是存款永不為負。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 1 元就夠，3 元是保守估計</div>
-      <div class="quiz-opt" data-correct="false" data-fb="攤還分析與機率無關；3 元是「最壞序列也不透支」的確定性設計。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 因為搬家平均發生機率是 1/3</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。union（加好友）＋ find（同圈查詢）正是 disjoint set 的原生介面，m 次操作 O(m α(n)) 幾乎線性。BFS/DFS 每次查詢要重掃 O(V+E)，動態邊的場景吃不消。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> disjoint set（union-find）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="每次查詢跑一次 BFS 是 O(V+E)；百萬次查詢就是百萬次全圖掃描。union-find 把每次操作壓到近常數。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 每次查詢跑 BFS</div>
+      <div class="quiz-opt" data-correct="false" data-fb="SCC 是有向圖概念；朋友關係是無向的，且 SCC 需要整圖重算，不支援動態加邊。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 預先算 SCC</div>
     </div>
     <div class="quiz-feedback" id="ex2Feedback"></div>
   </div>
@@ -702,31 +696,29 @@ d: 111</pre></div>
   <h2>本章速查表</h2>
   <div style="overflow-x:auto;">
   <table class="cmp-table" style="width:100%;font-size:.86rem;">
-    <thead><tr><th>主題</th><th>核心</th><th>複雜度</th><th>證明工具</th></tr></thead>
+    <thead><tr><th>工具</th><th>輸入</th><th>輸出</th><th>成本</th><th>關鍵機制</th></tr></thead>
     <tbody>
-      <tr><td>activity selection</td><td>最早結束優先</td><td class="best">O(n lg n)（排序主導）</td><td>exchange argument</td></tr>
-      <tr><td>Huffman</td><td>合併頻率最小兩樹</td><td class="best">O(n lg n)</td><td>引理 15.2／15.3</td></tr>
-      <tr><td>分數背包</td><td>單位價值優先</td><td class="best">O(n lg n)</td><td>exchange argument</td></tr>
-      <tr><td>0/1 背包</td><td class="worst">貪婪失敗 → DP</td><td>Θ(nW)</td><td>反例</td></tr>
-      <tr><td>aggregate</td><td>整段總帳 ÷ n</td><td colspan="2">binary counter：2n/n = O(1)</td></tr>
-      <tr><td>accounting</td><td>預收費存進物件</td><td colspan="2">存款永不透支即成立</td></tr>
-      <tr><td>potential</td><td>Φ(資料結構狀態)</td><td colspan="2">攤還 = 實際 + ΔΦ；Φ ≥ Φ₀</td></tr>
+      <tr><td>disjoint set</td><td>union/find 序列</td><td>集合代表</td><td class="best">O(m α(n))</td><td>by rank ＋ path compression</td></tr>
+      <tr><td>BFS</td><td>圖＋源點</td><td>最短距離＋BFS tree</td><td class="best">O(V+E)</td><td>queue 不變量（逐層）</td></tr>
+      <tr><td>DFS</td><td>圖</td><td>時間戳＋森林</td><td class="best">O(V+E)</td><td>括號定理、邊分類</td></tr>
+      <tr><td>topological sort</td><td>DAG</td><td>線性順序</td><td class="best">O(V+E)</td><td>f 遞減；back edge = 有環</td></tr>
+      <tr><td>SCC</td><td>有向圖</td><td>強連通元件</td><td class="best">O(V+E)</td><td>兩趟 DFS＋轉置圖</td></tr>
     </tbody>
   </table>
   </div>
   <div class="info-box" style="margin-top:1rem;">
     <span class="info-label">關鍵概念複習</span>
-    ① greedy = 每步一個選擇、一個子問題；正確性靠 greedy-choice property ＋ 最佳子結構。<br>
-    ② exchange argument：任何最佳解都能「換成」含貪婪選擇的最佳解而不變差。<br>
-    ③ 貪婪驗證流程：先找反例，找不到再寫證明——0/1 背包是永遠的警世反例。<br>
-    ④ 攤還 = 序列總帳的最壞情況保證，無機率；三法（aggregate／accounting／potential）任選其一。<br>
-    ⑤ potential method 是最通用的：攤還成本 = 實際成本 + Φ(after) − Φ(before)。
+    ① union by rank 壓高度、path compression 壓路徑；合用 α(n) 幾乎常數。<br>
+    ② BFS 的 queue 不變量（單調、跨層 ≤ 1）⟹ d[v] = δ(s,v)。<br>
+    ③ DFS 時間戳：巢狀 = 祖裔、不相交 = 無關；灰色 = back edge = 有環。<br>
+    ④ topo sort = f 遞減；證明靠「每條邊 v.f &lt; u.f」。<br>
+    ⑤ SCC：第一趟找「源頭順序」、轉置堵住出口、第二趟逐一收割。
   </div>
 </section>
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch6.json · 12 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch7.json · 13 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -736,137 +728,104 @@ d: 111</pre></div>
   <div class="fc-grid" id="fcGrid"></div>
 </section>
 
-<div class="chapter-nav"><a class="prev" href="dp.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">動態規劃</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="graphs1.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">Disjoint Set 與圖的走訪</div></a></div>
+<div class="chapter-nav"><a class="prev" href="greedy_amortized.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">貪婪與攤還分析</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="graphs2.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">MST 與最短路徑</div></a></div>
 </div>
 <footer>
-  演算法互動自學教材 · 第 06 章 Greedy &amp; Amortized（CLRS 4e Ch 15–16）<br>
+  演算法互動自學教材 · 第 07 章 Disjoint Sets &amp; Elementary Graph Algorithms（CLRS 4e Ch 19–20）<br>
   <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
 </footer>
 <script>
 const FLASHCARDS = [
-  {"front":"貪婪演算法（Greedy Algorithm）","back":"每一步都做當下看起來最好的選擇、永不回頭，只留下一個子問題。比 DP 快，但只有在貪婪選擇性質成立時才正確。"},
-  {"front":"貪婪選擇性質（Greedy-Choice Property）","back":"存在一個全域最佳解包含局部貪婪選擇——可以先做貪婪選擇、再解剩下的子問題而不會錯過最佳解。greedy 正確性的第一要素。"},
-  {"front":"交換論證（Exchange Argument）","back":"證明貪婪安全的標準手法：拿任一最佳解，把其中的非貪婪部分換成貪婪選擇，證明不變差 → 存在含貪婪選擇的最佳解。"},
-  {"front":"活動選擇（Activity Selection）","back":"選最多互不重疊的活動：按結束時間排序、每次選最早結束的相容活動。O(n lg n)；正確性由交換論證（f(aₘ) ≤ f(aⱼ)）。"},
-  {"front":"前綴自由碼（Prefix-Free Code）","back":"沒有任何編碼是另一編碼的前綴 → 解碼無歧義、可貪吃式讀位元。對應二元樹：字元全在葉子上。"},
-  {"front":"Huffman 編碼","back":"最佳前綴碼：min-PQ 反覆取出頻率最小兩棵樹合併，n−1 次後得樹。O(n lg n)；高頻字元編碼短、低頻字元最深。"},
-  {"front":"分數 vs 0/1 背包","back":"分數背包：按單位價值 v/w 貪婪 → 最佳。0/1 背包：同樣貪婪會失敗（CLRS 圖 15.2：160 < 220）→ 需要 DP。可分割性決定貪婪成敗。"},
-  {"front":"攤還分析（Amortized Analysis）","back":"分析 n 次操作序列的總成本再平攤到每次——是最壞情況保證，完全不涉及機率。單次貴的操作由序列中便宜的操作分期吸收。"},
-  {"front":"聚合法（Aggregate Method）","back":"直接算 n 次操作的總成本 T(n)，攤還成本 = T(n)/n。binary counter：總翻轉 < 2n → 每次 INCREMENT 攤還 O(1)。"},
-  {"front":"記帳法（Accounting Method）","back":"每種操作預收固定「攤還費」，多收的存進資料結構的特定物件、給未來的貴操作提領。合法條件：存款永不透支。"},
-  {"front":"位能法（Potential Method）","back":"定義位能函數 Φ(D)（≥ Φ(D₀)）；攤還成本 = 實際成本 + Φ(after) − Φ(before)。最通用：counter 用 Φ=1 的個數、stack 用 Φ=大小、動態表用 Φ=2num−size。"},
-  {"front":"動態表格（Dynamic Table）","back":"滿了就加倍搬家的陣列（vector 原型）。單次 INSERT 最壞 Θ(n)（搬家），攤還 O(1)：accounting 每次收 3 元或 Φ = 2·num − size。"}
+  {"front":"不相交集合（Disjoint Sets）","back":"維護一群互不相交的動態集合，支援 MAKE-SET、FIND-SET（回代表）、UNION。森林實作：每集合一棵樹、根為代表。"},
+  {"front":"union by rank","back":"合併時把 rank（高度上界）小的樹掛到大的下面；同 rank 任選並 +1。單獨使用即可保證樹高 O(lg n)。"},
+  {"front":"路徑壓縮（Path Compression）","back":"FIND-SET 回程時把沿途每個節點的父指標直接改指根——查一次、壓扁一路。與 by rank 合用達 O(m α(n))。"},
+  {"front":"反 Ackermann 函數 α(n)","back":"成長慢到荒謬的函數：對一切實際的 n（宇宙原子數量級）α(n) ≤ 4。union-find 兩優化合用的攤還成本 O(α(n))「幾乎常數」。"},
+  {"front":"BFS（廣度優先搜尋）","back":"用 queue 逐層擴散：白→灰（入列）→黑（鄰居掃完）。O(V+E)；無權圖中 d[v] = δ(s,v) 最短距離，π 串出 BFS tree。"},
+  {"front":"BFS queue 不變量","back":"佇列中的 d 值單調不減、最大 − 最小 ≤ 1——波前最多橫跨兩層。這是 BFS 最短距離正確性證明的支柱。"},
+  {"front":"DFS 時間戳（Timestamps）","back":"每頂點兩個戳記：發現 u.d（塗灰）與完成 u.f（塗黑），1 ≤ d < f ≤ 2V。DFS 所有結構性質都用它表達。"},
+  {"front":"括號定理（Parenthesis Theorem）","back":"任兩頂點的 [d, f] 區間要嘛不相交（無祖裔關係）、要嘛完整巢狀（後裔）——絕不交錯。"},
+  {"front":"邊分類（Edge Classification）","back":"探索 (u,v) 時看 v 的顏色：白 = tree、灰 = back（指祖先，代表有環）、黑 = forward/cross。無向圖只有 tree 與 back。"},
+  {"front":"拓撲排序（Topological Sort）","back":"DAG 的線性排序使所有邊由左指右：DFS 完成時間 f 遞減即為解。正確性：DAG 中每條邊 (u,v) 都有 v.f < u.f。O(V+E)。"},
+  {"front":"強連通元件（SCC）","back":"極大的互達頂點集。兩趟 DFS：G 上記 f → 建 Gᵀ → 按 f 遞減在 Gᵀ 上 DFS，每棵樹一個 SCC。O(V+E)。"},
+  {"front":"轉置圖（Transpose Graph）","back":"Gᵀ：所有邊反向。SCC(G) = SCC(Gᵀ)；第二趟 DFS 在 Gᵀ 上跑是為了堵住「流出 SCC」的邊，讓每棵樹不越界。"},
+  {"front":"元件圖（Component Graph）","back":"把每個 SCC 縮成一個頂點後的圖——必為 DAG（若兩個 SCC 互相可達就該合併成一個）。SCC 演算法的正確性架在它上面。"}
 ];
 
-/* ---------- P01 activity selection 動畫 ---------- */
-const ACTS = [
-  {id:1,s:1,f:4},{id:2,s:3,f:5},{id:3,s:0,f:6},{id:4,s:5,f:7},{id:5,s:3,f:9},{id:6,s:5,f:9},
-  {id:7,s:6,f:10},{id:8,s:7,f:11},{id:9,s:8,f:12},{id:10,s:2,f:14},{id:11,s:12,f:16}];
-function actFrames() {
-  const frames = [];
-  const st = ACTS.map(() => 'pending');
-  let lastF = 0, count = 0;
-  frames.push({st:[...st], cur:-1, msg:'11 個活動已按結束時間排序。a1 必選（最早結束）。'});
-  ACTS.forEach((a, i) => {
-    if (a.s >= lastF) {
-      st[i] = 'chosen'; lastF = a.f; count++;
-      frames.push({st:[...st], cur:i, msg:`a${a.id}［${a.s}, ${a.f}）：s=${a.s} ≥ 上一個結束 ${i===0?0:'…'}，選！之後只接受 s ≥ ${a.f} 的活動。`});
+/* ---------- P00 disjoint set 動畫 ---------- */
+function dsuFrames() {
+  const n = 10, name = 'abcdefghij';
+  const p = [...Array(n).keys()], rank = new Array(n).fill(0);
+  function find(x) { while (p[x] !== x) x = p[x]; return x; }
+  const ops = [['b','c'],['a','c'],['a','b'],['d','c'],['e','f'],['g','h'],['i','j']];
+  const frames = [{p: [...p], msg: '10 個 MAKE-SET：每個頂點自成一個集合（自己指自己）。', hl: []}];
+  ops.forEach(([x, y]) => {
+    const xi = name.indexOf(x), yi = name.indexOf(y);
+    const rx = find(xi), ry = find(yi);
+    let msg;
+    if (rx === ry) {
+      msg = `UNION(${x}, ${y})：FIND 發現同根（${name[rx]}），什麼都不做。`;
     } else {
-      st[i] = 'rejected';
-      frames.push({st:[...st], cur:i, msg:`a${a.id}［${a.s}, ${a.f}）：s=${a.s} < ${lastF}，與已選活動重疊，跳過。`});
+      let a = rx, b = ry;
+      if (rank[a] < rank[b]) [a, b] = [b, a];
+      p[b] = a;
+      if (rank[a] === rank[b]) rank[a]++;
+      msg = `UNION(${x}, ${y})：代表 ${name[rx]}、${name[ry]} 不同 → rank 小的 ${name[b]} 掛到 ${name[a]} 下。`;
     }
+    frames.push({p: [...p], msg, hl: [xi, yi]});
   });
-  frames.push({st:[...st], cur:-1, msg:`完成：選了 ${count} 個（a1, a4, a8, a11）——可證明為最大可能數。`});
+  frames.push({p: [...p], msg: '完成：三個連通元件 {a,b,c,d}、{e,f}、{g,h}、{i,j}——SAME-COMPONENT 只要比兩次 FIND。', hl: []});
   return frames;
 }
-function actApply(f) {
-  const el = $('actTimeline'); el.innerHTML = '';
-  const scale = 100 / 16;
-  ACTS.forEach((a, i) => {
-    const row = document.createElement('div');
-    row.style.cssText = 'position:relative;height:24px;margin:3px 0;';
-    const bar = document.createElement('div');
-    const color = f.st[i] === 'chosen' ? '#1a6b4a' : (f.st[i] === 'rejected' ? '#ccc' : '#5b7eb8');
-    bar.style.cssText = `position:absolute;left:${a.s*scale}%;width:${(a.f-a.s)*scale}%;height:100%;background:${color};border-radius:5px;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.68rem;display:flex;align-items:center;padding-left:6px;${f.cur===i?'outline:3px solid #f39c12;':''}`;
-    bar.textContent = `a${a.id} [${a.s},${a.f})`;
-    row.appendChild(bar);
+function dsuApply(f) {
+  const name = 'abcdefghij';
+  function root(x) { let g = 0; while (f.p[x] !== x && g++ < 20) x = f.p[x]; return x; }
+  const groups = {};
+  for (let v = 0; v < 10; v++) {
+    const r = root(v);
+    (groups[r] = groups[r] || []).push(v);
+  }
+  const el = $('dsuState'); el.innerHTML = '';
+  Object.entries(groups).forEach(([r, vs]) => {
+    const row = document.createElement('div'); row.className = 'adj-row';
+    row.innerHTML = `<span class="adj-key">${name[r]}</span><span class="adj-arrow">代表 ←</span>` +
+      vs.map(v => `<span class="adj-neighbor"${f.hl.includes(v) ? ' style="background:#f39c12;color:#fff;"' : ''}>${name[v]}${f.p[v] !== v ? '→' + name[f.p[v]] : ''}</span>`).join('');
     el.appendChild(row);
   });
-  setStatus('actStatus', f.msg);
+  setStatus('dsuStatus', f.msg);
 }
-const actPlayer = new Player({frames: actFrames(), apply: actApply, delayInput: null});
-actPlayer.reset();
+const dsuPlayer = new Player({frames: dsuFrames(), apply: dsuApply, delayInput: null});
+dsuPlayer.reset();
 
-/* ---------- P02 Huffman 合併動畫 ---------- */
-function hufFrames() {
-  let forest = [
-    {label:'f:5', freq:5},{label:'e:9', freq:9},{label:'c:12', freq:12},
-    {label:'b:13', freq:13},{label:'d:16', freq:16},{label:'a:45', freq:45}];
-  const frames = [{forest: forest.map(n => ({...n})), hl:[], msg:'六個葉節點入 min-PQ。每步取最小兩個合併。', codes:false}];
-  while (forest.length > 1) {
-    forest.sort((a,b) => a.freq - b.freq);
-    const [x, y] = [forest[0], forest[1]];
-    const z = {label:`(${x.freq}+${y.freq})=${x.freq+y.freq}`, freq:x.freq+y.freq};
-    forest = [z, ...forest.slice(2)];
-    frames.push({forest: forest.map(n => ({...n})), hl:[0],
-      msg:`EXTRACT-MIN ×2：${x.label} 與 ${y.label} 合併成頻率 ${z.freq} 的新節點，插回 PQ。`, codes:false});
+/* ---------- P02 DFS 括號動畫 ---------- */
+function dfsFrames() {
+  const name = ['內褲','褲子','皮帶','襯衫','領帶','外套','襪子','鞋','錶'];
+  const adj = [[1,7],[2,7],[5],[2,4],[5],[],[7],[],[]];
+  const events = [];
+  const disc = new Array(9).fill(0);
+  let t = 0;
+  function visit(u) {
+    disc[u] = ++t; events.push({type:'(', u, t});
+    for (const v of adj[u]) if (!disc[v]) visit(v);
+    ++t; events.push({type:')', u, t});
   }
-  frames.push({forest: forest.map(n => ({...n})), hl:[], codes:true,
-    msg:'完成！沿樹「左 0 右 1」讀出每個字元的編碼（下表）。期望長度 224（固定長度 3 位元要 300）。'});
+  for (let u = 0; u < 9; u++) if (!disc[u]) visit(u);
+  const frames = [{upto: 0, msg: '按「單步」推進。主迴圈按頂點編號順序選白色起點。', events, name}];
+  events.forEach((e, i) => frames.push({upto: i + 1, events, name,
+    msg: e.type === '(' ? `t=${e.t}：發現「${name[e.u]}」（塗灰、壓入遞迴）。` : `t=${e.t}：「${name[e.u]}」完成（塗黑）。完成順序反過來就是拓撲序。`}));
   return frames;
 }
-function hufApply(f) {
-  const el = $('hufForest'); el.innerHTML = '';
-  const row = document.createElement('div'); row.className = 'bq-row';
-  [...f.forest].sort((a,b) => a.freq - b.freq).forEach((n, i) => {
-    const d = document.createElement('div'); d.className = 'bq-item';
-    d.style.cssText = 'min-width:64px;font-size:.72rem;' + (f.hl.includes(i) && n.label.startsWith('(') ? 'background:#f39c12;' : (n.label.includes(':') ? '' : 'background:#8e44ad;'));
-    d.textContent = n.label;
-    row.appendChild(d);
-  });
-  el.appendChild(row);
-  const tbl = $('hufCodes');
-  tbl.innerHTML = f.codes
-    ? '<tr><th>字元</th><th>a</th><th>b</th><th>c</th><th>d</th><th>e</th><th>f</th></tr>' +
-      '<tr><td>頻率</td><td>45</td><td>13</td><td>12</td><td>16</td><td>9</td><td>5</td></tr>' +
-      '<tr><td>編碼</td><td class="nonzero">0</td><td class="nonzero">101</td><td class="nonzero">100</td><td class="nonzero">111</td><td class="nonzero">1101</td><td class="nonzero">1100</td></tr>'
-    : '';
-  setStatus('hufStatus', f.msg);
-}
-const hufPlayer = new Player({frames: hufFrames(), apply: hufApply, delayInput: null});
-hufPlayer.reset();
-
-/* ---------- P04 binary counter ---------- */
-function bcFrames() {
-  const k = 6, frames = [];
-  const bits = new Array(k).fill(0);
-  let total = 0;
-  frames.push({bits:[...bits], cost:null, total, n:0, msg:'計數器歸零。INCREMENT：把低位連續的 1 清成 0，再把第一個 0 設成 1。'});
-  for (let n = 1; n <= 16; n++) {
-    let i = 0, cost = 0;
-    while (i < k && bits[i] === 1) { bits[i] = 0; i++; cost++; }
-    if (i < k) { bits[i] = 1; cost++; }
-    total += cost;
-    frames.push({bits:[...bits], cost, total, n,
-      msg:`INCREMENT #${n}：翻了 ${cost} 個位元${cost > 2 ? '（貴！但它把一串 1 清掉了，之後好幾次都便宜）' : ''}。`});
-  }
-  return frames;
-}
-function bcApply(f) {
-  const el = $('bcBits'); el.innerHTML = '';
-  [...f.bits].reverse().forEach(b => {
-    const d = document.createElement('div'); d.className = 'bq-item';
-    d.style.cssText = 'min-width:34px;' + (b ? 'background:#1a6b4a;' : 'background:#bbb;');
-    d.textContent = b;
+function dfsApply(f) {
+  const el = $('dfsBrackets'); el.innerHTML = '';
+  f.events.slice(0, f.upto).forEach((e, i) => {
+    const d = document.createElement('div');
+    d.className = 'tok' + (e.type === ')' ? ' tok-op' : '') + (i === f.upto - 1 ? ' tok-new' : '');
+    d.textContent = e.type === '(' ? `(${f.name[e.u]}` : `${f.name[e.u]})`;
     el.appendChild(d);
   });
-  $('bcCost').textContent = f.cost ?? '—';
-  $('bcTotal').textContent = f.total;
-  $('bcAvg').textContent = f.n ? (f.total / f.n).toFixed(2) : '—';
-  setStatus('bcStatus', f.msg);
+  setStatus('dfsStatus', f.msg);
 }
-const bcPlayer = new Player({frames: bcFrames(), apply: bcApply, delayInput: null});
-bcPlayer.reset();
+const dfsPlayer = new Player({frames: dfsFrames(), apply: dfsApply, delayInput: null});
+dfsPlayer.reset();
 </script>
 <script>
 /* ============ shared utilities ============ */
