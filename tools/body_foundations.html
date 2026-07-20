@@ -6,6 +6,7 @@
   <a href="#invariant" data-target="invariant"><span class="fn-num">P03</span><span class="fn-name">loop invariant</span></a>
   <a href="#analysis" data-target="analysis"><span class="fn-num">P04</span><span class="fn-name">執行時間分析</span></a>
   <a href="#mergesort" data-target="mergesort"><span class="fn-num">P05</span><span class="fn-name">merge sort 與分治</span></a>
+  <a href="#merge" data-target="merge"><span class="fn-num">P06</span><span class="fn-name">MERGE 程序解剖</span></a>
   <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
   <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
   <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
@@ -41,6 +42,7 @@
     <a href="#invariant"><span class="toc-num">P03</span>loop invariant</a>
     <a href="#analysis"><span class="toc-num">P04</span>執行時間分析</a>
     <a href="#mergesort"><span class="toc-num">P05</span>merge sort 與分治</a>
+    <a href="#merge"><span class="toc-num">P06</span>MERGE 程序解剖</a>
     <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
     <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
     <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
@@ -69,6 +71,23 @@
     這門課把其中兩個（insertion、merge）重新拿出來，但問的問題不一樣：
     <strong>不再只是「會動」，而是「為什麼一定對？成本函數長什麼樣？」</strong>
   </div>
+
+  <h3>演算法是一種「技術」：比硬體還有力的加速器 <span class="sec-badge">§1.2</span></h3>
+  <p>好演算法值多少？CLRS §1.2 的經典對決：讓<strong>快 1000 倍的電腦跑爛演算法</strong>、
+  <strong>慢電腦跑好演算法</strong>，各排 1000 萬個數字：</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.85rem;">
+    <thead><tr><th></th><th>電腦 A（快）</th><th>電腦 B（慢 1000 倍）</th></tr></thead>
+    <tbody>
+      <tr><td>算力</td><td class="best">10¹⁰ 指令/秒</td><td class="worst">10⁷ 指令/秒</td></tr>
+      <tr><td>演算法</td><td class="worst">insertion sort，成本 2n² 條指令</td><td class="best">merge sort，成本 50 n lg n 條指令</td></tr>
+      <tr><td>n = 10⁷ 時的指令數</td><td>2·(10⁷)² = 2×10¹⁴</td><td>50·10⁷·lg 10⁷ ≈ 1.16×10¹⁰</td></tr>
+      <tr><td>耗時</td><td class="worst">2×10¹⁴ / 10¹⁰ = 20000 秒 ≈ <strong>5.5 小時</strong></td><td class="best">1.16×10¹⁰ / 10⁷ ≈ 1163 秒 ≈ <strong>20 分鐘</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">硬體快 1000 倍、常數還小 25 倍（2 vs 50），照樣被演算法翻盤 17 倍——而且 n 越大差距越懸殊（n 再乘 10，A 要 23 天、B 只要 3.7 小時）。
+  這就是整門課的立足點：<strong>演算法和硬體一樣是「技術」，而且是規模越大越值錢的那種</strong>。</p>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P00 · 正確性</div>
@@ -100,11 +119,13 @@
     <div class="side-panel">
       <div class="info-card">
         <div class="ic-title">O(1) 一條指令 <span class="ic-badge">RAM</span></div>
-        <div class="ic-row"><span class="ic-label">x + y、x % y</span><span class="ic-value">✓</span></div>
-        <div class="ic-row"><span class="ic-label">A[i] 讀寫</span><span class="ic-value">✓</span></div>
-        <div class="ic-row"><span class="ic-label">if、函式呼叫</span><span class="ic-value">✓</span></div>
-        <div class="ic-row"><span class="ic-label">「排序整個 A」</span><span class="ic-value highlight">✗ 不是指令</span></div>
-        <div class="ic-row"><span class="ic-label">xʸ（任意大）</span><span class="ic-value highlight">✗ 要小心</span></div>
+        <div class="ic-row"><span class="ic-label">x + y、x % y、⌊x/y⌋</span><span class="ic-value">✓</span></div>
+        <div class="ic-row"><span class="ic-label">A[i] 讀寫、變數複製</span><span class="ic-value">✓</span></div>
+        <div class="ic-row"><span class="ic-label">if、函式呼叫、return</span><span class="ic-value">✓</span></div>
+        <div class="ic-row"><span class="ic-label">2ᵏ 乘除（位移，k ≤ 字組寬）</span><span class="ic-value">✓</span></div>
+        <div class="ic-row"><span class="ic-label">「排序整個 A」</span><span class="ic-value highlight">✗ Θ(n lg n) 子程序</span></div>
+        <div class="ic-row"><span class="ic-label">「掃出 min(A)」</span><span class="ic-value highlight">✗ Θ(n) 子程序</span></div>
+        <div class="ic-row"><span class="ic-label">xʸ（任意大指數）</span><span class="ic-value highlight">✗ 要小心</span></div>
       </div>
       <div class="info-card">
         <div class="ic-title">為什麼要抽象模型</div>
@@ -283,6 +304,16 @@
       <p><strong>最壞情況（worst case）</strong>：輸入嚴格遞減。每個 key 都要一路移到最前面（tᵢ = i），
       Σᵢ₌₂ⁿ i = n(n+1)/2 − 1，T(n) = an² + bn + c 是 <strong>n 的二次函數 Θ(n²)</strong>。</p>
       <p>這門課預設報告<strong>最壞情況</strong>：① 它是對任何輸入的保證上限；② 對很多演算法而言最壞情況並不罕見；③「平均情況」需要假設輸入分布（Ch 5 的機率分析），而且 insertion sort 的平均仍是 Θ(n²)——平均每個 key 要移過一半的前綴。</p>
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.85rem;">
+        <thead><tr><th>情況</th><th>輸入長相</th><th>tᵢ（while 測試次數）</th><th>Σᵢ₌₂ⁿ tᵢ</th><th>T(n)</th></tr></thead>
+        <tbody>
+          <tr><td>最好</td><td>已排序</td><td>每輪 1</td><td>n − 1</td><td class="best">an + b = Θ(n)</td></tr>
+          <tr><td>平均</td><td>隨機排列</td><td>約 i/2</td><td>≈ n²/4</td><td>Θ(n²)</td></tr>
+          <tr><td>最壞</td><td>嚴格遞減</td><td>每輪 i</td><td>n(n+1)/2 − 1</td><td class="worst">an² + bn + c = Θ(n²)</td></tr>
+        </tbody>
+      </table>
+      </div>
       <p>按右邊按鈕，比較兩種極端輸入下「右移總次數」的實測值。</p>
     </div>
     <div class="side-panel">
@@ -338,26 +369,52 @@
         <span class="line"><span class="ln">5</span><span class="fn">MERGE-SORT</span>(A, q + 1, r)</span>
         <span class="line"><span class="ln">6</span><span class="fn">MERGE</span>(A, p, q, r)　　<span class="com">// 合併 A[p:q] 與 A[q+1:r]</span></span>
       </div>
-      <div class="clrs-code" style="margin-top:.7rem;">
-        <div class="cc-title"><span class="fn">MERGE</span>(A, p, q, r) <span class="com">— 主迴圈</span></div>
-        <span class="line"><span class="ln">…</span>複製 A[p:q] → L、A[q+1:r] → R；i = j = 0，k = p</span>
-        <span class="line"><span class="ln">12</span><span class="kw">while</span> i &lt; n<sub>L</sub> <span class="kw">and</span> j &lt; n<sub>R</sub></span>
-        <span class="line"><span class="ln">13</span>    <span class="kw">if</span> L[i] ≤ R[j]</span>
-        <span class="line"><span class="ln">14</span>        A[k] = L[i]；i = i + 1</span>
-        <span class="line"><span class="ln">15</span>    <span class="kw">else</span> A[k] = R[j]；j = j + 1</span>
-        <span class="line"><span class="ln">16</span>    k = k + 1</span>
-        <span class="line"><span class="ln">…</span>把 L 或 R 剩下的元素依序倒進 A</span>
-      </div>
-      <div class="ct-note">閉區間 [p, r]。第 13 行的「≤」讓相等元素優先取左邊 → merge sort 是<strong>穩定排序</strong>。</div>
+      <div class="ct-note">閉區間 [p, r]。真正做事的 MERGE 是本章最需要逐行吃透的程序——完整 pseudocode、逐步 trace、
+      不變量證明與互動動畫都在下一節 <a href="#merge">P06 · MERGE 程序解剖</a>。</div>
     </div>
     <div class="ct-panel" data-lang="cpp">
       <div class="pseudo-code"><span class="line"><span class="kw">void</span> <span class="fn">merge</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> p, <span class="kw">int</span> q, <span class="kw">int</span> r) {</span><span class="line">    std::vector&lt;<span class="kw">int</span>&gt; L(A.begin() + p, A.begin() + q + <span class="num">1</span>);   <span class="com">// A[p..q]</span></span><span class="line">    std::vector&lt;<span class="kw">int</span>&gt; R(A.begin() + q + <span class="num">1</span>, A.begin() + r + <span class="num">1</span>); <span class="com">// A[q+1..r]</span></span><span class="line">    std::size_t i = <span class="num">0</span>, j = <span class="num">0</span>;</span><span class="line">    <span class="kw">int</span> k = p;</span><span class="line">    <span class="kw">while</span> (i &lt; L.size() &amp;&amp; j &lt; R.size())</span><span class="line">        A[k++] = (L[i] &lt;= R[j]) ? L[i++] : R[j++];   <span class="com">// 取兩疊頂端較小者</span></span><span class="line">    <span class="kw">while</span> (i &lt; L.size()) A[k++] = L[i++];</span><span class="line">    <span class="kw">while</span> (j &lt; R.size()) A[k++] = R[j++];</span><span class="line">}</span><span class="line"></span><span class="line"><span class="kw">void</span> <span class="fn">mergeSort</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> p, <span class="kw">int</span> r) {</span><span class="line">    <span class="kw">if</span> (p &gt;= r) <span class="kw">return</span>;                 <span class="com">// 0 或 1 個元素：已排序</span></span><span class="line">    <span class="kw">int</span> q = (p + r) / <span class="num">2</span>;</span><span class="line">    <span class="fn">mergeSort</span>(A, p, q);                 <span class="com">// Divide + Conquer 左半</span></span><span class="line">    <span class="fn">mergeSort</span>(A, q + <span class="num">1</span>, r);             <span class="com">// Conquer 右半</span></span><span class="line">    <span class="fn">merge</span>(A, p, q, r);                  <span class="com">// Combine</span></span><span class="line">}</span></div>
       <div class="expected-out"><span class="eo-tag">執行輸出（輸入 {12, 3, 7, 9, 14, 6, 11, 2}）</span><pre>2 3 6 7 9 11 12 14</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code"><span class="line"><span class="kw">def</span> <span class="fn">merge_sort</span>(A, p, r):</span><span class="line">    <span class="com"># 官方版核心（Chapter 2/merge_sort.py，MIT License）</span></span><span class="line">    <span class="kw">if</span> p &gt;= r:   <span class="com"># 0 or 1 element?</span></span><span class="line">        <span class="kw">return</span></span><span class="line">    q = (p + r) // <span class="num">2</span>          <span class="com"># midpoint of A[p:r]</span></span><span class="line">    merge_sort(A, p, q)       <span class="com"># recursively sort A[p:q]</span></span><span class="line">    merge_sort(A, q + <span class="num">1</span>, r)   <span class="com"># recursively sort A[q+1:r]</span></span><span class="line">    merge(A, p, q, r)         <span class="com"># merge A[p:q] and A[q+1:r] into A[p:r]</span></span></div>
-      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 [12, 3, 7, 9, 14, 6, 11, 2]）</span><pre>[2, 3, 6, 7, 9, 11, 12, 14]</pre></div>
-      <div class="ct-note">取自 CLRS 4e 官方實作；merge() 全文見官方 Chapter 2/merge_sort.py。</div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 2/merge_sort.py（MIT License）：0-based、閉區間 [p, r]</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">merge</span>(A, p, q, r):</span>
+<span class="line">    nL = q - p + <span class="num">1</span>                          <span class="com"># A[p..q] 的長度</span></span>
+<span class="line">    nR = r - q                              <span class="com"># A[q+1..r] 的長度</span></span>
+<span class="line">    L = [A[p + i] <span class="kw">for</span> i in <span class="fn">range</span>(nL)]       <span class="com"># 複製左半</span></span>
+<span class="line">    R = [A[q + <span class="num">1</span> + j] <span class="kw">for</span> j in <span class="fn">range</span>(nR)]   <span class="com"># 複製右半</span></span>
+<span class="line">    i = j = <span class="num">0</span></span>
+<span class="line">    k = p</span>
+<span class="line">    <span class="kw">while</span> i &lt; nL and j &lt; nR:                <span class="com"># 兩疊都還有牌：取頂端較小者</span></span>
+<span class="line">        <span class="kw">if</span> L[i] &lt;= R[j]:                    <span class="com"># 「≤」平手取左 → 穩定排序</span></span>
+<span class="line">            A[k] = L[i]</span>
+<span class="line">            i += <span class="num">1</span></span>
+<span class="line">        <span class="kw">else</span>:</span>
+<span class="line">            A[k] = R[j]</span>
+<span class="line">            j += <span class="num">1</span></span>
+<span class="line">        k += <span class="num">1</span></span>
+<span class="line">    <span class="kw">while</span> i &lt; nL:                           <span class="com"># 左疊剩下的依序倒回</span></span>
+<span class="line">        A[k] = L[i]</span>
+<span class="line">        i += <span class="num">1</span></span>
+<span class="line">        k += <span class="num">1</span></span>
+<span class="line">    <span class="kw">while</span> j &lt; nR:                           <span class="com"># 右疊剩下的依序倒回</span></span>
+<span class="line">        A[k] = R[j]</span>
+<span class="line">        j += <span class="num">1</span></span>
+<span class="line">        k += <span class="num">1</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">merge_sort</span>(A, p, r):</span>
+<span class="line">    <span class="kw">if</span> p &gt;= r:                              <span class="com"># 0 或 1 個元素：已排序</span></span>
+<span class="line">        <span class="kw">return</span></span>
+<span class="line">    q = (p + r) // <span class="num">2</span></span>
+<span class="line">    merge_sort(A, p, q)                     <span class="com"># Divide + Conquer 左半</span></span>
+<span class="line">    merge_sort(A, q + <span class="num">1</span>, r)                 <span class="com"># Conquer 右半</span></span>
+<span class="line">    merge(A, p, q, r)                       <span class="com"># Combine</span></span>
+<span class="line"> </span>
+<span class="line">A = [<span class="num">12</span>, <span class="num">3</span>, <span class="num">7</span>, <span class="num">9</span>, <span class="num">14</span>, <span class="num">6</span>, <span class="num">11</span>, <span class="num">2</span>]</span>
+<span class="line">merge_sort(A, <span class="num">0</span>, <span class="fn">len</span>(A) - <span class="num">1</span>)</span>
+<span class="line"><span class="fn">print</span>(A)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/foundations/merge_sort.py）</span><pre>[2, 3, 6, 7, 9, 11, 12, 14]</pre></div>
+      <div class="ct-note">完整可跑：merge() 與 merge_sort() 全文都在這裡，複製貼上即可執行。</div>
     </div>
   </div>
 
@@ -388,6 +445,31 @@
     </div>
   </div>
 
+  <h3>遞迴帳本：為什麼是 Θ(n lg n)</h3>
+  <p>把 T(n) = 2T(n/2) + Θ(n) 逐層展開（n = 8 為例）。每往下一層，子問題數翻倍、每個子問題的合併成本減半——
+  <strong>每一層的總帳都恰好是 cn</strong>：</p>
+  <div class="clrs-code" style="font-size:.8rem;">
+    <div class="cc-title">遞迴展開階梯（n = 8，c = 每元素合併成本）</div>
+    <span class="line">層 0：      [========= n = 8 =========]      合併成本 c·8 = cn</span>
+    <span class="line">層 1：      [== 4 ==]        [== 4 ==]       c·4 × 2 = cn</span>
+    <span class="line">層 2：      [2]  [2]        [2]  [2]         c·2 × 4 = cn</span>
+    <span class="line">層 3：      [1][1][1][1]  [1][1][1][1]       單元素不需合併</span>
+    <span class="line"> </span>
+    <span class="line">層數 = lg n + 1 = 4，每層 cn ⟹ T(n) = cn(lg n + 1) = Θ(n lg n)</span>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">「層數 × 每層總帳」這招叫 recursion tree，下一章會正式化；那裡也會處理「切不平均」「子問題大小不同」的一般情形。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05b · 遞迴帳本</div>
+    <p>對 n = 1024 執行 merge sort。從整個陣列算第 0 層，「單一元素」出現在第幾層？合併工作總共發生在幾層？</p>
+    <div class="quiz-options" id="q08Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。每往下一層長度減半：1024 → 512 → … → 1，共除以 2 十次，單元素在第 lg 1024 = 10 層；合併發生在第 0～9 層共 10 層，每層總帳 cn → T(n) ≈ 10·c·1024，正是 n lg n 的量級。" onclick="quizCheck('q08', this)"><span class="opt-letter">(A)</span> 第 10 層；合併發生在 10 層</div>
+      <div class="quiz-opt" data-correct="false" data-fb="1024 層是「每層只切掉一個元素」的線性遞迴（如壞掉的 quicksort）才會發生；對半切只需要 lg 1024 = 10 層。" onclick="quizCheck('q08', this)"><span class="opt-letter">(B)</span> 第 1024 層；合併發生在 1024 層</div>
+      <div class="quiz-opt" data-correct="false" data-fb="5 層對應 n = 32；1024 = 2¹⁰ 需要 10 次對半。lg n 這個數字就是分治「快」的來源。" onclick="quizCheck('q08', this)"><span class="opt-letter">(C)</span> 第 5 層；合併發生在 5 層</div>
+    </div>
+    <div class="quiz-feedback" id="q08Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P05 · 分治</div>
     <p>MERGE 合併兩段各 n/2 個元素的已排序子陣列，<strong>最壞情況</strong>下元素比較（L[i] ≤ R[j]）大約幾次？</p>
@@ -400,9 +482,141 @@
   </div>
 </section>
 
+<section id="merge">
+  <div class="section-number">P06 · MERGE 程序解剖</div>
+  <h2>MERGE：兩疊排好的牌合成一疊 <span class="sec-badge">§2.3.1</span></h2>
+  <p>merge sort 的所有工作都發生在 MERGE 裡，值得整節解剖。
+  情境：A[p:q] 與 A[q+1:r] 各自已排序（想像桌上兩疊面朝上的牌、每疊最小的在頂端），
+  要把它們合併成一段已排序的 A[p:r]。做法：<strong>先把兩段抄到暫存陣列 L、R，
+  再反覆比較兩疊頂端、把較小者放回 A</strong>——每次比較恰好送一張牌回家。</p>
+
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.76rem;">
+        <div class="cc-title"><span class="fn">MERGE</span>(A, p, q, r) <span class="com">— CLRS 4e 完整版</span></div>
+        <span class="line"><span class="ln">1</span>n<sub>L</sub> = q − p + 1　　<span class="com">// A[p:q] 的長度</span></span>
+        <span class="line"><span class="ln">2</span>n<sub>R</sub> = r − q　　<span class="com">// A[q+1:r] 的長度</span></span>
+        <span class="line"><span class="ln">3</span>建立新陣列 L[0:n<sub>L</sub>−1] 與 R[0:n<sub>R</sub>−1]</span>
+        <span class="line"><span class="ln">4</span><span class="kw">for</span> i = 0 <span class="kw">to</span> n<sub>L</sub> − 1　<span class="com">// 抄左半進 L</span></span>
+        <span class="line"><span class="ln">5</span>    L[i] = A[p + i]</span>
+        <span class="line"><span class="ln">6</span><span class="kw">for</span> j = 0 <span class="kw">to</span> n<sub>R</sub> − 1　<span class="com">// 抄右半進 R</span></span>
+        <span class="line"><span class="ln">7</span>    R[j] = A[q + j + 1]</span>
+        <span class="line"><span class="ln">8</span>i = 0　<span class="com">// L 中最小的未搬元素</span></span>
+        <span class="line"><span class="ln">9</span>j = 0　<span class="com">// R 中最小的未搬元素</span></span>
+        <span class="line"><span class="ln">10</span>k = p　<span class="com">// A 中下一個要填的位置</span></span>
+        <span class="line"><span class="ln">11</span><span class="kw">while</span> i &lt; n<sub>L</sub> <span class="kw">and</span> j &lt; n<sub>R</sub>　<span class="com">// 兩疊都非空</span></span>
+        <span class="line"><span class="ln">12</span>    <span class="kw">if</span> L[i] ≤ R[j]</span>
+        <span class="line"><span class="ln">13</span>        A[k] = L[i]</span>
+        <span class="line"><span class="ln">14</span>        i = i + 1</span>
+        <span class="line"><span class="ln">15</span>    <span class="kw">else</span> A[k] = R[j]</span>
+        <span class="line"><span class="ln">16</span>        j = j + 1</span>
+        <span class="line"><span class="ln">17</span>    k = k + 1</span>
+        <span class="line"><span class="ln">18</span><span class="kw">while</span> i &lt; n<sub>L</sub>　<span class="com">// L 還有剩：依序倒回</span></span>
+        <span class="line"><span class="ln">19</span>    A[k] = L[i]</span>
+        <span class="line"><span class="ln">20</span>    i = i + 1</span>
+        <span class="line"><span class="ln">21</span>    k = k + 1</span>
+        <span class="line"><span class="ln">22</span><span class="kw">while</span> j &lt; n<sub>R</sub>　<span class="com">// R 還有剩：依序倒回</span></span>
+        <span class="line"><span class="ln">23</span>    A[k] = R[j]</span>
+        <span class="line"><span class="ln">24</span>    j = j + 1</span>
+        <span class="line"><span class="ln">25</span>    k = k + 1</span>
+      </div>
+      <div class="ct-note">3e 舊版在 L、R 尾端放 ∞ <strong>哨兵（sentinel）</strong>省去空疊檢查；4e 改成第 11 行明確檢查 i &lt; n<sub>L</sub>、j &lt; n<sub>R</sub>——兩種寫法等價，4e 版不需要「∞ 存在」的假設。</div>
+    </div>
+    <div class="viz-panel">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">L（左疊）</div>
+      <div class="bq-row" id="mgL"></div>
+      <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .2rem;">R（右疊）</div>
+      <div class="bq-row" id="mgR"></div>
+      <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .2rem;">A[p:r]（合併輸出）</div>
+      <div class="bq-row" id="mgOut"></div>
+      <div class="status-banner" id="mgStatus"><span class="status-icon">▸</span><span class="status-text">CLRS 圖 2.3 的例子：L = ⟨2,4,5,7⟩、R = ⟨1,2,3,6⟩。按「單步」。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="mgPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="mgPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="mgPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+  </div>
+
+  <h3>逐步 trace：每次比較送一張牌回家</h3>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.84rem;">
+    <thead><tr><th>k</th><th>比較</th><th>取誰</th><th>i, j（取完後）</th><th>A[p:k]（已合併部分）</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>L[0]=2 vs R[0]=1</td><td>R 的 1</td><td>i=0, j=1</td><td>⟨1⟩</td></tr>
+      <tr><td>2</td><td>L[0]=2 vs R[1]=2</td><td class="best">平手 → L 的 2（≤ 取左）</td><td>i=1, j=1</td><td>⟨1, 2⟩</td></tr>
+      <tr><td>3</td><td>L[1]=4 vs R[1]=2</td><td>R 的 2</td><td>i=1, j=2</td><td>⟨1, 2, 2⟩</td></tr>
+      <tr><td>4</td><td>L[1]=4 vs R[2]=3</td><td>R 的 3</td><td>i=1, j=3</td><td>⟨1, 2, 2, 3⟩</td></tr>
+      <tr><td>5</td><td>L[1]=4 vs R[3]=6</td><td>L 的 4</td><td>i=2, j=3</td><td>⟨1, 2, 2, 3, 4⟩</td></tr>
+      <tr><td>6</td><td>L[2]=5 vs R[3]=6</td><td>L 的 5</td><td>i=3, j=3</td><td>⟨1, 2, 2, 3, 4, 5⟩</td></tr>
+      <tr><td>7</td><td>L[3]=7 vs R[3]=6</td><td>R 的 6</td><td>i=3, j=4</td><td>⟨1, 2, 2, 3, 4, 5, 6⟩</td></tr>
+      <tr><td>8</td><td>R 空了（j = n<sub>R</sub>）</td><td>倒回 L 剩的 7</td><td>i=4, j=4</td><td>⟨1, 2, 2, 3, 4, 5, 6, 7⟩</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">第 2 步的平手正是「≤」的存在理由：相等元素取左邊的，原本在前面的仍在前面——穩定性一行就決定了。
+  總共 7 次比較送完 8 個元素：每次比較恰送一個元素回家、最後一疊免費倒回，所以比較至多 n − 1 次、搬移恰 n 次——<strong>MERGE 是 Θ(n)</strong>。</p>
+
+  <div class="thm-box proof">
+    <div class="thm-label">MERGE 主迴圈（第 11–17 行）的 loop invariant——P03 那套的實戰第二例</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    <strong>敘述</strong>：每輪開始時，A[p:k−1] 按序放著 L 與 R 中<strong>最小的 k − p 個元素</strong>；
+    且 L[i]、R[j] 分別是各自陣列中最小的未搬元素。<br>
+    <strong>Initialization</strong>：k = p 時 A[p:k−1] 是空的（0 個元素），i = j = 0 指向兩疊頂端 ✓。<br>
+    <strong>Maintenance</strong>：設 L[i] ≤ R[j]（另一邊對稱）。L[i] 同時 ≤ 兩疊所有未搬元素，
+    而 A[p:k−1] 裡的又都 ≤ L[i]（它們更早被選走）——把 L[i] 放到 A[k] 後，
+    A[p:k] 恰是最小的 k − p + 1 個且有序；i、k 各加 1 讓敘述對下一輪成立 ✓。<br>
+    <strong>Termination</strong>：迴圈停時某疊已空。此時 A[p:k−1] 是最小的 k − p 個且有序，
+    剩下那疊裡全是更大的元素、且自身有序——第 18–25 行依序倒回後 A[p:r] 完全排序。∎</div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P06 · 手跑 MERGE</div>
+    <p>合併 L = ⟨2,4,5,7⟩、R = ⟨1,2,3,6⟩，主迴圈做完<strong>第 4 次</strong>「放回 A」之後，i、j 是多少？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。前四步依序取 R:1、L:2（平手取左）、R:2、R:3——L 被取走 1 個（i=1）、R 被取走 3 個（j=3），A 已放 ⟨1,2,2,3⟩。對照上方 trace 表第 4 列。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> i = 1，j = 3</div>
+      <div class="quiz-opt" data-correct="false" data-fb="i=2, j=2 代表兩疊各被取走兩個——但前四小的元素是 1, 2, 2, 3，其中三個來自 R。合併取誰只看大小，不會輪流。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> i = 2，j = 2</div>
+      <div class="quiz-opt" data-correct="false" data-fb="i=3, j=1 意味 L 貢獻了前四小之中的三個——但 L 的前三個是 2, 4, 5，而 4 比 R 的 2、3 都大，輪不到它。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> i = 3，j = 1</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P06b · 不變量的力度</div>
+    <p>MERGE 不變量中「L[i]、R[j] 是各自陣列中<strong>最小的未搬元素</strong>」這半句可以拿掉嗎？</p>
+    <div class="quiz-options" id="q07Options">
+      <div class="quiz-opt" data-correct="false" data-fb="不變量不是程式行為的「附註」，是證明的前提——maintenance 那步要論證「L[i] ≤ 所有未搬元素」，沒有這半句就推不動。" onclick="quizCheck('q07', this)"><span class="opt-letter">(A)</span> 可以，程式行為不會變</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。程式當然照跑（不變量只是敘述），但證明會斷：maintenance 需要「這次放進 A 的元素 ≥ A[p:k−1] 的所有元素、≤ 所有未搬元素」，這依賴 L[i]/R[j] 正是兩疊目前的最小值（L、R 已排序＋指標只前進）。拿掉它，「A 前綴 = 全體最小的 k−p 個」就接不上去。" onclick="quizCheck('q07', this)"><span class="opt-letter">(B)</span> 程式照跑，但 maintenance 論證會接不起來</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不變量寫多寫少不影響停機——迴圈每輪 k 都 +1，必定終止。影響的是能否「證」出正確性。" onclick="quizCheck('q07', this)"><span class="opt-letter">(C)</span> 不行，拿掉後迴圈可能不終止</div>
+    </div>
+    <div class="quiz-feedback" id="q07Feedback"></div>
+  </div>
+</section>
+
 <section id="exercises">
   <div class="section-number">EXERCISES · 綜合練習</div>
   <h2>把兩把工具用在新演算法上</h2>
+  <p>練習對象：<strong>selection sort</strong>（CLRS 習題 2.2-2）。它和 insertion sort 同為 Θ(n²) 的漸增法，
+  但「前綴」的意義完全不同——先看完整實作與逐輪輸出，再作答下面兩題。</p>
+  <div class="deck-extra">
+    <div class="dx-label">習題 2.2-2 · selectionSort 完整實作（src/foundations/selection_sort.cpp）</div>
+    <div class="pseudo-code" style="font-size:.78rem;"><span class="line"><span class="kw">void</span> <span class="fn">selectionSort</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A) {</span>
+<span class="line">    <span class="kw">for</span> (std::<span class="kw">size_t</span> i = <span class="num">0</span>; i + <span class="num">1</span> &lt; A.size(); ++i) {   <span class="com">// 只需 n-1 輪：最後一格自動就位</span></span>
+<span class="line">        std::<span class="kw">size_t</span> m = i;</span>
+<span class="line">        <span class="kw">for</span> (std::<span class="kw">size_t</span> j = i + <span class="num">1</span>; j &lt; A.size(); ++j)</span>
+<span class="line">            <span class="kw">if</span> (A[j] &lt; A[m]) m = j;                    <span class="com">// 線性掃出 A[i..n-1] 的最小值</span></span>
+<span class="line">        std::swap(A[i], A[m]);</span>
+<span class="line">    }</span>
+<span class="line">}</span></div>
+    <div class="expected-out"><span class="eo-tag">逐輪輸出（輸入 {5, 2, 4, 6, 1, 3}）</span><pre>1 2 4 6 5 3  （前 1 格已定案）
+1 2 4 6 5 3  （前 2 格已定案）
+1 2 3 6 5 4  （前 3 格已定案）
+1 2 3 4 5 6  （前 4 格已定案）
+1 2 3 4 5 6  （前 5 格已定案）</pre></div>
+    <p class="dx-note">注意輸出中的關鍵字「定案」：selection sort 的前綴放的是<strong>全域最小的那批</strong>，之後永遠不會再動；
+    insertion sort 的前綴只是「自己內部有序」，之後還會被新 key 插隊。另外它的比較次數固定 n(n−1)/2——
+    輸入已排序也不會變快（對照 P04 的 best case 表）；而每輪至多一次 swap，總搬移 O(n)，是它唯一勝過 insertion sort 之處。</p>
+  </div>
   <div class="quiz-box">
     <div class="quiz-label">EXERCISE 1 · selection sort 的 invariant</div>
     <p>selection sort（每輪從 A[i:n] 挑最小值換到 A[i]）外圈的 loop invariant，下列哪個<strong>最恰當</strong>？</p>
@@ -414,7 +628,18 @@
     <div class="quiz-feedback" id="ex1Feedback"></div>
   </div>
   <div class="quiz-box">
-    <div class="quiz-label">EXERCISE 2 · 交叉點</div>
+    <div class="quiz-label">EXERCISE 2 · linear search 的 invariant（習題 2.1-3）</div>
+    <p>LINEAR-SEARCH(A, n, x)：i 從 1 掃到 n，看到 A[i] = x 就回傳 i，掃完回傳 NIL。
+    要證它正確，for 迴圈的 invariant 應該是？</p>
+    <div class="quiz-options" id="ex3Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。Initialization：i=1 時 A[1:0] 是空段、空敘述成立。Maintenance：這輪檢查 A[i]，沒回傳表示 A[i] ≠ x，前綴擴大一格仍成立。Termination：兩種出口都收割得到——中途回傳 i 時 A[i]=x 正確；跑完（i=n+1）時 invariant 說 x 不在 A[1:n]，回傳 NIL 正確。" onclick="quizCheck('ex3', this)"><span class="opt-letter">(A)</span> 每輪開始時，x 不在 A[1:i−1] 之中</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「A[i] 可能等於 x」是猜測不是狀態敘述，而且它沒有累積性——invariant 要描述「到目前為止確定了什麼」。" onclick="quizCheck('ex3', this)"><span class="opt-letter">(B)</span> 每輪開始時，A[i] 可能等於 x</div>
+      <div class="quiz-opt" data-correct="false" data-fb="搜尋不動陣列，「A[1:i−1] 已排序」與正確性無關——invariant 要選「termination 時能推出結論」的那句。" onclick="quizCheck('ex3', this)"><span class="opt-letter">(C)</span> 每輪開始時，A[1:i−1] 已排序</div>
+    </div>
+    <div class="quiz-feedback" id="ex3Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 3 · 交叉點</div>
     <p>insertion sort 每步成本低（c·n² 的 c 小）、merge sort 有遞迴開銷（d·n lg n 的 d 大）。實務上排序函式庫常怎麼取兩者之長？</p>
     <div class="quiz-options" id="ex2Options">
       <div class="quiz-opt" data-correct="true" data-fb="正確。小 n 時 n² 與 n lg n 差距小、常數主導，insertion sort 反而快——所以遞迴切到小區間（例如 ≤ 16 或 32）就改用 insertion sort 收尾。std::sort 的 introsort 正是這樣做。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> 大陣列用分治排序，遞迴到小區間改用 insertion sort</div>
@@ -454,7 +679,7 @@
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch1.json · 12 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch1.json · 17 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -483,7 +708,12 @@ const FLASHCARDS = [
   {"front":"分治法（Divide-and-Conquer）","back":"遞迴設計典範三步驟：Divide 把問題切成子問題、Conquer 遞迴解子問題、Combine 把子解合併成原問題的解。"},
   {"front":"合併排序（Merge Sort）","back":"分治排序：對半切到單一元素，再逐層用 MERGE 合併兩段已排序子陣列。任何輸入都是 Θ(n lg n)，但需要 Θ(n) 額外空間。"},
   {"front":"遞迴式（Recurrence）","back":"用「自己在較小輸入上的值」描述函數的等式，例如 merge sort 的 T(n) = 2T(n/2) + Θ(n)。解遞迴式的三種方法見下一章。"},
-  {"front":"就地排序（Sorted in Place）","back":"排序過程中任何時刻只有常數個元素存放在陣列之外。insertion sort 是就地排序；教科書版 merge sort 不是。"}
+  {"front":"就地排序（Sorted in Place）","back":"排序過程中任何時刻只有常數個元素存放在陣列之外。insertion sort 是就地排序；教科書版 merge sort 不是。"},
+  {"front":"MERGE 程序","back":"合併兩段已排序子陣列：抄進暫存 L、R，反覆比較兩疊頂端把較小者放回 A，某疊空了就把另一疊倒回。比較 ≤ n−1 次、搬移 n 次，Θ(n)。"},
+  {"front":"MERGE 的迴圈不變量","back":"主迴圈每輪開始時：A[p:k−1] 按序放著 L 與 R 中最小的 k−p 個元素，且 L[i]、R[j] 是各自陣列最小的未搬元素。三段式論證的實戰第二例。"},
+  {"front":"哨兵（Sentinel）","back":"3e 版 MERGE 在 L、R 尾端放 ∞，讓比較永遠有對象、省去空疊檢查；4e 改用 i < nL、j < nR 明確檢查。兩寫法等價。"},
+  {"front":"穩定排序（Stable Sort）","back":"相等元素排序後保持原相對順序。MERGE 用「≤」讓平手取左疊（原本在前的），merge sort 因此穩定；之後 counting/radix sort 都依賴穩定性。"},
+  {"front":"混合式排序（Hybrid Sort）","back":"大陣列用分治排序、遞迴到小區間（如 ≤ 16）改用 insertion sort 收尾——小 n 時常數小的 Θ(n²) 反而快。std::sort 的 introsort 即此。"}
 ];
 
 /* ---------- P02 insertion sort 動畫 ---------- */
@@ -583,4 +813,60 @@ function msApply(f) {
 }
 const msPlayer = new Player({frames: msFrames(), apply: msApply, delayInput: null});
 msPlayer.reset();
+
+/* ---------- P06 MERGE 雙指標動畫 ---------- */
+const MG_L = [2, 4, 5, 7], MG_R = [1, 2, 3, 6];
+function mgFrames() {
+  const frames = [];
+  let i = 0, j = 0;
+  const out = [];
+  frames.push({i, j, out: [], msg: '兩疊已排序。i、j 指著各自的頂端（最小未搬元素）。'});
+  while (i < MG_L.length && j < MG_R.length) {
+    const takeL = MG_L[i] <= MG_R[j];
+    const v = takeL ? MG_L[i] : MG_R[j];
+    const cmp = 'L[' + i + ']=' + MG_L[i] + ' vs R[' + j + ']=' + MG_R[j];
+    if (takeL) i++; else j++;
+    out.push(v);
+    frames.push({i, j, out: [...out],
+      msg: cmp + ' → 取' + (takeL ? ' L 的 ' : ' R 的 ') + v +
+           (takeL && MG_L[i-1] === MG_R[j] ? '（平手取左：穩定性）' : '') + '，放到 A 的第 ' + out.length + ' 格。'});
+  }
+  while (i < MG_L.length) {
+    out.push(MG_L[i]); i++;
+    frames.push({i, j, out: [...out], msg: 'R 已空：把 L 剩下的 ' + out[out.length-1] + ' 免比較倒回 A。'});
+  }
+  while (j < MG_R.length) {
+    out.push(MG_R[j]); j++;
+    frames.push({i, j, out: [...out], msg: 'L 已空：把 R 剩下的 ' + out[out.length-1] + ' 免比較倒回 A。'});
+  }
+  frames.push({i, j, out: [...out], msg: '完成：⟨' + out.join(', ') + '⟩。比較 7 次、搬移 8 次——Θ(n)。'});
+  return frames;
+}
+function mgRow(el, arr, ptr) {
+  el.innerHTML = '';
+  arr.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item';
+    if (idx < ptr) d.style.opacity = '.25';
+    if (idx === ptr) d.style.background = '#f39c12';
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+function mgApply(f) {
+  mgRow($('mgL'), MG_L, f.i);
+  mgRow($('mgR'), MG_R, f.j);
+  const o = $('mgOut'); o.innerHTML = '';
+  f.out.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item';
+    d.style.background = '#1a6b4a';
+    if (idx === f.out.length - 1) d.style.outline = '3px solid #c0392b';
+    d.textContent = v;
+    o.appendChild(d);
+  });
+  setStatus('mgStatus', f.msg);
+}
+const mgPlayer = new Player({frames: mgFrames(), apply: mgApply, delayInput: null});
+mgPlayer.reset();
 </script>

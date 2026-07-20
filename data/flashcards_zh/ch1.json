@@ -46,5 +46,25 @@
  {
   "front": "就地排序（Sorted in Place）",
   "back": "排序過程中任何時刻只有常數個元素存放在陣列之外。insertion sort 是就地排序；教科書版 merge sort 不是。"
+ },
+ {
+  "front": "MERGE 程序",
+  "back": "合併兩段已排序子陣列：抄進暫存 L、R，反覆比較兩疊頂端把較小者放回 A，某疊空了就把另一疊倒回。比較 ≤ n−1 次、搬移 n 次，Θ(n)。"
+ },
+ {
+  "front": "MERGE 的迴圈不變量",
+  "back": "主迴圈每輪開始時：A[p:k−1] 按序放著 L 與 R 中最小的 k−p 個元素，且 L[i]、R[j] 是各自陣列最小的未搬元素。三段式論證的實戰第二例。"
+ },
+ {
+  "front": "哨兵（Sentinel）",
+  "back": "3e 版 MERGE 在 L、R 尾端放 ∞，讓比較永遠有對象、省去空疊檢查；4e 改用 i < nL、j < nR 明確檢查。兩寫法等價。"
+ },
+ {
+  "front": "穩定排序（Stable Sort）",
+  "back": "相等元素排序後保持原相對順序。MERGE 用「≤」讓平手取左疊（原本在前的），merge sort 因此穩定；之後 counting/radix sort 都依賴穩定性。"
+ },
+ {
+  "front": "混合式排序（Hybrid Sort）",
+  "back": "大陣列用分治排序、遞迴到小區間（如 ≤ 16）改用 insertion sort 收尾——小 n 時常數小的 Θ(n²) 反而快。std::sort 的 introsort 即此。"
  }
 ]
