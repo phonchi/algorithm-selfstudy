@@ -476,11 +476,13 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 <nav class="float-nav" id="floatNav" aria-label="章節導覽">
   <div class="fn-title">章節導覽</div>
   <a href="#heapsort" data-target="heapsort"><span class="fn-num">P00</span><span class="fn-name">heapsort</span></a>
+  <a href="#pq" data-target="pq"><span class="fn-num">P00b</span><span class="fn-name">priority queue</span></a>
   <a href="#partition" data-target="partition"><span class="fn-num">P01</span><span class="fn-name">quicksort partition</span></a>
   <a href="#qanalysis" data-target="qanalysis"><span class="fn-num">P02</span><span class="fn-name">quicksort 分析</span></a>
   <a href="#lowerbound" data-target="lowerbound"><span class="fn-num">P03</span><span class="fn-name">排序下界</span></a>
   <a href="#linear" data-target="linear"><span class="fn-num">P04</span><span class="fn-name">線性時間排序</span></a>
   <a href="#select" data-target="select"><span class="fn-num">P05</span><span class="fn-name">order statistics</span></a>
+  <a href="#mom" data-target="mom"><span class="fn-num">P06</span><span class="fn-name">中位數之中位數</span></a>
   <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
   <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
   <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
@@ -510,11 +512,13 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
   <div class="toc-title">CONTENTS · 內容目錄</div>
   <div class="toc-grid">
     <a href="#heapsort"><span class="toc-num">P00</span>heapsort</a>
+    <a href="#pq"><span class="toc-num">P00b</span>priority queue（§6.5）</a>
     <a href="#partition"><span class="toc-num">P01</span>quicksort partition</a>
     <a href="#qanalysis"><span class="toc-num">P02</span>quicksort 分析</a>
     <a href="#lowerbound"><span class="toc-num">P03</span>比較排序下界</a>
     <a href="#linear"><span class="toc-num">P04</span>線性時間排序</a>
     <a href="#select"><span class="toc-num">P05</span>order statistics</a>
+    <a href="#mom"><span class="toc-num">P06</span>中位數之中位數（§9.3）</a>
     <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
     <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
     <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
@@ -590,10 +594,50 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <div class="ct-note">0-based：LEFT = 2i+1、RIGHT = 2i+2、最後內部節點 = n/2 − 1（課本 1-based 是 2i、2i+1、⌊n/2⌋）。</div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 6/heapsort.py（MIT License）— 核心</span></span><span class="line"><span class="kw">def</span> <span class="fn">heapsort</span>(A):</span><span class="line">    <span class="com">"""Sort a list or numpy array in place."""</span></span><span class="line">    heap = MaxHeap(A)　　<span class="com"># build_max_heap 在建構子內完成</span></span><span class="line">    <span class="kw">for</span> i <span class="kw">in</span> range(heap.get_heap_size() - <span class="num">1</span>, <span class="num">0</span>, -<span class="num">1</span>):</span><span class="line">        heap.swap(<span class="num">0</span>, i)                 <span class="com"># 堆頂 ↔ 尾端</span></span><span class="line">        heap.set_heap_size(heap.get_heap_size() - <span class="num">1</span>)</span><span class="line">        heap.max_heapify(<span class="num">0</span>)             <span class="com"># 修復</span></span><span class="line"></span><span class="line">A = [<span class="num">4</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>, <span class="num">16</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">14</span>, <span class="num">8</span>, <span class="num">7</span>]</span><span class="line">heapsort(A)</span></div>
-      <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>[1, 2, 3, 4, 7, 8, 9, 10, 14, 16]</pre></div>
-      <div class="ct-note">官方版把 heap 包成 MaxHeap 類別（Chapter 6/max_heap.py），介面對應 pseudocode 的 A.heap-size。</div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 6/heap.py＋heapsort.py（MIT License）：攤平三函式（0-based）</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">max_heapify</span>(A, heap_size, i):</span>
+<span class="line">    l, r = <span class="num">2</span> * i + <span class="num">1</span>, <span class="num">2</span> * i + <span class="num">2</span></span>
+<span class="line">    largest = i</span>
+<span class="line">    <span class="kw">if</span> l &lt; heap_size and A[l] &gt; A[largest]:</span>
+<span class="line">        largest = l</span>
+<span class="line">    <span class="kw">if</span> r &lt; heap_size and A[r] &gt; A[largest]:</span>
+<span class="line">        largest = r</span>
+<span class="line">    <span class="kw">if</span> largest != i:</span>
+<span class="line">        A[i], A[largest] = A[largest], A[i]</span>
+<span class="line">        max_heapify(A, heap_size, largest)      <span class="com"># 被換下去的值繼續下沉</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">build_max_heap</span>(A):</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(<span class="fn">len</span>(A) // <span class="num">2</span> - <span class="num">1</span>, -<span class="num">1</span>, -<span class="num">1</span>):    <span class="com"># 最後內部節點倒著往前</span></span>
+<span class="line">        max_heapify(A, <span class="fn">len</span>(A), i)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">heapsort</span>(A):</span>
+<span class="line">    build_max_heap(A)</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(<span class="fn">len</span>(A) - <span class="num">1</span>, <span class="num">0</span>, -<span class="num">1</span>):</span>
+<span class="line">        A[<span class="num">0</span>], A[i] = A[i], A[<span class="num">0</span>]                 <span class="com"># 堆頂（最大）歸位到尾端</span></span>
+<span class="line">        max_heapify(A, i, <span class="num">0</span>)                    <span class="com"># heap 縮成 i 格後修復堆頂</span></span>
+<span class="line"> </span>
+<span class="line">A = [<span class="num">4</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>, <span class="num">16</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">14</span>, <span class="num">8</span>, <span class="num">7</span>]</span>
+<span class="line">B = A[:]</span>
+<span class="line">build_max_heap(B)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"build_max_heap:"</span>, B)</span>
+<span class="line">heapsort(A)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"heapsort:"</span>, A)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/heapsort.py）</span><pre>build_max_heap: [16, 14, 10, 8, 7, 9, 3, 2, 4, 1]
+heapsort: [1, 2, 3, 4, 7, 8, 9, 10, 14, 16]</pre></div>
+      <div class="ct-note">完整可跑：max_heapify／build_max_heap／heapsort 全文都在。build 的中間結果 [16,14,10,8,7,9,3,2,4,1] 正是 CLRS 圖 6.3 的答案。</div>
     </div>
+  </div>
+
+  <h3>BUILD-MAX-HEAP 為什麼是 O(n) 而不是 O(n lg n)</h3>
+  <div class="thm-box proof">
+    <div class="thm-label">緊分析：把成本按「高度」記帳</div>
+    <div style="font-size:.88rem;line-height:1.75;">
+    粗算：n/2 次 heapify、每次 O(lg n) → O(n lg n)。沒錯但不緊——heapify 的真實成本是 <strong>O(h)</strong>（h = 該節點的高度），
+    而大多數節點高度很小。<br>
+    n 個元素的 heap 中，高度為 h 的節點<strong>至多 ⌈n/2^(h+1)⌉ 個</strong>（一半是葉子 h=0、四分之一是 h=1、…）。總成本：<br>
+    Σ<sub>h=0</sub><sup>⌊lg n⌋</sup> ⌈n/2^(h+1)⌉·O(h) = O( n·Σ<sub>h=0</sub><sup>∞</sup> h/2^h )。<br>
+    關鍵級數：<strong>Σ h/2^h = 2</strong>（把 Σ x^h = 1/(1−x) 微分再乘 x，代 x = 1/2：x/(1−x)² = 2）。<br>
+    所以總成本 = O(2n) = <strong>O(n)</strong>。∎　直覺：便宜的節點（矮的）佔絕大多數、貴的節點（高的）寥寥無幾——加權平均下來每個節點攤不到常數。</div>
   </div>
 
   <div class="quiz-box">
@@ -605,6 +649,125 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <div class="quiz-opt" data-correct="false" data-fb="⌊n/2⌋+1 以後的節點是葉子、天然是 heap 沒錯，但這只解釋「為何從 ⌊n/2⌋ 開始」，不解釋「為何要倒著往前」。關鍵是 heapify 的前提條件。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 因為葉子不用處理</div>
     </div>
     <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="pq">
+  <div class="section-number">P00b · PRIORITY QUEUE</div>
+  <h2>優先佇列：heap 的第二個人生 <span class="sec-badge">§6.5</span></h2>
+  <p>heap 不只是排序引擎——它是<strong>最大優先佇列（max-priority queue）</strong>的標準實作：
+  維護一個集合，隨時要能「看最大、取最大、調高某元素的優先權、插入新元素」。
+  OS 的工作排程、事件驅動模擬、之後 Prim／Dijkstra 的 min 版本，全是這組介面：</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>操作</th><th>做法</th><th>成本</th></tr></thead>
+    <tbody>
+      <tr><td>MAXIMUM</td><td>看堆頂 A[1]</td><td class="best">O(1)</td></tr>
+      <tr><td>EXTRACT-MAX</td><td>尾端補到頂、heap-size−1、MAX-HEAPIFY 下沉</td><td>O(lg n)</td></tr>
+      <tr><td>INCREASE-KEY</td><td>增鍵後沿父鏈<strong>往上浮</strong>（heapify 是往下沉）</td><td>O(lg n)</td></tr>
+      <tr><td>INSERT</td><td>尾端塞 −∞ 佔位，再 INCREASE-KEY 到目標值</td><td>O(lg n)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="bq-row" id="pqArr"></div>
+      <div class="status-banner" id="pqStatus"><span class="status-icon">▸</span><span class="status-text">CLRS 圖 6.5 的 max-heap。按「單步」看 INSERT(15) 上浮、再 EXTRACT-MAX 下沉。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="pqPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="pqPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="pqPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctPq">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctPq','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctPq','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctPq','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.74rem;">
+            <div class="cc-title"><span class="fn">HEAP-INCREASE-KEY</span>(A, i, key)</div>
+            <span class="line"><span class="ln">1</span><span class="kw">if</span> key &lt; A[i]：error</span>
+            <span class="line"><span class="ln">2</span>A[i] = key</span>
+            <span class="line"><span class="ln">3</span><span class="kw">while</span> i &gt; 1 <span class="kw">and</span> A[<span class="fn">PARENT</span>(i)] &lt; A[i]</span>
+            <span class="line"><span class="ln">4</span>    exchange A[i] ↔ A[<span class="fn">PARENT</span>(i)]　<span class="com">// 上浮</span></span>
+            <span class="line"><span class="ln">5</span>    i = <span class="fn">PARENT</span>(i)</span>
+          </div>
+          <div class="clrs-code" style="font-size:.74rem;margin-top:.6rem;">
+            <div class="cc-title"><span class="fn">MAX-HEAP-INSERT</span>(A, key)　／　<span class="fn">HEAP-EXTRACT-MAX</span>(A)</div>
+            <span class="line"><span class="ln">1</span>INSERT：heap-size+1；A[heap-size] = −∞；<span class="fn">INCREASE-KEY</span>(A, heap-size, key)</span>
+            <span class="line"><span class="ln">2</span>EXTRACT：max = A[1]；A[1] = A[heap-size]；heap-size−1；<span class="fn">MAX-HEAPIFY</span>(A, 1)；<span class="kw">return</span> max</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">void</span> <span class="fn">heapIncreaseKey</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> i, <span class="kw">int</span> key) {</span>
+<span class="line">    A[i] = key;</span>
+<span class="line">    <span class="kw">while</span> (i &gt; <span class="num">0</span> &amp;&amp; A[(i - <span class="num">1</span>) / <span class="num">2</span>] &lt; A[i]) {   <span class="com">// 上浮</span></span>
+<span class="line">        std::swap(A[i], A[(i - <span class="num">1</span>) / <span class="num">2</span>]);</span>
+<span class="line">        i = (i - <span class="num">1</span>) / <span class="num">2</span>;</span>
+<span class="line">    }</span>
+<span class="line">}</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">void</span> <span class="fn">maxHeapInsert</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> key) {</span>
+<span class="line">    A.push_back(std::numeric_limits&lt;<span class="kw">int</span>&gt;::min());   <span class="com">// −∞ 佔位</span></span>
+<span class="line">    <span class="fn">heapIncreaseKey</span>(A, A.size() - <span class="num">1</span>, key);</span>
+<span class="line">}</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">int</span> <span class="fn">heapExtractMax</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A) {</span>
+<span class="line">    <span class="kw">int</span> mx = A[<span class="num">0</span>];</span>
+<span class="line">    A[<span class="num">0</span>] = A.back(); A.pop_back();</span>
+<span class="line">    <span class="fn">maxHeapify</span>(A, A.size(), <span class="num">0</span>);        <span class="com">// 下沉修復</span></span>
+<span class="line">    <span class="kw">return</span> mx;</span>
+<span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/priority_queue.cpp，CLRS 圖 6.5）</span><pre>INSERT(15) 後: 16 15 10 8 14 9 3 2 4 1 7
+EXTRACT-MAX = 16
+之後: 15 14 10 8 7 9 3 2 4 1</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 max_heap_priority_queue.py（MIT License）：平鋪函式版</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">heap_extract_max</span>(A):            <span class="com"># 尾端補頂、下沉，O(lg n)</span></span>
+<span class="line">    mx = A[<span class="num">0</span>]</span>
+<span class="line">    A[<span class="num">0</span>] = A[-<span class="num">1</span>]</span>
+<span class="line">    A.pop()</span>
+<span class="line">    max_heapify(A, <span class="fn">len</span>(A), <span class="num">0</span>)</span>
+<span class="line">    <span class="kw">return</span> mx</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">heap_increase_key</span>(A, i, key):    <span class="com"># 增鍵後上浮，O(lg n)</span></span>
+<span class="line">    <span class="kw">assert</span> key &gt;= A[i]</span>
+<span class="line">    A[i] = key</span>
+<span class="line">    <span class="kw">while</span> i &gt; <span class="num">0</span> and A[(i - <span class="num">1</span>) // <span class="num">2</span>] &lt; A[i]:</span>
+<span class="line">        A[i], A[(i - <span class="num">1</span>) // <span class="num">2</span>] = A[(i - <span class="num">1</span>) // <span class="num">2</span>], A[i]</span>
+<span class="line">        i = (i - <span class="num">1</span>) // <span class="num">2</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">max_heap_insert</span>(A, key):         <span class="com"># -inf 佔位再增鍵</span></span>
+<span class="line">    A.append(<span class="fn">float</span>(<span class="str">"-inf"</span>))</span>
+<span class="line">    heap_increase_key(A, <span class="fn">len</span>(A) - <span class="num">1</span>, key)</span>
+<span class="line"> </span>
+<span class="line">A = [<span class="num">16</span>, <span class="num">14</span>, <span class="num">10</span>, <span class="num">8</span>, <span class="num">7</span>, <span class="num">9</span>, <span class="num">3</span>, <span class="num">2</span>, <span class="num">4</span>, <span class="num">1</span>]</span>
+<span class="line">max_heap_insert(A, <span class="num">15</span>)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"INSERT(15) 後:"</span>, A)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"EXTRACT-MAX ="</span>, heap_extract_max(A))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/priority_queue.py）</span><pre>INSERT(15) 後: [16, 15, 10, 8, 14, 9, 3, 2, 4, 1, 7]
+EXTRACT-MAX = 16
+之後: [15, 14, 10, 8, 7, 9, 3, 2, 4, 1]</pre></div>
+          <div class="ct-note">max_heapify 同 P00 的定義；C++／Python 輸出逐字相同。實務上 Python 內建 heapq 是 min-heap 版同一套。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00b · 方向感</div>
+    <p>INCREASE-KEY 用「上浮」、EXTRACT-MAX 用「下沉」。為什麼方向不同？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。增鍵只會讓 A[i] 變大——它與子樹的關係不變（仍 ≥ 子孫），唯一可能違規的是「比祖先大」，所以往上修。EXTRACT-MAX 把尾端小值放到頂——它比子孫小才違規，所以往下修。看「哪個方向的 heap 性質被破壞」決定修復方向。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> 增鍵只可能違反「≤ 父」、補頂只可能違反「≥ 子」——各修各的方向</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩者都是 O(lg n)（最多走一條根葉路徑），效率相同——差別在正確性所需的方向。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> 上浮比較快，能用就用</div>
+      <div class="quiz-opt" data-correct="false" data-fb="順序無關緊要——heap 的違規位置決定一切：增鍵處在樹中間也一樣往上浮。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 習慣問題，兩個方向都可以</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
   </div>
 </section>
 
@@ -666,9 +829,85 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <div class="expected-out"><span class="eo-tag">執行輸出（輸入 {2,8,7,1,3,5,6,4}）</span><pre>1 2 3 4 5 6 7 8</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 7/randomized_quicksort.py（MIT License）— 核心</span></span><span class="line"><span class="kw">def</span> <span class="fn">randomized_partition</span>(A, p, r):</span><span class="line">    i = randint(p, r)          <span class="com"># 隨機選 pivot 索引</span></span><span class="line">    A[i], A[r] = A[r], A[i]    <span class="com"># 換到尾端後跑一般 partition</span></span><span class="line">    <span class="kw">return</span> partition(A, p, r)</span><span class="line"></span><span class="line"><span class="kw">def</span> <span class="fn">randomized_quicksort</span>(A, p=<span class="num">0</span>, r=<span class="kw">None</span>):</span><span class="line">    <span class="kw">if</span> r <span class="kw">is</span> <span class="kw">None</span>:</span><span class="line">        r = len(A) - <span class="num">1</span></span><span class="line">    <span class="kw">if</span> p &lt; r:</span><span class="line">        q = randomized_partition(A, p, r)</span><span class="line">        randomized_quicksort(A, p, q - <span class="num">1</span>)</span><span class="line">        randomized_quicksort(A, q + <span class="num">1</span>, r)</span></div>
-      <div class="expected-out"><span class="eo-tag">執行輸出（輸入 [2,8,7,1,3,5,6,4]）</span><pre>[1, 2, 3, 4, 5, 6, 7, 8]</pre></div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 7/randomized_quicksort.py（MIT License）：含 partition 全文</span></span>
+<span class="line"><span class="kw">import</span> random</span>
+<span class="line">random.seed(<span class="num">42</span>)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">partition</span>(A, p, r):</span>
+<span class="line">    x = A[r]                            <span class="com"># pivot 取最後一個元素</span></span>
+<span class="line">    i = p - <span class="num">1</span>                           <span class="com"># 「≤ x 區」的右邊界</span></span>
+<span class="line">    <span class="kw">for</span> j in <span class="fn">range</span>(p, r):</span>
+<span class="line">        <span class="kw">if</span> A[j] &lt;= x:</span>
+<span class="line">            i += <span class="num">1</span></span>
+<span class="line">            A[i], A[j] = A[j], A[i]</span>
+<span class="line">    A[i + <span class="num">1</span>], A[r] = A[r], A[i + <span class="num">1</span>]     <span class="com"># pivot 歸位</span></span>
+<span class="line">    <span class="kw">return</span> i + <span class="num">1</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">randomized_partition</span>(A, p, r):</span>
+<span class="line">    i = random.randint(p, r)            <span class="com"># 隨機挑 pivot 換到尾端</span></span>
+<span class="line">    A[i], A[r] = A[r], A[i]</span>
+<span class="line">    <span class="kw">return</span> partition(A, p, r)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">randomized_quicksort</span>(A, p, r):</span>
+<span class="line">    <span class="kw">if</span> p &lt; r:</span>
+<span class="line">        q = randomized_partition(A, p, r)</span>
+<span class="line">        randomized_quicksort(A, p, q - <span class="num">1</span>)   <span class="com"># pivot 已就定位</span></span>
+<span class="line">        randomized_quicksort(A, q + <span class="num">1</span>, r)</span>
+<span class="line"> </span>
+<span class="line">A = [<span class="num">2</span>, <span class="num">8</span>, <span class="num">7</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">4</span>]</span>
+<span class="line">randomized_quicksort(A, <span class="num">0</span>, <span class="fn">len</span>(A) - <span class="num">1</span>)</span>
+<span class="line"><span class="fn">print</span>(A)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/quicksort.py，seed=42）</span><pre>[1, 2, 3, 4, 5, 6, 7, 8]</pre></div>
+      <div class="ct-note">完整可跑：partition／randomized_partition／randomized_quicksort 三個函式全文。</div>
     </div>
+  </div>
+
+  <h3>另一把引擎：Hoare partition（原始版本）<span class="sec-badge">習題 7-1</span></h3>
+  <p>Lomuto 好教好證，但 Hoare 的原始 partition 實務更快（交換次數平均少三倍）：
+  pivot 取 <strong>A[p]</strong>，兩個指標<strong>從兩端相向掃描</strong>——左指標找「≥ x」、右指標找「≤ x」，交換後繼續，交錯即停：</p>
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.76rem;">
+        <div class="cc-title"><span class="fn">HOARE-PARTITION</span>(A, p, r)</div>
+        <span class="line"><span class="ln">1</span>x = A[p]　<span class="com">// pivot 取開頭</span></span>
+        <span class="line"><span class="ln">2</span>i = p − 1；j = r + 1</span>
+        <span class="line"><span class="ln">3</span><span class="kw">while</span> <span class="kw">true</span></span>
+        <span class="line"><span class="ln">4</span>    <span class="kw">repeat</span> j = j − 1 <span class="kw">until</span> A[j] ≤ x</span>
+        <span class="line"><span class="ln">5</span>    <span class="kw">repeat</span> i = i + 1 <span class="kw">until</span> A[i] ≥ x</span>
+        <span class="line"><span class="ln">6</span>    <span class="kw">if</span> i &lt; j：exchange A[i] ↔ A[j]</span>
+        <span class="line"><span class="ln">7</span>    <span class="kw">else</span> <span class="kw">return</span> j</span>
+      </div>
+    </div>
+    <div>
+      <div class="warn-box"><b>最大陷阱：</b>Hoare 回傳的 j <b>不是</b> pivot 的最終位置！它只保證
+      「A[p..j] 全 ≤ x ≤ A[j+1..r] 全」——pivot 本身可能在任一側。
+      所以遞迴要寫 <span class="mono">QUICKSORT(A, p, j)</span> 與 <span class="mono">QUICKSORT(A, j+1, r)</span>
+      （j 包含在左段，跟 Lomuto 的 q−1／q+1 不同）。抄錯這行是無窮遞迴的經典來源。</div>
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.84rem;">
+        <thead><tr><th></th><th>Lomuto</th><th>Hoare</th></tr></thead>
+        <tbody>
+          <tr><td>pivot 位置</td><td>A[r]（尾）</td><td>A[p]（頭）</td></tr>
+          <tr><td>掃描方式</td><td>單向 j：p→r−1</td><td class="best">雙向相向</td></tr>
+          <tr><td>回傳值意義</td><td class="best">pivot 最終位置 q</td><td>分界 j（pivot 不保證就位）</td></tr>
+          <tr><td>遞迴區間</td><td>[p, q−1]、[q+1, r]</td><td>[p, j]、[j+1, r]</td></tr>
+          <tr><td>平均交換次數</td><td>較多</td><td class="best">約 1/3</td></tr>
+          <tr><td>全相等輸入</td><td class="worst">退化 Θ(n²)</td><td class="best">完美對半 Θ(n lg n)</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01b · Hoare 的分界</div>
+    <p>用 Hoare partition 寫 quicksort，把遞迴寫成 QUICKSORT(A, p, j−1) 與 QUICKSORT(A, j+1, r)（模仿 Lomuto）。後果是？</p>
+    <div class="quiz-options" id="q08Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。Hoare 的 j 位置上不保證是 pivot——跳過 A[j] 等於「丟掉一個未排序的元素」，結果會錯；而某些情況 j = r 時 [p, j−1] 沒有縮小問題規模，還可能無窮遞迴。Hoare 必須用 [p, j]（含 j）與 [j+1, r]。" onclick="quizCheck('q08', this)"><span class="opt-letter">(A)</span> 結果可能錯、甚至無窮遞迴——j 不是 pivot 的最終位置</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不只是慢——正確性直接壞掉：A[j] 未必等於 pivot，跳過它就是漏排一個元素。" onclick="quizCheck('q08', this)"><span class="opt-letter">(B)</span> 只是稍微變慢，結果仍正確</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩種 partition 的「回傳值合約」不同：Lomuto 保證 pivot 就位、Hoare 只保證兩側分界——遞迴區間必須配合各自的合約。" onclick="quizCheck('q08', this)"><span class="opt-letter">(C)</span> 沒差，兩種 partition 可以互換遞迴寫法</div>
+    </div>
+    <div class="quiz-feedback" id="q08Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -694,11 +933,19 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       → O(n lg n)。切分不必完美，<strong>常數比例</strong>就夠——這是 P02 recursion tree 那題不平衡樹的直接應用。</p>
       <p><strong>隨機化的期望分析</strong>（§7.4.2 的漂亮論證）：令 z₁&lt;…&lt;zₙ 為排序後元素，
       zᵢ 與 zⱼ<em>要嘛比較一次、要嘛永不比較</em>——只有當 zᵢ 或 zⱼ 是「區間 Zᵢⱼ = {zᵢ,…,zⱼ} 中第一個被選到的 pivot」才會比較：</p>
-      <div class="info-box green">
-        <span class="info-label">indicator RV 再上場</span>
-        Pr{zᵢ 與 zⱼ 比較} = 2／(j − i + 1)。期望總比較數
-        E[X] = Σᵢ Σⱼ 2/(j−i+1) ≤ Σᵢ O(lg n) = <strong>O(n lg n)</strong>。
-        上一章 hiring problem 的工具原封不動搬過來。
+      <div class="thm-box proof">
+        <div class="thm-label">期望比較數 O(n lg n) 完整推導（§7.4.2）</div>
+        <div style="font-size:.87rem;line-height:1.75;">
+        <strong>① 設變數</strong>：X<sub>ij</sub> = I{zᵢ 與 zⱼ 曾被比較}，總比較數 X = Σ<sub>i&lt;j</sub> X<sub>ij</sub>。<br>
+        <strong>② 算機率</strong>：zᵢ、zⱼ 被比較 ⟺ 兩者之一是 Z<sub>ij</sub> = {zᵢ, zᵢ₊₁, …, zⱼ} 中<strong>第一個被選中的 pivot</strong>
+        （若先選中中間的某個 z<sub>k</sub>，i 與 j 被分到兩側、永不相見）。
+        隨機 pivot 下 Z<sub>ij</sub> 的 j−i+1 個元素等可能率先當選：<br>
+        <span style="display:block;text-align:center;">Pr{X<sub>ij</sub> = 1} = 2／(j − i + 1)</span>
+        <strong>③ 加總</strong>（令 k = j − i）：<br>
+        E[X] = Σ<sub>i=1</sub><sup>n−1</sup> Σ<sub>j=i+1</sub><sup>n</sup> 2/(j−i+1)
+        = Σ<sub>i=1</sub><sup>n−1</sup> Σ<sub>k=1</sub><sup>n−i</sup> 2/(k+1)
+        &lt; Σ<sub>i=1</sub><sup>n−1</sup> 2·H<sub>n</sub> = <strong>O(n lg n)</strong>。∎<br>
+        調和級數 H<sub>n</sub> = ln n + O(1) 又出現了——與 hiring problem 同一條級數，同一套 indicator 工具。</div>
       </div>
     </div>
     <div class="side-panel">
@@ -710,6 +957,17 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
         ▸ std::sort 的 introsort = quicksort ＋ 深度超標時切 heapsort ＋ 小區間 insertion sort：三章的知識拼在同一支函式裡。</div>
       </div>
     </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02b · 比較的機率</div>
+    <p>排序後的元素 z₁ &lt; z₂ &lt; … &lt; z₁₀。隨機化 quicksort 中，<strong>最小值 z₁ 與最大值 z₁₀</strong> 被互相比較的機率是？</p>
+    <div class="quiz-options" id="q09Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。Z₁,₁₀ 是全部 10 個元素；z₁ 與 z₁₀ 要比較，必須兩者之一是「全場第一個 pivot」——機率 2/10 = 1/5。距離越遠的配對越難相見（中間任何人先當 pivot 就把他們分開了），這正是期望比較數只有 n lg n 的原因。" onclick="quizCheck('q09', this)"><span class="opt-letter">(A)</span> 2/10 = 1/5</div>
+      <div class="quiz-opt" data-correct="false" data-fb="1/2 是「相鄰配對」（j−i+1 = 2）的機率——相鄰元素永遠會被比較之一擋不住；最遠的配對機率最低。" onclick="quizCheck('q09', this)"><span class="opt-letter">(B)</span> 1/2</div>
+      <div class="quiz-opt" data-correct="false" data-fb="機率不是 1——只要中間任何一個元素比 z₁、z₁₀ 更早當上 pivot，兩人就被分進不同子問題、永不比較。" onclick="quizCheck('q09', this)"><span class="opt-letter">(C)</span> 1（一定會比較）</div>
+    </div>
+    <div class="quiz-feedback" id="q09Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -794,17 +1052,69 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
           <div class="expected-out"><span class="eo-tag">輸出</span><pre>0 0 1 1 2 2 3 3 4 6 6</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 8/counting_sort.py（MIT License）</span></span><span class="line"><span class="com"># 簽名：counting_sort(A, n, k)，值域 0..k-1</span></span><span class="line">sorted_A = counting_sort(A, len(A), <span class="num">7</span>)</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[0, 0, 1, 1, 2, 2, 3, 3, 4, 6, 6]</pre></div>
-          <div class="ct-note">注意官方版的 k 是「值域大小」（值 0..k−1），課本是「最大值 k」——差一。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 8/counting_sort.py（MIT License）：值域 0..k</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">counting_sort</span>(A, k):</span>
+<span class="line">    C = [<span class="num">0</span>] * (k + <span class="num">1</span>)</span>
+<span class="line">    <span class="kw">for</span> a in A:                 <span class="com"># ① 計數</span></span>
+<span class="line">        C[a] += <span class="num">1</span></span>
+<span class="line">    <span class="kw">for</span> v in <span class="fn">range</span>(<span class="num">1</span>, k + <span class="num">1</span>):   <span class="com"># ② 前綴和：C[v] =「≤ v 的個數」</span></span>
+<span class="line">        C[v] += C[v - <span class="num">1</span>]</span>
+<span class="line">    B = [<span class="kw">None</span>] * <span class="fn">len</span>(A)</span>
+<span class="line">    <span class="kw">for</span> a in <span class="fn">reversed</span>(A):       <span class="com"># ③ 從後往前 → 穩定</span></span>
+<span class="line">        B[C[a] - <span class="num">1</span>] = a</span>
+<span class="line">        C[a] -= <span class="num">1</span></span>
+<span class="line">    <span class="kw">return</span> B</span>
+<span class="line"> </span>
+<span class="line">A = [<span class="num">6</span>, <span class="num">0</span>, <span class="num">2</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">6</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">2</span>]</span>
+<span class="line"><span class="fn">print</span>(counting_sort(A, <span class="num">6</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/counting_sort.py）</span><pre>[0, 0, 1, 1, 2, 2, 3, 3, 4, 6, 6]</pre></div>
+          <div class="ct-note">完整可跑；三段結構（計數→前綴和→從後往前放）與 pseudocode 逐段對應。</div>
         </div>
       </div>
     </div>
   </div>
 
-  <p style="margin-top:1rem;"><strong>radix sort</strong>（§8.3）：d 位數的整數，從<strong>最低位</strong>開始逐位用「穩定排序」（通常就是 counting sort）排 d 輪
-  → Θ(d(n + k))。穩定性是命脈：排高位時，低位已排好的相對順序必須被保留。
-  <strong>bucket sort</strong>（§8.4）：輸入均勻分布在 [0,1) 時，切 n 個桶、各桶 insertion sort，<strong>期望</strong> Θ(n)——又是機率分析。</p>
+  <h3>radix sort：逐位排、靠穩定性接力 <span class="sec-badge">§8.3</span></h3>
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.76rem;">
+        <div class="cc-title"><span class="fn">RADIX-SORT</span>(A, n, d)</div>
+        <span class="line"><span class="ln">1</span><span class="kw">for</span> i = 1 <span class="kw">to</span> d　<span class="com">// 從最低位到最高位</span></span>
+        <span class="line"><span class="ln">2</span>    用<strong>穩定排序</strong>依第 i 位排序 A</span>
+        <span class="line"><span class="ln">3</span>　　<span class="com">// 通常用 counting sort：每輪 Θ(n + k)</span></span>
+      </div>
+      <div class="clrs-code" style="font-size:.76rem;margin-top:.6rem;">
+        <div class="cc-title"><span class="fn">BUCKET-SORT</span>(A, n) <span class="com">// A[i] ∈ [0, 1)</span></div>
+        <span class="line"><span class="ln">1</span>建 n 個空桶 B[0..n−1]</span>
+        <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> n：把 A[i] 丟進 B[⌊n·A[i]⌋]</span>
+        <span class="line"><span class="ln">3</span><span class="kw">for</span> 每個桶：insertion sort 排桶內</span>
+        <span class="line"><span class="ln">4</span>依序串接 B[0], B[1], …, B[n−1]</span>
+      </div>
+    </div>
+    <div>
+      <p><strong>radix sort 的正確性靠歸納</strong>：排完第 i 位時，「後 i 位」整體有序——
+      第 i 位不同者由本輪排序決定；第 i 位相同者靠<strong>穩定性</strong>保住前 i−1 輪建立的順序。
+      成本 Θ(d(n+k))；b 位元整數取 r 位元一組時 Θ((b/r)(n+2ʳ))，r ≈ lg n 最優。</p>
+      <p><strong>bucket sort 的期望線性</strong>又是機率分析：桶內元素數 nᵢ 的期望 E[nᵢ²] = 2 − 1/n（indicator 變數算兩兩同桶機率），
+      各桶 insertion sort 的期望總成本 Σ O(E[nᵢ²]) = O(n)。均勻分布假設是命門——全部擠進同一桶就退化 Θ(n²)。</p>
+    </div>
+  </div>
+  <div class="deck-extra">
+    <div class="dx-label">實跑：radix sort 逐輪（CLRS 圖 8.3）＋ bucket sort（圖 8.4）— src/sorting/radix_bucket.cpp</div>
+    <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="kw">void</span> <span class="fn">countingByDigit</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; A, <span class="kw">int</span> exp) {   <span class="com">// 依第 exp 位穩定排序</span></span>
+<span class="line">    std::vector&lt;<span class="kw">int</span>&gt; C(<span class="num">10</span>, <span class="num">0</span>), B(A.size());</span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">int</span> a : A) ++C[(a / exp) % <span class="num">10</span>];</span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">int</span> v = <span class="num">1</span>; v &lt; <span class="num">10</span>; ++v) C[v] += C[v - <span class="num">1</span>];</span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = (<span class="kw">int</span>)A.size() - <span class="num">1</span>; i &gt;= <span class="num">0</span>; --i)         <span class="com">// 從後往前 → 穩定</span></span>
+<span class="line">        B[--C[(A[i] / exp) % <span class="num">10</span>]] = A[i];</span>
+<span class="line">    A = B;</span>
+<span class="line">}</span></div>
+    <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>依   1 位排完：720 355 436 457 657 329 839
+依  10 位排完：720 329 436 839 355 457 657
+依 100 位排完：329 355 436 457 657 720 839
+bucket sort：0.12 0.17 0.21 0.23 0.26 0.39 0.68 0.72 0.78 0.94</pre></div>
+    <p class="dx-note">逐輪對照課本圖 8.3：第一輪後個位有序、第二輪後「後兩位」有序（看 355 與 457/657 的相對位置——十位同為 5，靠穩定性保住個位順序）、第三輪全序。bucket 例即圖 8.4 的十個小數。</p>
+  </div>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P04 · 穩定性的角色</div>
@@ -853,8 +1163,43 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 第 10 小 = 9</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 9/randomized_select.py（MIT License）— 核心</span></span><span class="line"><span class="kw">def</span> <span class="fn">randomized_select</span>(A, p, r, i):</span><span class="line">    <span class="kw">if</span> p == r:</span><span class="line">        <span class="kw">return</span> A[p]</span><span class="line">    q = randomized_partition(A, p, r)</span><span class="line">    k = q - p + <span class="num">1</span></span><span class="line">    <span class="kw">if</span> i == k:</span><span class="line">        <span class="kw">return</span> A[q]</span><span class="line">    <span class="kw">elif</span> i &lt; k:</span><span class="line">        <span class="kw">return</span> randomized_select(A, p, q - <span class="num">1</span>, i)</span><span class="line">    <span class="kw">else</span>:</span><span class="line">        <span class="kw">return</span> randomized_select(A, q + <span class="num">1</span>, r, i - k)</span></div>
-      <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>第5小: 4</pre></div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 9/randomized_select.py（MIT License）：含 partition 全文</span></span>
+<span class="line"><span class="kw">import</span> random</span>
+<span class="line">random.seed(<span class="num">42</span>)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">partition</span>(A, p, r):</span>
+<span class="line">    x = A[r]</span>
+<span class="line">    i = p - <span class="num">1</span></span>
+<span class="line">    <span class="kw">for</span> j in <span class="fn">range</span>(p, r):</span>
+<span class="line">        <span class="kw">if</span> A[j] &lt;= x:</span>
+<span class="line">            i += <span class="num">1</span></span>
+<span class="line">            A[i], A[j] = A[j], A[i]</span>
+<span class="line">    A[i + <span class="num">1</span>], A[r] = A[r], A[i + <span class="num">1</span>]</span>
+<span class="line">    <span class="kw">return</span> i + <span class="num">1</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">randomized_partition</span>(A, p, r):</span>
+<span class="line">    i = random.randint(p, r)</span>
+<span class="line">    A[i], A[r] = A[r], A[i]</span>
+<span class="line">    <span class="kw">return</span> partition(A, p, r)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">randomized_select</span>(A, p, r, i):</span>
+<span class="line">    <span class="kw">if</span> p == r:</span>
+<span class="line">        <span class="kw">return</span> A[p]</span>
+<span class="line">    q = randomized_partition(A, p, r)</span>
+<span class="line">    k = q - p + <span class="num">1</span>                   <span class="com"># pivot 在本段排第 k 小</span></span>
+<span class="line">    <span class="kw">if</span> i == k:</span>
+<span class="line">        <span class="kw">return</span> A[q]</span>
+<span class="line">    <span class="kw">if</span> i &lt; k:</span>
+<span class="line">        <span class="kw">return</span> randomized_select(A, p, q - <span class="num">1</span>, i)</span>
+<span class="line">    <span class="kw">return</span> randomized_select(A, q + <span class="num">1</span>, r, i - k)   <span class="com"># 扣掉左邊 k 個</span></span>
+<span class="line"> </span>
+<span class="line">A = [<span class="num">3</span>, <span class="num">2</span>, <span class="num">9</span>, <span class="num">0</span>, <span class="num">7</span>, <span class="num">5</span>, <span class="num">4</span>, <span class="num">8</span>, <span class="num">6</span>, <span class="num">1</span>]</span>
+<span class="line"><span class="kw">for</span> i in (<span class="num">1</span>, <span class="num">5</span>, <span class="num">10</span>):</span>
+<span class="line">    <span class="fn">print</span>(<span class="str">"第"</span>, i, <span class="str">"小 ="</span>, randomized_select(A[:], <span class="num">0</span>, <span class="fn">len</span>(A) - <span class="num">1</span>, i))</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/randomized_select.py，seed=42）</span><pre>第 1 小 = 0
+第 5 小 = 4
+第 10 小 = 9</pre></div>
+      <div class="ct-note">完整可跑；與左邊 C++ 版輸出一致。</div>
     </div>
   </div>
 
@@ -867,6 +1212,129 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <div class="quiz-opt" data-correct="false" data-fb="最壞情況仍是 Θ(n²)（每次 pivot 都選到端點）；Θ(n) 是期望值。要最壞線性得用 §9.3 的中位數之中位數。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 它保證最壞情況也是 Θ(n)</div>
     </div>
     <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+</section>
+
+<section id="mom">
+  <div class="section-number">P06 · MEDIAN OF MEDIANS</div>
+  <h2>SELECT：把「期望線性」升級成「保證線性」 <span class="sec-badge">§9.3</span></h2>
+  <p>randomized select 的 Θ(n) 只是期望——倒楣起來還是 Θ(n²)。
+  §9.3 的 <strong>SELECT（中位數之中位數）</strong>不擲骰子，用五步構造一個「保證不差」的 pivot：</p>
+  <div class="info-box purple">
+    <span class="info-label">SELECT 五步驟</span>
+    ① 把 n 個元素<strong>5 個一組</strong>分成 ⌈n/5⌉ 組。<br>
+    ② 每組（≤ 5 個元素）insertion sort 後取<strong>組中位數</strong>——每組 O(1)，共 O(n)。<br>
+    ③ <strong>遞迴呼叫 SELECT</strong> 找這 ⌈n/5⌉ 個中位數的中位數 x。<br>
+    ④ 以 x 為 pivot partition 整個陣列（x 落在第 k 位）。<br>
+    ⑤ 和 randomized select 一樣三岔：i = k 收工、i &lt; k 走左、i &gt; k 走右（只走一邊）。
+  </div>
+  <div class="viz-layout">
+    <div>
+      <div class="thm-box proof">
+        <div class="thm-label">為什麼 x 保證不差：數人頭</div>
+        <div style="font-size:.87rem;line-height:1.75;">
+        至少一半的組（約 ⌈n/5⌉/2 組）的中位數 ≥ x；每個這樣的組裡至少 3 個元素 ≥ 自家中位數 ≥ x
+        （組中位數與它上面兩個）。扣掉 x 自己那組與不滿 5 人的尾組：<br>
+        <span style="display:block;text-align:center;"><strong>≥ x 的元素至少 3(⌈⌈n/5⌉/2⌉ − 2) ≥ 3n/10 − 6 個</strong></span>
+        對稱地 ≤ x 的也至少 3n/10 − 6 個 ⟹ 第 ⑤ 步無論走哪邊，
+        子問題大小 ≤ <strong>7n/10 + 6</strong>——pivot 保證甩掉約三成的元素。</div>
+      </div>
+      <div class="thm-box proof">
+        <div class="thm-label">遞迴式與線性證明</div>
+        <div style="font-size:.87rem;line-height:1.75;">
+        T(n) ≤ T(⌈n/5⌉) + T(7n/10 + 6) + O(n)　（找中位數們的中位數＋遞迴一邊＋分組/partition）。<br>
+        關鍵：<strong>1/5 + 7/10 = 9/10 &lt; 1</strong>——兩個子問題合計比原問題小，成本形成遞減幾何級數。
+        用 substitution 猜 T(n) ≤ cn：cn/5 + 7cn/10 + 6c + an = 9cn/10 + 6c + an ≤ cn，
+        取 c 夠大（如 c ≥ 20a、n ≥ 120）即成立 → <strong>T(n) = O(n) 最壞情況保證</strong>。∎</div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctMom">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctMom','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctMom','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctMom','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.74rem;">
+            <div class="cc-title"><span class="fn">SELECT</span>(A, i) <span class="com">— 概念版</span></div>
+            <span class="line"><span class="ln">1</span><span class="kw">if</span> n ≤ 5：排序後直接回傳第 i 個</span>
+            <span class="line"><span class="ln">2</span>5 個一組，各組取中位數 → medians</span>
+            <span class="line"><span class="ln">3</span>x = <span class="fn">SELECT</span>(medians, ⌈|medians|/2⌉)</span>
+            <span class="line"><span class="ln">4</span>以 x 分割：lo（&lt;x）｜eq（=x）｜hi（&gt;x）</span>
+            <span class="line"><span class="ln">5</span>依 i 落點遞迴 lo 或 hi（或直接回傳 x）</span>
+          </div>
+          <div class="ct-note">課本版就地 partition 更省空間；這裡的三路分割版本邏輯相同、好讀好寫。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">int</span> <span class="fn">select</span>(std::vector&lt;<span class="kw">int</span>&gt; A, <span class="kw">int</span> i) {</span>
+<span class="line">    <span class="kw">if</span> (A.size() &lt;= <span class="num">5</span>) {</span>
+<span class="line">        std::sort(A.begin(), A.end());</span>
+<span class="line">        <span class="kw">return</span> A[i - <span class="num">1</span>];</span>
+<span class="line">    }</span>
+<span class="line">    std::vector&lt;<span class="kw">int</span>&gt; medians;              <span class="com">// ① 5 個一組取中位數</span></span>
+<span class="line">    <span class="kw">for</span> (std::<span class="kw">size_t</span> j = <span class="num">0</span>; j &lt; A.size(); j += <span class="num">5</span>) {</span>
+<span class="line">        <span class="kw">auto</span> e = std::min(j + <span class="num">5</span>, A.size());</span>
+<span class="line">        std::vector&lt;<span class="kw">int</span>&gt; g(A.begin() + j, A.begin() + e);</span>
+<span class="line">        std::sort(g.begin(), g.end());</span>
+<span class="line">        medians.push_back(g[g.size() / <span class="num">2</span>]);</span>
+<span class="line">    }</span>
+<span class="line">    <span class="kw">int</span> x = <span class="fn">select</span>(medians, (medians.size() + <span class="num">1</span>) / <span class="num">2</span>);  <span class="com">// ② MoM</span></span>
+<span class="line">    std::vector&lt;<span class="kw">int</span>&gt; lo, eq, hi;           <span class="com">// ③ 三路分割</span></span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">int</span> a : A) (a &lt; x ? lo : a == x ? eq : hi).push_back(a);</span>
+<span class="line">    <span class="kw">if</span> (i &lt;= (<span class="kw">int</span>)lo.size()) <span class="kw">return</span> <span class="fn">select</span>(lo, i);</span>
+<span class="line">    <span class="kw">if</span> (i &lt;= (<span class="kw">int</span>)(lo.size() + eq.size())) <span class="kw">return</span> x;</span>
+<span class="line">    <span class="kw">return</span> <span class="fn">select</span>(hi, i - lo.size() - eq.size());</span>
+<span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/select_mom.cpp，15 個元素）</span><pre>第 8 小（中位數）= 7
+第 1 小 = 0，第 15 小 = 14</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 order_statistics.py（MIT License）精簡版</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">select</span>(A, i):</span>
+<span class="line">    <span class="kw">if</span> <span class="fn">len</span>(A) &lt;= <span class="num">5</span>:                    <span class="com"># 基底：小陣列直接排</span></span>
+<span class="line">        <span class="kw">return</span> <span class="fn">sorted</span>(A)[i - <span class="num">1</span>]</span>
+<span class="line">    medians = [<span class="fn">sorted</span>(A[j:j + <span class="num">5</span>])[<span class="fn">len</span>(A[j:j + <span class="num">5</span>]) // <span class="num">2</span>]</span>
+<span class="line">               <span class="kw">for</span> j in <span class="fn">range</span>(<span class="num">0</span>, <span class="fn">len</span>(A), <span class="num">5</span>)]   <span class="com"># ① 各組中位數</span></span>
+<span class="line">    x = select(medians, (<span class="fn">len</span>(medians) + <span class="num">1</span>) // <span class="num">2</span>)  <span class="com"># ② MoM 當 pivot</span></span>
+<span class="line">    lo = [a <span class="kw">for</span> a in A <span class="kw">if</span> a &lt; x]       <span class="com"># ③ 三路分割</span></span>
+<span class="line">    eq = [a <span class="kw">for</span> a in A <span class="kw">if</span> a == x]</span>
+<span class="line">    hi = [a <span class="kw">for</span> a in A <span class="kw">if</span> a &gt; x]</span>
+<span class="line">    <span class="kw">if</span> i &lt;= <span class="fn">len</span>(lo):</span>
+<span class="line">        <span class="kw">return</span> select(lo, i)</span>
+<span class="line">    <span class="kw">if</span> i &lt;= <span class="fn">len</span>(lo) + <span class="fn">len</span>(eq):</span>
+<span class="line">        <span class="kw">return</span> x</span>
+<span class="line">    <span class="kw">return</span> select(hi, i - <span class="fn">len</span>(lo) - <span class="fn">len</span>(eq))</span>
+<span class="line"> </span>
+<span class="line">A = [<span class="num">3</span>, <span class="num">2</span>, <span class="num">9</span>, <span class="num">0</span>, <span class="num">7</span>, <span class="num">5</span>, <span class="num">4</span>, <span class="num">8</span>, <span class="num">6</span>, <span class="num">1</span>, <span class="num">12</span>, <span class="num">11</span>, <span class="num">10</span>, <span class="num">14</span>, <span class="num">13</span>]</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"第 8 小（中位數）="</span>, select(A, <span class="num">8</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/sorting/select_mom.py）</span><pre>第 8 小（中位數）= 7
+第 1 小 = 0 ，第 15 小 = 14</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th></th><th>RANDOMIZED-SELECT</th><th>SELECT（MoM）</th></tr></thead>
+    <tbody>
+      <tr><td>pivot 來源</td><td>擲骰子</td><td class="best">中位數之中位數（確定性）</td></tr>
+      <tr><td>期望</td><td class="best">Θ(n)</td><td>Θ(n)</td></tr>
+      <tr><td>最壞</td><td class="worst">Θ(n²)</td><td class="best">Θ(n) 保證</td></tr>
+      <tr><td>常數</td><td class="best">小、實務快</td><td>大（分組排序開銷）、實務少用</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P06 · 為什麼是 5</div>
+    <p>SELECT 改成「<strong>3 個一組</strong>」取中位數之中位數，會怎樣？</p>
+    <div class="quiz-options" id="q07Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。3 個一組時保證甩掉的比例變小：子問題變成 T(n/3) + T(2n/3 + 常數)，而 1/3 + 2/3 = 1——幾何級數不收斂，每層成本都是 Θ(n)、共 Θ(lg n) 層，解出 Θ(n lg n)，線性保證消失。5 是讓「兩個子問題比例和 < 1」的最小奇數組距之一。" onclick="quizCheck('q07', this)"><span class="opt-letter">(A)</span> 遞迴式變 T(n/3)+T(2n/3+O(1))+O(n)，比例和=1，退化成 Θ(n lg n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="演算法照樣正確（照樣找得到第 i 小）——壞掉的是「線性時間」的證明：比例和不再小於 1。" onclick="quizCheck('q07', this)"><span class="opt-letter">(B)</span> 演算法會輸出錯誤答案</div>
+      <div class="quiz-opt" data-correct="false" data-fb="3 一組的每組工作確實更便宜，但 pivot 品質下降（只保證甩掉 n/3 − 常數）——整體反而變慢。組距的選擇是品質與開銷的平衡。" onclick="quizCheck('q07', this)"><span class="opt-letter">(C)</span> 更快——每組排序更便宜</div>
+    </div>
+    <div class="quiz-feedback" id="q07Feedback"></div>
   </div>
 </section>
 
@@ -924,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch3.json · 14 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch3.json · 20 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -955,7 +1423,13 @@ const FLASHCARDS = [
   {"front":"桶排序（Bucket Sort）","back":"輸入均勻分布於 [0,1) 時切 n 個桶、各桶 insertion sort 後串接。期望 Θ(n)；最壞（全擠一桶）Θ(n²)。"},
   {"front":"穩定排序（Stable Sort）","back":"鍵值相等的元素在輸出中保持輸入的相對順序。merge／insertion／counting 穩定；heapsort、quicksort 不穩定。"},
   {"front":"順序統計量（Order Statistic）","back":"集合中第 i 小的元素；中位數是第 ⌊(n+1)/2⌋ 小。不需排序即可求得。"},
-  {"front":"RANDOMIZED-SELECT","back":"用 randomized partition 找第 i 小，但每次只遞迴 pivot 的一側：期望 Θ(n)（幾何級數），最壞 Θ(n²)。§9.3 的 SELECT 可達最壞線性。"}
+  {"front":"RANDOMIZED-SELECT","back":"用 randomized partition 找第 i 小，但每次只遞迴 pivot 的一側：期望 Θ(n)（幾何級數），最壞 Θ(n²)。§9.3 的 SELECT 可達最壞線性。"},
+  {"front":"BUILD-MAX-HEAP 的 O(n) 分析","back":"高度 h 的節點至多 ⌈n/2^(h+1)⌉ 個、heapify 成本 O(h)：Σ h·n/2^(h+1) = O(n·Σh/2^h) = O(2n)。矮節點多、高節點少，加權平均攤成常數。"},
+  {"front":"最大優先佇列（Max-Priority Queue）","back":"支援 MAXIMUM O(1)、EXTRACT-MAX／INCREASE-KEY／INSERT 各 O(lg n) 的集合結構，heap 是標準實作。排程、事件模擬、Prim/Dijkstra 的底座。"},
+  {"front":"HEAP-INCREASE-KEY","back":"增鍵後沿父鏈上浮（heapify 是下沉）：增鍵只可能違反「≤ 父」，補頂只可能違反「≥ 子」——違規方向決定修復方向。INSERT = 塞 −∞ 再增鍵。"},
+  {"front":"Hoare partition","back":"pivot 取 A[p]、雙指標從兩端相向掃描交換。回傳的 j 不是 pivot 最終位置，遞迴須用 [p,j]、[j+1,r]。交換少、全相等輸入不退化。"},
+  {"front":"比較機率 2/(j−i+1)","back":"隨機化 quicksort 中 zᵢ、zⱼ 被比較 ⟺ 兩者之一是 Z_ij 中第一個 pivot。期望比較數 ΣΣ 2/(j−i+1) = O(n lg n)——期望分析的核心引理。"},
+  {"front":"中位數之中位數（Median of Medians）","back":"5 個一組取中位數、遞迴找中位數們的中位數當 pivot：保證甩掉 ≥ 3n/10−6 個元素。T(n) ≤ T(n/5)+T(7n/10+6)+O(n)，因 1/5+7/10 < 1 得最壞 O(n)。"}
 ];
 
 /* ---------- P00 heapsort 動畫 ---------- */
@@ -1091,6 +1565,56 @@ function csApply(f) {
 }
 const csPlayer = new Player({frames: csFrames(), apply: csApply, delayInput: null});
 csPlayer.reset();
+
+/* ---------- P00b priority queue 動畫 ---------- */
+function pqFrames() {
+  const A = [16, 14, 10, 8, 7, 9, 3, 2, 4, 1];
+  const frames = [];
+  const snap = (msg, hl) => frames.push({A: [...A], hl: hl ?? [], msg});
+  snap('CLRS 圖 6.5 的 max-heap（陣列表示：父 = ⌊(i−1)/2⌋）。先 INSERT(15)。');
+  A.push(-Infinity);
+  snap('INSERT ①：尾端塞 −∞ 佔位（不會破壞 heap 性質）。', [A.length - 1]);
+  let i = A.length - 1;
+  A[i] = 15;
+  snap('INSERT ②：INCREASE-KEY 到 15，開始與父節點比較上浮。', [i]);
+  while (i > 0 && A[(i - 1) >> 1] < A[i]) {
+    const p = (i - 1) >> 1;
+    [A[i], A[p]] = [A[p], A[i]];
+    snap('15 > 父節點 ' + A[i] + '：交換上浮到位置 ' + p + '。', [p, i]);
+    i = p;
+  }
+  snap('15 ≤ 父節點 ' + A[(i - 1) >> 1] + '：上浮停止。INSERT 完成，共 O(lg n)。', [i]);
+  const mx = A[0];
+  A[0] = A[A.length - 1];
+  A.pop();
+  snap('EXTRACT-MAX：取走堆頂 ' + mx + '，尾端 ' + A[0] + ' 補到頂，開始下沉。', [0]);
+  i = 0;
+  while (true) {
+    const l = 2 * i + 1, r = 2 * i + 2;
+    let largest = i;
+    if (l < A.length && A[l] > A[largest]) largest = l;
+    if (r < A.length && A[r] > A[largest]) largest = r;
+    if (largest === i) break;
+    [A[i], A[largest]] = [A[largest], A[i]];
+    snap('與較大子節點 ' + A[i] + ' 交換，繼續下沉。', [i, largest]);
+    i = largest;
+  }
+  snap('下沉停止：heap 修復完成，新堆頂 = ' + A[0] + '。EXTRACT-MAX 回傳 ' + mx + '。', [i]);
+  return frames;
+}
+function pqApply(f) {
+  const el = $('pqArr'); el.innerHTML = '';
+  f.A.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item';
+    if (f.hl.includes(idx)) d.style.background = '#f39c12';
+    d.textContent = v === -Infinity ? '−∞' : v;
+    el.appendChild(d);
+  });
+  setStatus('pqStatus', f.msg);
+}
+const pqPlayer = new Player({frames: pqFrames(), apply: pqApply, delayInput: null});
+pqPlayer.reset();
 </script>
 <script>
 /* ===== code tabs（pseudocode / C++ / Python 切換）===== */

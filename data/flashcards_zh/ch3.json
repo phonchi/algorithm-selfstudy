@@ -54,5 +54,29 @@
  {
   "front": "RANDOMIZED-SELECT",
   "back": "用 randomized partition 找第 i 小，但每次只遞迴 pivot 的一側：期望 Θ(n)（幾何級數），最壞 Θ(n²)。§9.3 的 SELECT 可達最壞線性。"
+ },
+ {
+  "front": "BUILD-MAX-HEAP 的 O(n) 分析",
+  "back": "高度 h 的節點至多 ⌈n/2^(h+1)⌉ 個、heapify 成本 O(h)：Σ h·n/2^(h+1) = O(n·Σh/2^h) = O(2n)。矮節點多、高節點少，加權平均攤成常數。"
+ },
+ {
+  "front": "最大優先佇列（Max-Priority Queue）",
+  "back": "支援 MAXIMUM O(1)、EXTRACT-MAX／INCREASE-KEY／INSERT 各 O(lg n) 的集合結構，heap 是標準實作。排程、事件模擬、Prim/Dijkstra 的底座。"
+ },
+ {
+  "front": "HEAP-INCREASE-KEY",
+  "back": "增鍵後沿父鏈上浮（heapify 是下沉）：增鍵只可能違反「≤ 父」，補頂只可能違反「≥ 子」——違規方向決定修復方向。INSERT = 塞 −∞ 再增鍵。"
+ },
+ {
+  "front": "Hoare partition",
+  "back": "pivot 取 A[p]、雙指標從兩端相向掃描交換。回傳的 j 不是 pivot 最終位置，遞迴須用 [p,j]、[j+1,r]。交換少、全相等輸入不退化。"
+ },
+ {
+  "front": "比較機率 2/(j−i+1)",
+  "back": "隨機化 quicksort 中 zᵢ、zⱼ 被比較 ⟺ 兩者之一是 Z_ij 中第一個 pivot。期望比較數 ΣΣ 2/(j−i+1) = O(n lg n)——期望分析的核心引理。"
+ },
+ {
+  "front": "中位數之中位數（Median of Medians）",
+  "back": "5 個一組取中位數、遞迴找中位數們的中位數當 pivot：保證甩掉 ≥ 3n/10−6 個元素。T(n) ≤ T(n/5)+T(7n/10+6)+O(n)，因 1/5+7/10 < 1 得最壞 O(n)。"
  }
 ]
