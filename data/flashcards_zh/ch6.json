@@ -1,0 +1,50 @@
+[
+ {
+  "front": "貪婪演算法（Greedy Algorithm）",
+  "back": "每一步都做當下看起來最好的選擇、永不回頭，只留下一個子問題。比 DP 快，但只有在貪婪選擇性質成立時才正確。"
+ },
+ {
+  "front": "貪婪選擇性質（Greedy-Choice Property）",
+  "back": "存在一個全域最佳解包含局部貪婪選擇——可以先做貪婪選擇、再解剩下的子問題而不會錯過最佳解。greedy 正確性的第一要素。"
+ },
+ {
+  "front": "交換論證（Exchange Argument）",
+  "back": "證明貪婪安全的標準手法：拿任一最佳解，把其中的非貪婪部分換成貪婪選擇，證明不變差 → 存在含貪婪選擇的最佳解。"
+ },
+ {
+  "front": "活動選擇（Activity Selection）",
+  "back": "選最多互不重疊的活動：按結束時間排序、每次選最早結束的相容活動。O(n lg n)；正確性由交換論證（f(aₘ) ≤ f(aⱼ)）。"
+ },
+ {
+  "front": "前綴自由碼（Prefix-Free Code）",
+  "back": "沒有任何編碼是另一編碼的前綴 → 解碼無歧義、可貪吃式讀位元。對應二元樹：字元全在葉子上。"
+ },
+ {
+  "front": "Huffman 編碼",
+  "back": "最佳前綴碼：min-PQ 反覆取出頻率最小兩棵樹合併，n−1 次後得樹。O(n lg n)；高頻字元編碼短、低頻字元最深。"
+ },
+ {
+  "front": "分數 vs 0/1 背包",
+  "back": "分數背包：按單位價值 v/w 貪婪 → 最佳。0/1 背包：同樣貪婪會失敗（CLRS 圖 15.2：160 < 220）→ 需要 DP。可分割性決定貪婪成敗。"
+ },
+ {
+  "front": "攤還分析（Amortized Analysis）",
+  "back": "分析 n 次操作序列的總成本再平攤到每次——是最壞情況保證，完全不涉及機率。單次貴的操作由序列中便宜的操作分期吸收。"
+ },
+ {
+  "front": "聚合法（Aggregate Method）",
+  "back": "直接算 n 次操作的總成本 T(n)，攤還成本 = T(n)/n。binary counter：總翻轉 < 2n → 每次 INCREMENT 攤還 O(1)。"
+ },
+ {
+  "front": "記帳法（Accounting Method）",
+  "back": "每種操作預收固定「攤還費」，多收的存進資料結構的特定物件、給未來的貴操作提領。合法條件：存款永不透支。"
+ },
+ {
+  "front": "位能法（Potential Method）",
+  "back": "定義位能函數 Φ(D)（≥ Φ(D₀)）；攤還成本 = 實際成本 + Φ(after) − Φ(before)。最通用：counter 用 Φ=1 的個數、stack 用 Φ=大小、動態表用 Φ=2num−size。"
+ },
+ {
+  "front": "動態表格（Dynamic Table）",
+  "back": "滿了就加倍搬家的陣列（vector 原型）。單次 INSERT 最壞 Θ(n)（搬家），攤還 O(1)：accounting 每次收 3 元或 Φ = 2·num − size。"
+ }
+]

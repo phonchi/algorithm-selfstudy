@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>貪婪演算法與攤還分析 — Greedy <title>陣列與稀疏矩陣 — Arrays Interactive（C++）</title>amp; Amortized（CLRS Ch15–16）</title>
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#1a1a2e;--paper:#f7f3eb;--accent:#c0392b;--accent2:#2c3e7a;--accent3:#1a6b4a;
+  --muted:#8a8578;--card:#fffdf7;--card-border:#e8e2d6;--highlight:#fff3cd;
+  --code-bg:#2d2d3f;--code-fg:#e8e6df;
+  --node-white:#ffffff;--node-gray:#bdc3c7;--node-black:#34495e;
+  --node-current:#f39c12;--node-found:#16a085;--node-start:#9b59b6;
+  --edge-default:#95a5a6;--edge-tree:#27ae60;--edge-explore:#f39c12;--edge-mst:#1a6b4a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;font-size:17px;}
+
+/* Hero */
+.hero{min-height:62vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;position:relative;overflow:hidden;background:linear-gradient(170deg,#1a1a2e 0%,#2c3e7a 40%,#1a6b4a 100%);}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0%,transparent 40%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);}
+.hero-content{position:relative;z-index:1;max-width:860px;}
+.hero h1{font-family:'Noto Serif TC',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#fff;letter-spacing:.04em;line-height:1.3;margin-bottom:1rem;}
+.hero h1 .green{color:#2ecc71;}
+.hero h1 .blue{color:#5dade2;}
+.hero h1 .orange{color:#f39c12;}
+.hero h1 .purple{color:#bb8fce;}
+.hero .subtitle{font-size:clamp(.95rem,2.2vw,1.2rem);color:rgba(255,255,255,.65);font-weight:300;margin-bottom:2rem;}
+.hero .big-formula{color:#2ecc71;background:rgba(0,0,0,.3);padding:.8rem 2rem;border-radius:12px;display:inline-block;border:1px solid rgba(255,255,255,.1);margin-bottom:2rem;backdrop-filter:blur(4px);font-size:1.05rem;}
+.scroll-hint{color:rgba(255,255,255,.4);font-size:.9rem;animation:bounce 2s infinite;}
+.scroll-hint span{display:block;font-size:1.4rem;margin-top:.3rem;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+
+/* Hero mini-graph illustration */
+.hero-graph{position:absolute;right:5%;top:50%;transform:translateY(-50%);opacity:.18;pointer-events:none;}
+@media(max-width:900px){.hero-graph{display:none;}}
+
+/* Layout */
+.container{max-width:1180px;margin:0 auto;padding:3rem 1.5rem;}
+.section-number{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.5rem;}
+h2{font-family:'Noto Serif TC',serif;font-size:1.65rem;font-weight:700;color:var(--ink);margin-bottom:1.2rem;line-height:1.4;}
+h3{font-family:'Noto Serif TC',serif;font-size:1.15rem;font-weight:700;color:var(--accent2);margin:1.4rem 0 .8rem;}
+section{margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--card-border);}
+section:last-of-type{border-bottom:none;}
+p{margin-bottom:1rem;}
+code{font-family:'JetBrains Mono',monospace;font-size:.92em;background:rgba(44,62,122,.08);padding:1px 6px;border-radius:4px;color:var(--accent2);}
+strong{color:var(--ink);}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.5rem;margin:1rem 0 2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.toc-title{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);font-weight:600;letter-spacing:.15em;margin-bottom:.7rem;}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem .8rem;}
+.toc-grid a{color:var(--accent2);text-decoration:none;font-size:.9rem;padding:.3rem 0;display:flex;align-items:center;gap:.4rem;transition:color .2s;}
+.toc-grid a:hover{color:var(--accent);}
+.toc-grid a .toc-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);min-width:34px;}
+
+/* Viz layout */
+.viz-layout{display:grid;grid-template-columns:1fr 320px;gap:1.3rem;margin:1.2rem 0;align-items:start;}
+@media(max-width:900px){.viz-layout{grid-template-columns:1fr;}}
+
+.viz-panel{background:linear-gradient(160deg,#fffdf7 0%,#f4efe3 100%);border:1px solid var(--card-border);border-radius:12px;padding:1rem;box-shadow:0 4px 18px rgba(0,0,0,.06);position:relative;}
+
+/* Graph SVG canvas */
+.graph-canvas{position:relative;width:100%;height:380px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #ececec;}
+.graph-canvas svg{width:100%;height:100%;display:block;}
+
+/* SVG elements styles */
+.graph-edge{stroke:var(--edge-default);stroke-width:2;fill:none;transition:stroke .25s, stroke-width .25s;}
+.graph-edge.tree{stroke:var(--edge-tree);stroke-width:3.5;}
+.graph-edge.exploring{stroke:var(--edge-explore);stroke-width:3.5;stroke-dasharray:5 4;animation:dash 1s linear infinite;}
+.graph-edge.mst{stroke:var(--edge-mst);stroke-width:4;}
+.graph-edge.path{stroke:var(--accent);stroke-width:4;}
+.graph-edge.dotted{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;}
+@keyframes dash{to{stroke-dashoffset:-18;}}
+
+.edge-label{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;fill:var(--ink);pointer-events:none;}
+.edge-label-bg{fill:#fafafa;stroke:#ececec;stroke-width:1;}
+
+.graph-node{cursor:pointer;}
+.graph-node circle{fill:var(--node-white);stroke:var(--ink);stroke-width:2;transition:fill .25s, stroke .25s, r .2s;}
+.graph-node.gray circle{fill:var(--node-gray);}
+.graph-node.black circle{fill:var(--node-black);stroke:var(--node-black);}
+.graph-node.current circle{fill:var(--node-current);stroke:#d68910;stroke-width:3;}
+.graph-node.start circle{fill:var(--node-start);stroke:#7d3c98;stroke-width:3;}
+.graph-node.found circle{fill:var(--node-found);stroke:#117a65;stroke-width:3;}
+.graph-node.in-mst circle{fill:#82e0aa;stroke:var(--accent3);stroke-width:3;}
+.graph-node text.node-key{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.graph-node.black text.node-key{fill:#fff;}
+.graph-node.current text.node-key{fill:#fff;}
+.graph-node.start text.node-key{fill:#fff;}
+.graph-node.found text.node-key{fill:#fff;}
+.graph-node text.node-meta{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;fill:var(--accent);text-anchor:middle;pointer-events:none;}
+
+/* Status banner */
+.status-banner{margin-top:.8rem;padding:.7rem 1rem;background:var(--code-bg);color:#fff;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;min-height:42px;display:flex;align-items:center;gap:.6rem;}
+.status-banner .status-icon{color:#2ecc71;font-weight:700;}
+.status-banner .status-text{flex:1;}
+
+/* Controls */
+.controls-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--card-border);}
+.btn{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:none;cursor:pointer;transition:all .2s;}
+.btn-play{background:var(--accent3);color:#fff;}
+.btn-play:hover{background:#22845c;}
+.btn-play.active{background:var(--accent);}
+.btn-step{background:var(--accent2);color:#fff;}
+.btn-step:hover{background:#1f2e5f;}
+.btn-step:disabled{background:#ccc;cursor:not-allowed;}
+.btn-reset{background:var(--card-border);color:var(--ink);}
+.btn-reset:hover{background:#ccc;}
+.btn-toggle{background:var(--accent2);color:#fff;}
+.btn-toggle:hover{background:#1f2e5f;}
+.btn-toggle.off{background:#bbb;color:#555;}
+.btn-shuffle{background:#8e44ad;color:#fff;}
+.btn-shuffle:hover{background:#6c3485;}
+
+/* Slider row */
+.slider-row{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:var(--paper);border-radius:8px;margin-bottom:.5rem;}
+.slider-row .slider-label{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent2);font-weight:600;min-width:60px;}
+.slider-row input[type="range"]{flex:1;accent-color:var(--accent3);height:5px;cursor:pointer;}
+.slider-row .slider-val{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:600;min-width:60px;text-align:right;}
+
+/* Side panel */
+.side-panel{display:flex;flex-direction:column;gap:.85rem;}
+.info-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:.85rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.info-card .ic-title{font-size:.72rem;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.5rem;border-bottom:1px solid var(--card-border);padding-bottom:.3rem;display:flex;align-items:center;justify-content:space-between;}
+.info-card .ic-title .ic-badge{font-size:.7rem;color:#fff;background:var(--accent3);padding:1px 7px;border-radius:3px;letter-spacing:.05em;font-weight:700;}
+.info-card .ic-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.83rem;padding:.2rem 0;}
+.info-card .ic-label{color:var(--muted);}
+.info-card .ic-value{color:var(--ink);font-weight:600;}
+.info-card .ic-value.highlight{color:var(--accent);}
+.info-card .ic-value.big{font-size:1.4rem;color:var(--accent2);}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.4rem;}
+.stat-tile{background:var(--paper);border-radius:8px;padding:.5rem .7rem;text-align:center;}
+.stat-tile .stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600;}
+.stat-tile .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent2);}
+
+/* Queue / Stack / PQ visualization */
+.ds-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--paper);border-radius:6px;padding:.5rem .7rem;min-height:36px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:1px dashed var(--card-border);}
+.ds-display .ds-empty{color:var(--muted);font-style:italic;}
+.ds-item{background:var(--accent2);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;}
+.ds-item.front{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.top{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-item.pq{background:var(--accent3);}
+.ds-item.pq.min{background:var(--accent);box-shadow:0 0 0 2px rgba(192,57,43,.3);}
+.ds-arrow{color:var(--muted);}
+
+/* Pseudo code */
+.pseudo-code{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;overflow-x:auto;}
+.pseudo-code .line{padding:1px 4px;border-radius:3px;display:block;white-space:pre;}
+.pseudo-code .line.active{background:rgba(243,156,18,.3);color:#fff;border-left:3px solid var(--node-current);padding-left:6px;}
+.pseudo-code .kw{color:#ff79c6;}
+.pseudo-code .fn{color:#50fa7b;}
+.pseudo-code .num{color:#bd93f9;}
+.pseudo-code .com{color:#6272a4;font-style:italic;}
+.pseudo-code .str{color:#f1fa8c;}
+
+/* Adjacency table */
+.adj-display{margin:.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.adj-matrix{border-collapse:collapse;margin:.5rem auto;}
+.adj-matrix td,.adj-matrix th{border:1px solid var(--card-border);padding:6px 10px;text-align:center;min-width:34px;background:#fff;}
+.adj-matrix th{background:var(--accent2);color:#fff;font-weight:700;}
+.adj-matrix td.zero{color:#ccc;}
+.adj-matrix td.nonzero{background:#eafaf1;color:var(--accent3);font-weight:700;}
+.adj-matrix td.highlight{background:#fff3cd;}
+.adj-list{background:var(--card);border:1px solid var(--card-border);border-radius:8px;padding:.7rem 1rem;}
+.adj-list .adj-row{padding:3px 0;border-bottom:1px dashed var(--card-border);}
+.adj-list .adj-row:last-child{border-bottom:none;}
+.adj-list .adj-key{color:var(--accent);font-weight:700;display:inline-block;min-width:32px;}
+.adj-list .adj-arrow{color:var(--muted);margin:0 6px;}
+.adj-list .adj-neighbor{background:#eef2ff;color:var(--accent2);padding:1px 8px;border-radius:4px;margin:1px 3px;display:inline-block;font-weight:600;}
+
+/* Chess board for Knight's tour */
+.chess-board{display:grid;background:#fff;border:2px solid var(--ink);border-radius:6px;overflow:hidden;margin:.5rem auto;width:fit-content;}
+.chess-cell{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:700;position:relative;transition:background .2s;}
+.chess-cell.light{background:#f0d9b5;color:#666;}
+.chess-cell.dark{background:#b58863;color:#fff;}
+.chess-cell.visited{background:#27ae60 !important;color:#fff;}
+.chess-cell.current{background:#f39c12 !important;color:#fff;box-shadow:inset 0 0 0 3px #d68910;}
+.chess-cell.start{background:#9b59b6 !important;color:#fff;}
+.chess-cell .knight{font-size:1.4em;line-height:1;}
+.chess-cell .step-num{font-size:.7em;}
+
+/* Info box */
+.info-box{background:#eef2ff;border:2px solid var(--accent2);border-radius:10px;padding:1.1rem 1.4rem;margin:1.3rem 0;position:relative;}
+.info-box .info-label{position:absolute;top:-11px;left:14px;background:var(--accent2);color:#fff;font-size:.74rem;font-weight:700;padding:2px 10px;border-radius:4px;letter-spacing:.05em;}
+.info-box.warm{background:#fef5e7;border-color:#d68910;}
+.info-box.warm .info-label{background:#d68910;}
+.info-box.green{background:#eafaf1;border-color:var(--accent3);}
+.info-box.green .info-label{background:var(--accent3);}
+.info-box.purple{background:#f4ecf7;border-color:#8e44ad;}
+.info-box.purple .info-label{background:#8e44ad;}
+
+/* Pill labels */
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:2px 9px;border-radius:4px;margin:0 .15rem;vertical-align:1px;}
+.pill-blue{background:rgba(41,128,185,.12);color:#2980b9;border:1px solid rgba(41,128,185,.3);}
+.pill-red{background:rgba(192,57,43,.12);color:var(--accent);border:1px solid rgba(192,57,43,.3);}
+.pill-green{background:rgba(39,174,96,.12);color:var(--accent3);border:1px solid rgba(39,174,96,.3);}
+.pill-orange{background:rgba(243,156,18,.12);color:#d68910;border:1px solid rgba(243,156,18,.3);}
+.pill-purple{background:rgba(142,68,173,.12);color:#8e44ad;border:1px solid rgba(142,68,173,.3);}
+.pill-gray{background:rgba(0,0,0,.06);color:var(--muted);border:1px solid rgba(0,0,0,.12);}
+
+/* Comparison table */
+.cmp-table{width:100%;border-collapse:collapse;font-size:.86rem;margin:.8rem 0;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.cmp-table th{background:var(--accent2);color:#fff;padding:.6rem .8rem;text-align:center;font-weight:600;font-size:.82rem;}
+.cmp-table td{padding:.6rem .8rem;text-align:center;border-bottom:1px solid var(--card-border);font-family:'JetBrains Mono',monospace;font-size:.82rem;}
+.cmp-table td:first-child{font-family:'Noto Sans TC',sans-serif;color:var(--accent2);font-weight:600;text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:nth-child(even){background:rgba(0,0,0,.015);}
+.cmp-table .best{color:var(--accent3);font-weight:700;}
+.cmp-table .worst{color:var(--accent);font-weight:700;}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;}
+.legend-item{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .5rem;background:var(--paper);border-radius:5px;}
+.legend-item .lg-swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--ink);}
+.legend-item .lg-edge{width:18px;height:3px;border-radius:2px;}
+
+/* Quiz */
+.quiz-box{background:var(--card);border:2px solid var(--accent2);border-radius:12px;padding:1.3rem 1.5rem;margin:1.5rem 0;}
+.quiz-box .quiz-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.1em;margin-bottom:.5rem;}
+.quiz-options{display:flex;flex-direction:column;gap:.5rem;margin:.8rem 0;}
+.quiz-opt{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;background:var(--paper);border:2px solid var(--card-border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:.86rem;}
+.quiz-opt:hover{border-color:var(--accent2);}
+.quiz-opt .opt-letter{font-weight:700;color:var(--accent2);min-width:22px;}
+.quiz-opt.correct{background:#eafaf1;border-color:var(--accent3);}
+.quiz-opt.correct .opt-letter{color:var(--accent3);}
+.quiz-opt.wrong{background:#fef5e7;border-color:var(--accent);}
+.quiz-opt.wrong .opt-letter{color:var(--accent);}
+.quiz-feedback{margin-top:.7rem;padding:.7rem 1rem;border-radius:8px;font-size:.88rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.correct{background:#eafaf1;color:var(--accent3);border-left:4px solid var(--accent3);}
+.quiz-feedback.wrong{background:#fef5e7;color:var(--accent);border-left:4px solid var(--accent);}
+
+/* Floating sidebar navigation */
+.float-nav{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:2px;background:rgba(255,253,250,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--card-border);border-radius:12px;padding:10px 7px;box-shadow:0 6px 24px rgba(0,0,0,.10);font-family:'JetBrains Mono',monospace;max-height:88vh;overflow-y:auto;transition:padding .25s ease;}
+.float-nav .fn-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.68rem;color:var(--accent2);text-align:center;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--card-border);max-width:0;overflow:hidden;transition:max-width .25s ease;}
+.float-nav:hover .fn-title{max-width:220px;}
+.float-nav a{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;color:var(--ink);text-decoration:none;white-space:nowrap;transition:all .2s ease;border-left:3px solid transparent;}
+.float-nav a .fn-num{font-weight:700;font-size:.66rem;color:var(--muted);letter-spacing:.4px;flex-shrink:0;width:30px;text-align:left;}
+.float-nav a .fn-name{font-family:'Noto Sans TC',sans-serif;font-size:.76rem;font-weight:500;max-width:0;overflow:hidden;transition:max-width .25s ease,padding .25s ease;padding:0;}
+.float-nav:hover a .fn-name{max-width:220px;padding-left:2px;}
+.float-nav a:hover{background:var(--card);}
+.float-nav a.active{background:var(--accent2);color:#fff;border-left-color:var(--accent);box-shadow:0 2px 6px rgba(192,57,43,.25);}
+.float-nav a.active .fn-num{color:rgba(255,255,255,.85);}
+.float-nav a.active .fn-name{color:#fff;}
+.float-nav .fn-top{margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);justify-content:center;}
+.float-nav .fn-top .fn-num{width:auto;color:var(--accent2);font-size:.78rem;}
+@media(max-width:768px){
+  .float-nav{right:8px;top:auto;bottom:14px;transform:none;padding:6px 5px;max-height:70vh;}
+  .float-nav .fn-title{display:none;}
+  .float-nav a{padding:4px 7px;}
+  .float-nav a .fn-num{width:26px;font-size:.62rem;}
+}
+
+footer{text-align:center;padding:2rem;font-size:.85rem;color:var(--muted);border-top:1px solid var(--card-border);}
+
+/* Distance / table inside graph viz */
+.vert-table{margin-top:.6rem;width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.vert-table th,.vert-table td{padding:4px 6px;text-align:center;border:1px solid var(--card-border);}
+.vert-table th{background:var(--accent2);color:#fff;font-weight:600;font-size:.74rem;}
+.vert-table td.tcell-current{background:#fff3cd;font-weight:700;color:var(--accent);}
+.vert-table td.tcell-done{background:#eafaf1;color:var(--accent3);}
+.vert-table td.tcell-inf{color:#ccc;}
+.sec-badge{font-size:.6em;color:var(--muted);border:1px solid var(--card-border);background:var(--card);padding:2px 10px;border-radius:999px;vertical-align:middle;margin-left:.6rem;font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.02em;white-space:nowrap;}
+
+/* Phase 8 shared widgets */
+.bs-stack{display:flex;flex-direction:column-reverse;align-items:center;gap:4px;min-height:180px;justify-content:flex-start;padding:.6rem;}
+.bs-item{width:110px;text-align:center;padding:.4rem .6rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;box-shadow:0 2px 5px rgba(0,0,0,.15);}
+.bs-hl{background:#f39c12;}
+.bs-toplabel,.bq-label{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.bq-row{display:flex;align-items:center;gap:6px;min-height:64px;flex-wrap:wrap;padding:.4rem;}
+.bq-item{min-width:52px;text-align:center;padding:.45rem .5rem;background:#5b7eb8;color:#fff;border-radius:6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+.char-strip{display:flex;gap:3px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;padding:.4rem 0;}
+.char-cell{min-width:30px;text-align:center;padding:.35rem .25rem;border:1px solid var(--card-border);border-radius:5px;background:var(--card);}
+.char-cur{background:#f39c12;color:#fff;border-color:#f39c12;}
+.char-done{background:#e8f5ec;color:#1a6b4a;border-color:#bfe3cd;}
+.char-bad{background:#c0392b;color:#fff;border-color:#c0392b;}
+.token-out{display:flex;gap:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;min-height:40px;padding:.3rem 0;}
+.tok{padding:.3rem .55rem;border-radius:5px;background:#2c3e7a;color:#fff;font-weight:600;}
+.tok-op{background:#8e44ad;}
+.tok-new{outline:3px solid #f39c12;}
+.mono{font-family:'JetBrains Mono',monospace;}
+</style>
+<style>
+/* ===== 網站化附加樣式（study-guide / flashcards / chapter-nav）===== */
+.study-guide{background:var(--card);border:1px solid var(--card-border);border-left:5px solid var(--accent3);border-radius:12px;padding:1.2rem 1.4rem;margin:0 0 2.2rem;}
+.study-guide .sg-title{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);margin-bottom:.5rem;}
+.study-guide p{font-size:.92rem;margin-bottom:.5rem;}
+.study-guide .sg-links{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;}
+.study-guide .sg-links a{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:600;color:var(--accent2);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .85rem;text-decoration:none;transition:all .2s;}
+.study-guide .sg-links a:hover{background:var(--accent2);color:#fff;}
+.fc-controls{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0 1.2rem;}
+.fc-controls button{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;padding:.45rem 1rem;border-radius:6px;border:1px solid var(--card-border);cursor:pointer;background:var(--card);color:var(--ink);transition:all .2s;}
+.fc-controls button:hover{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:.9rem;}
+.fc-card{perspective:900px;height:170px;cursor:pointer;}
+.fc-card .fc-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.fc-card.flipped .fc-inner{transform:rotateY(180deg);}
+.fc-card .fc-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.9rem;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.fc-card .fc-front{background:linear-gradient(150deg,var(--accent2),var(--ink));color:#fff;font-family:'Noto Serif TC',serif;font-size:1rem;font-weight:700;letter-spacing:.02em;flex-direction:column;gap:.4rem;}
+.fc-card .fc-front .fc-hint{font-size:.62rem;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;font-weight:400;letter-spacing:.1em;}
+.fc-card .fc-back{background:var(--card);border:2px solid var(--accent3);color:var(--ink);font-size:.78rem;line-height:1.55;transform:rotateY(180deg);overflow-y:auto;}
+.chapter-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:.8rem;align-items:stretch;margin:2.5rem 0 1rem;}
+.chapter-nav a{display:block;border:1px solid var(--card-border);border-radius:12px;padding:.8rem 1.1rem;text-decoration:none;color:var(--ink);background:var(--card);transition:all .2s;}
+.chapter-nav a:hover{border-color:var(--accent2);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.chapter-nav .nav-dir{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.2rem;}
+.chapter-nav .nav-title{font-family:'Noto Serif TC',serif;font-weight:700;font-size:.95rem;color:var(--accent2);}
+.chapter-nav a.next{text-align:right;}
+.chapter-nav a.home{display:flex;flex-direction:column;justify-content:center;text-align:center;}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr;}}
+</style>
+<style>
+/* ===== 講義範例卡 ===== */
+.deck-extra{margin:1.2rem 0;}
+.deck-extra .dx-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:.4rem;}
+.deck-extra .dx-note{font-size:.9rem;margin-top:.6rem;}
+.expected-out{background:var(--card);border:1px solid var(--card-border);border-left:4px solid var(--accent3);border-radius:0 8px 8px 0;padding:.5rem .9rem;margin-top:.5rem;}
+.expected-out .eo-tag{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:1px;color:var(--accent3);display:block;margin-bottom:.2rem;}
+.expected-out pre{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.55;white-space:pre-wrap;margin:0;}
+.warn-box{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.25);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:.6rem 1rem;margin:.8rem 0;font-size:.9rem;}
+.warn-box b{color:var(--accent);}
+</style>
+<style>
+/* ===== algorithm-selfstudy 附加樣式（三分頁籤 / CLRS pseudocode / 補充徽章）===== */
+.code-tabs{margin:1rem 0;}
+.code-tabs .ct-bar{display:flex;gap:.35rem;flex-wrap:wrap;}
+.code-tabs .ct-btn{font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:600;padding:.4rem 1rem;border:1px solid var(--card-border);border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .2s;}
+.code-tabs .ct-btn:hover{color:var(--accent2);}
+.code-tabs .ct-btn.active{background:var(--code-bg);color:#fff;border-color:var(--code-bg);}
+.code-tabs .ct-btn.active.ct-pseudo{background:var(--accent2);border-color:var(--accent2);}
+.code-tabs .ct-panel{display:none;}
+.code-tabs .ct-panel.active{display:block;}
+.code-tabs .ct-panel .pseudo-code{border-radius:0 10px 10px 10px;}
+.code-tabs .ct-note{font-size:.82rem;color:var(--muted);margin-top:.4rem;}
+
+/* CLRS 風格 pseudocode：行號 + 縮排 */
+.clrs-code{background:#fffdf7;border:1px solid var(--card-border);border-left:4px solid var(--accent2);border-radius:0 10px 10px 0;padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;overflow-x:auto;}
+.clrs-code .cc-title{font-weight:600;color:var(--ink);margin-bottom:.35rem;white-space:pre;}
+.clrs-code .cc-title .fn{color:var(--accent2);font-weight:700;}
+.clrs-code .line{display:block;white-space:pre;padding:0 4px;border-radius:3px;}
+.clrs-code .line .ln{display:inline-block;min-width:1.6em;color:var(--muted);text-align:right;margin-right:.9em;font-size:.88em;user-select:none;}
+.clrs-code .line.active{background:var(--highlight);}
+.clrs-code .kw{color:#8e44ad;font-weight:600;}
+.clrs-code .fn{color:var(--accent2);font-weight:600;}
+.clrs-code .com{color:var(--accent3);font-style:italic;}
+.clrs-code .attr{color:#b9770e;}
+
+/* 補充徽章（課堂未授內容） */
+.sec-badge.supp{color:#8e44ad;border-color:#d2b4de;background:#f9f4fc;}
+
+/* 定理 / 證明框 */
+.thm-box{background:var(--card);border:1px solid var(--card-border);border-left:5px solid #8e44ad;border-radius:0 10px 10px 0;padding:1rem 1.3rem;margin:1.2rem 0;}
+.thm-box .thm-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;letter-spacing:1px;color:#8e44ad;margin-bottom:.35rem;}
+.thm-box.proof{border-left-color:var(--accent3);}
+.thm-box.proof .thm-label{color:var(--accent3);}
+</style>
+</head>
+<body>
+<nav class="float-nav" id="floatNav" aria-label="章節導覽">
+  <div class="fn-title">章節導覽</div>
+  <a href="#greedy" data-target="greedy"><span class="fn-num">P00</span><span class="fn-name">greedy 兩要素</span></a>
+  <a href="#activity" data-target="activity"><span class="fn-num">P01</span><span class="fn-name">activity selection</span></a>
+  <a href="#huffman" data-target="huffman"><span class="fn-num">P02</span><span class="fn-name">Huffman</span></a>
+  <a href="#knapsack" data-target="knapsack"><span class="fn-num">P03</span><span class="fn-name">背包對照</span></a>
+  <a href="#amortized" data-target="amortized"><span class="fn-num">P04</span><span class="fn-name">攤還三法</span></a>
+  <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
+  <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
+  <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
+  <a href="#top" class="fn-top" title="回到頂端"><span class="fn-num">↑ TOP</span></a>
+</nav>
+
+<div class="hero" id="top">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <h1><span class="orange">貪婪演算法</span>與<span class="purple">攤還分析</span></h1>
+    <div class="subtitle">第 06 章 — Greedy Algorithms &amp; Amortized Analysis（CLRS 4e Ch 15–16）</div>
+    <div class="big-formula">greedy-choice｜exchange argument｜Huffman｜aggregate｜accounting｜potential</div>
+    <div class="scroll-hint">向下捲動開始互動<span>↓</span></div>
+  </div>
+</div>
+
+<div class="container">
+<div class="study-guide">
+  <div class="sg-title">📌 本頁使用方式（CLRS Ch 15–16）</div>
+  <p>① greedy 是「每步選局部最好、永不回頭」——比 DP 簡單，但<strong>只在特定結構下正確</strong>；本章的重點是學會<strong>證明貪婪安全</strong>（exchange argument）與識破貪婪失敗（0/1 背包）。
+  ② 資結課的 vector 加倍你已聽過「攤還 O(1)」；P04 給它正式的三種語言：aggregate、accounting、potential。
+  ③ Huffman 建樹是手算大題常客——動畫看完自己畫一次。
+  ④ 每節 quiz 立刻自測，最後翻<a href="#cards">詞彙卡</a>。</p>
+  <div class="sg-links"><a href="https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/" target="_blank" rel="noopener">📖 CLRS 4e 書頁</a><a href="index.html">🏠 章節總覽</a></div>
+</div>
+
+<div class="toc">
+  <div class="toc-title">CONTENTS · 內容目錄</div>
+  <div class="toc-grid">
+    <a href="#greedy"><span class="toc-num">P00</span>greedy 兩要素</a>
+    <a href="#activity"><span class="toc-num">P01</span>activity selection</a>
+    <a href="#huffman"><span class="toc-num">P02</span>Huffman coding</a>
+    <a href="#knapsack"><span class="toc-num">P03</span>0/1 vs 分數背包</a>
+    <a href="#amortized"><span class="toc-num">P04</span>攤還分析三法</a>
+    <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
+    <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
+    <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
+  </div>
+</div>
+
+<section id="greedy">
+  <div class="section-number">P00 · GREEDY</div>
+  <h2>貪婪何時安全？兩個要素、一種證法 <span class="sec-badge">§15.2</span></h2>
+  <div class="viz-layout">
+    <div>
+      <p>DP 在每一步「枚舉所有選擇取最好」；greedy 直接<strong>做眼前看起來最好的那個選擇</strong>，
+      不解其他子問題。要讓這招正確，問題必須同時有：</p>
+      <div class="info-box warm">
+        <span class="info-label">兩個要素</span>
+        ① <strong>貪婪選擇性質（greedy-choice property）</strong>：存在一個「全域最佳解」包含「局部貪婪選擇」——
+        可以先做貪婪選擇再解剩下的子問題，不會錯過最佳解。<br>
+        ② <strong>最佳子結構</strong>：做完貪婪選擇後剩下的子問題，其最佳解與貪婪選擇合起來是原問題最佳解（與 DP 共用這條）。
+      </div>
+      <p>證明①的標準武器是<strong>交換論證（exchange argument）</strong>：
+      拿任何一個最佳解，把它「不貪婪」的部分換成貪婪選擇，證明<strong>換完不會變差</strong>——
+      所以存在包含貪婪選擇的最佳解。P01 立刻示範。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">DP vs Greedy 判斷順序</div>
+        <div style="font-size:.85rem;line-height:1.8;">先想 DP（枚舉選擇）→ 觀察是否「其實每次都選同一種」→ 若能證 exchange argument，降級成 greedy 拿更好的複雜度。反過來先猜 greedy 很容易踩到 0/1 背包型陷阱。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00 · 概念定位</div>
+    <p>greedy 與 DP 的本質差異是？</p>
+    <div class="quiz-options" id="q00Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。DP 對每個狀態枚舉所有選擇、比較後取優（自底向上解所有子問題）；greedy 每步只做一個選擇、只留下一個子問題。所以 greedy 通常更快，但需要額外證明「這個唯一選擇不會錯」。" onclick="quizCheck('q00', this)"><span class="opt-letter">(A)</span> DP 枚舉所有選擇；greedy 每步只做一個選擇、只剩一個子問題</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩者都需要最佳子結構——那是共同前提，不是差異。" onclick="quizCheck('q00', this)"><span class="opt-letter">(B)</span> DP 需要最佳子結構，greedy 不需要</div>
+      <div class="quiz-opt" data-correct="false" data-fb="greedy 不一定比較不準——在滿足貪婪選擇性質的問題上它給出「精確最佳解」，不是近似。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> greedy 只能求近似解</div>
+    </div>
+    <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="activity">
+  <div class="section-number">P01 · ACTIVITY SELECTION</div>
+  <h2>活動選擇：永遠先選「最早結束」 <span class="sec-badge">§15.1</span></h2>
+  <p>n 個活動搶同一間教室，選最多個互不重疊的。貪婪規則：<strong>依結束時間排序，每次選「與已選相容、最早結束」的活動</strong>。
+  直覺：最早結束 = 留給後面最多的時間。按單步看 CLRS 圖 15.1 的 11 個活動：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div id="actTimeline" style="position:relative;"></div>
+      <div class="status-banner" id="actStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」逐一檢視活動（已按結束時間排序）。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="actPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="actPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="actPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="thm-box proof" style="margin:0;">
+        <div class="thm-label">交換論證（定理 15.1 精神）</div>
+        <div style="font-size:.85rem;line-height:1.7;">設 OPT 是任一最佳解，aₘ 是「最早結束」的活動，aⱼ 是 OPT 中最早結束者。
+        把 OPT 的 aⱼ 換成 aₘ：因 f(aₘ) ≤ f(aⱼ)，aₘ 不會與 OPT 其他活動重疊 → 仍是可行解、大小不變。
+        <strong>∴ 存在含 aₘ 的最佳解</strong>——貪婪選擇安全，剩下的子問題遞迴同理。∎</div>
+      </div>
+      <div class="code-tabs" id="ctAct" style="margin-top:.8rem;">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctAct','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctAct','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctAct','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">GREEDY-ACTIVITY-SELECTOR</span>(s, f, n)</div>
+            <span class="line"><span class="ln">1</span>A = {a₁}；k = 1　<span class="com">// 已按 f 排序</span></span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> m = 2 <span class="kw">to</span> n</span>
+            <span class="line"><span class="ln">3</span>  <span class="kw">if</span> s[m] ≥ f[k]　<span class="com">// 相容？</span></span>
+            <span class="line"><span class="ln">4</span>    A = A ∪ {aₘ}；k = m</span>
+            <span class="line"><span class="ln">5</span><span class="kw">return</span> A</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">std::sort(acts.begin(), acts.end(),</span><span class="line">    [](<span class="kw">auto</span>&amp; a, <span class="kw">auto</span>&amp; b){ <span class="kw">return</span> a.f &lt; b.f; });</span><span class="line"><span class="kw">int</span> lastFinish = <span class="num">0</span>;</span><span class="line"><span class="kw">for</span> (<span class="kw">const auto</span>&amp; a : acts)</span><span class="line">    <span class="kw">if</span> (a.s &gt;= lastFinish) {</span><span class="line">        chosen.push_back(a.id);</span><span class="line">        lastFinish = a.f;</span><span class="line">    }</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>選了 4 個活動：a1 a4 a8 a11</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 15/activity_selector.py（MIT License）</span></span><span class="line">s = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">0</span>, <span class="num">5</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">2</span>, <span class="num">12</span>]</span><span class="line">f = [<span class="num">0</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">9</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">11</span>, <span class="num">12</span>, <span class="num">14</span>, <span class="num">16</span>]</span><span class="line">A = greedy_activity_selector(s, f, len(s))</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出（雙向鏈結串列走訪）</span><pre>['activity1', 'activity4', 'activity8', 'activity11']</pre></div>
+          <div class="ct-note">官方版把結果存進 Ch10 的 DLLSentinel；索引 0 需放哨兵值（s[0]=f[0]=0）。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01 · 錯誤的貪婪規則</div>
+    <p>「每次選<strong>最短</strong>的活動」為什麼是錯的貪婪規則？</p>
+    <div class="quiz-options" id="q01Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。反例：⟨1,9⟩ 與 ⟨8,10⟩、⟨9,17⟩——最短的 ⟨8,10⟩ 一選就同時擋掉兩個，只得 1 個活動；最早結束規則選 ⟨1,9⟩＋⟨9,17⟩ 得 2 個。找一個小反例就足以擊斃一條貪婪規則——這是 quiz／作業的常見題型。" onclick="quizCheck('q01', this)"><span class="opt-letter">(A)</span> 存在反例：短活動可能橫跨中間、同時擋掉兩側</div>
+      <div class="quiz-opt" data-correct="false" data-fb="效率不是問題（一樣是排序＋掃描）；問題是答案會錯。" onclick="quizCheck('q01', this)"><span class="opt-letter">(B)</span> 它比較慢</div>
+      <div class="quiz-opt" data-correct="false" data-fb="貪婪規則不需要唯一——「最早結束」也可能平手（任選即可）。錯在「最短」證不出 exchange argument，且有具體反例。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 最短活動可能不唯一</div>
+    </div>
+    <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="huffman">
+  <div class="section-number">P02 · HUFFMAN</div>
+  <h2>Huffman coding：反覆合併頻率最小的兩棵樹 <span class="sec-badge">§15.3</span></h2>
+  <p>給每個字元一個<strong>變動長度、前綴自由（prefix-free）</strong>的 0/1 編碼，讓總位元數最少。
+  貪婪規則：<strong>每次從 min-priority queue 取出頻率最小的兩棵樹合併</strong>（頻率相加），重複 n−1 次。
+  用 CLRS 圖 15.5 的頻率表（a:45、b:13、c:12、d:16、e:9、f:5，單位千次）：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div id="hufForest" style="min-height:90px;"></div>
+      <div class="status-banner" id="hufStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」執行下一次合併。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="hufPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="hufPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="hufPlayer.reset()">↺ 重來</button>
+      </div>
+      <div style="overflow-x:auto;margin-top:.6rem;"><table class="cmp-table" style="font-size:.78rem;" id="hufCodes"></table></div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctHuf">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctHuf','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctHuf','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctHuf','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.75rem;">
+            <div class="cc-title"><span class="fn">HUFFMAN</span>(C, n)</div>
+            <span class="line"><span class="ln">1</span>Q = C　<span class="com">// min-PQ（按頻率）</span></span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> n − 1</span>
+            <span class="line"><span class="ln">3</span>  x = <span class="fn">EXTRACT-MIN</span>(Q)</span>
+            <span class="line"><span class="ln">4</span>  y = <span class="fn">EXTRACT-MIN</span>(Q)</span>
+            <span class="line"><span class="ln">5</span>  z = 新節點：z.freq = x.freq + y.freq</span>
+            <span class="line"><span class="ln">6</span>  z.left = x；z.right = y；<span class="fn">INSERT</span>(Q, z)</span>
+            <span class="line"><span class="ln">7</span><span class="kw">return</span> <span class="fn">EXTRACT-MIN</span>(Q)　<span class="com">// 樹根</span></span>
+          </div>
+          <div class="ct-note">n−1 次合併 × O(lg n) 的 PQ 操作 = O(n lg n)。</div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">std::priority_queue&lt;Node*, std::vector&lt;Node*&gt;, Cmp&gt; Q;</span><span class="line"><span class="kw">for</span> (<span class="kw">auto</span> [c, f] : freq) Q.push(<span class="kw">new</span> Node{c, f});</span><span class="line"><span class="kw">while</span> (Q.size() &gt; <span class="num">1</span>) {     <span class="com">// n−1 次合併</span></span><span class="line">    Node* x = Q.top(); Q.pop();</span><span class="line">    Node* y = Q.top(); Q.pop();</span><span class="line">    Q.push(<span class="kw">new</span> Node{<span class="str">'*'</span>, x-&gt;freq + y-&gt;freq, x, y});</span><span class="line">}</span><span class="line"><span class="fn">printCodes</span>(Q.top(), <span class="str">""</span>);  <span class="com">// 左 0 右 1 走到葉</span></span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（同 CLRS 圖 15.5）</span><pre>a: 0
+c: 100
+b: 101
+f: 1100
+e: 1101
+d: 111</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># heapq 簡例（官方 Chapter 15/huffman.py 是完整檔案壓縮器）</span></span><span class="line">h = [(f, c, c) <span class="kw">for</span> c, f <span class="kw">in</span> freq.items()]</span><span class="line">heapq.heapify(h)</span><span class="line"><span class="kw">while</span> len(h) &gt; <span class="num">1</span>:</span><span class="line">    f1, _, x = heapq.heappop(h)</span><span class="line">    f2, _, y = heapq.heappop(h)</span><span class="line">    tree[node] = (x, y)</span><span class="line">    heapq.heappush(h, (f1 + f2, node, node))</span></div>
+          <div class="expected-out"><span class="eo-tag">輸出</span><pre>codes: {'a':'0','b':'101','c':'100',
+ 'd':'111','e':'1101','f':'1100'}
+期望編碼長度: 224</pre></div>
+          <div class="ct-note">官方 huffman.py 可對真實檔案（附 moby-dick.txt）壓縮／解壓，行有餘力值得一讀。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02 · 引理 15.2</div>
+    <p>頻率最小的兩個字元 x、y，在<strong>某個</strong>最佳前綴碼樹中一定是？</p>
+    <div class="quiz-options" id="q02Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。引理 15.2 的交換論證：把最深層的兩個兄弟葉子與 x、y 對調，總成本不增（頻率小的放深處划算）→ 存在一個最佳樹讓 x、y 是最深的兄弟。這正是「先合併最小兩個」安全的原因。" onclick="quizCheck('q02', this)"><span class="opt-letter">(A)</span> 深度最大的一對兄弟葉子</div>
+      <div class="quiz-opt" data-correct="false" data-fb="反了——頻率小的要放深處（編碼長），頻率大的才靠近根（a:45 的編碼只有 1 位元）。" onclick="quizCheck('q02', this)"><span class="opt-letter">(B)</span> 最靠近根的兩個葉子</div>
+      <div class="quiz-opt" data-correct="false" data-fb="前綴碼樹的字元只出現在葉子（這正是「前綴自由」的來源）；內部節點只是頻率和。" onclick="quizCheck('q02', this)"><span class="opt-letter">(C)</span> 一個在葉子、一個在內部節點</div>
+    </div>
+    <div class="quiz-feedback" id="q02Feedback"></div>
+  </div>
+</section>
+
+<section id="knapsack">
+  <div class="section-number">P03 · 背包對照</div>
+  <h2>同一題兩種版本：分數背包貪婪成功、0/1 失敗 <span class="sec-badge">§15.2</span></h2>
+  <p>經典對照組（CLRS 圖 15.2）：W = 50，物品 1（w=10, v=60）、物品 2（w=20, v=100）、物品 3（w=30, v=120）。
+  貪婪規則「按<strong>單位價值</strong> v/w 由高到低拿」：</p>
+  <div class="viz-layout">
+    <div>
+      <p><strong>分數背包（fractional）</strong>：可拿部分物品。單位價值 6 &gt; 5 &gt; 4，
+      拿滿物品 1、2，剩 20 容量拿物品 3 的 2/3 → 60 + 100 + 80 = <strong>240（最佳）</strong>。
+      交換論證成立：最佳解若沒裝滿單位價值最高者，把別的東西換掉一定不虧。</p>
+      <p><strong>0/1 背包</strong>：整件拿或不拿。同樣的貪婪拿物品 1、2 → 160；
+      但最佳解是物品 2 ＋ 3 = <strong>220</strong>。貪婪失敗的原因：拿了物品 1 之後<strong>剩餘容量被卡住</strong>——
+      「不可分割」讓局部最優的選擇擋住全域最優。0/1 版沒有貪婪選擇性質，必須用上一章的 DP（Θ(nW)）。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">CLRS 圖 15.2 數字</div>
+        <div class="ic-row"><span class="ic-label">貪婪（0/1）</span><span class="ic-value">160</span></div>
+        <div class="ic-row"><span class="ic-label">最佳（0/1）</span><span class="ic-value highlight">220 = 物品 2+3</span></div>
+        <div class="ic-row"><span class="ic-label">貪婪（分數）</span><span class="ic-value highlight">240 = 最佳</span></div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">判讀口訣</div>
+        <div style="font-size:.85rem;line-height:1.8;">「能不能只做一個選擇就丟掉其餘可能？」能證 → greedy；不能 → 回 DP。考試遇到新題先找反例，找不到再寫 exchange argument。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03 · 反例操作</div>
+    <p>0/1 背包中，「按單位價值貪婪」在上例只得 160。若改成「按<strong>總價值</strong>由高到低拿」呢？</p>
+    <div class="quiz-options" id="q03Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。按總價值先拿物品 3（120），再拿物品 2（100）→ 重量 50 恰好、價值 220 ——這例子上剛好等於最佳。但這不代表規則正確：換組數字（如 v=61,100,120 之類）仍能構造反例。0/1 背包對任何簡單貪婪規則都存在反例——它本質上需要 DP。" onclick="quizCheck('q03', this)"><span class="opt-letter">(A)</span> 這例子上得到 220，但該規則仍非普遍正確</div>
+      <div class="quiz-opt" data-correct="false" data-fb="按總價值：先 120（w=30）、再 100（w=20），總重 50 裝得下 → 220，不是 160。" onclick="quizCheck('q03', this)"><span class="opt-letter">(B)</span> 仍是 160</div>
+      <div class="quiz-opt" data-correct="false" data-fb="一個例子上答對 ≠ 規則正確——貪婪的正確性要靠證明，不能靠測資。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 得到 220，證明此規則對 0/1 背包永遠正確</div>
+    </div>
+    <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="amortized">
+  <div class="section-number">P04 · AMORTIZED</div>
+  <h2>攤還分析：貴的操作讓便宜的操作分期付款 <span class="sec-badge">Ch 16</span></h2>
+  <p>問的不是「單次操作最壞多少」，而是「<strong>n 次操作的序列</strong>總共多少、平攤每次多少」——
+  <strong>沒有任何機率</strong>，是最壞情況保證。三種記帳語言，同一個真相：</p>
+  <p>示範例：<strong>k 位元二進位計數器 INCREMENT</strong>。單次最壞翻 k 個位元，但 n 次總共翻幾個？按單步看：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div class="bq-row" id="bcBits" style="justify-content:center;"></div>
+      <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="stat-tile"><div class="stat-label">本次翻轉</div><div class="stat-value" id="bcCost">—</div></div>
+        <div class="stat-tile"><div class="stat-label">累計翻轉</div><div class="stat-value" id="bcTotal">0</div></div>
+        <div class="stat-tile"><div class="stat-label">平均/次</div><div class="stat-value" id="bcAvg">—</div></div>
+      </div>
+      <div class="status-banner" id="bcStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」執行 INCREMENT。觀察平均值收斂到 2 以下。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="bcPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="bcPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="bcPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">三種方法看同一件事</div>
+        <div style="font-size:.83rem;line-height:1.75;">
+        <strong>① aggregate</strong>：bit 0 每次翻、bit 1 每 2 次、bit i 每 2ⁱ 次 → 總翻轉 Σ n/2ⁱ &lt; 2n → 每次攤還 O(1)。<br>
+        <strong>② accounting</strong>：每次 INCREMENT 收 2 元——1 元付「設成 1」，1 元存在該位元上，未來「清成 0」免費。存款永不透支 ⇒ 攤還成本 2。<br>
+        <strong>③ potential</strong>：Φ = 目前 1 的個數。攤還成本 = 實際成本 + ΔΦ = (t+1) + (1−t) = 2（t = 本次清掉的 1 數）。</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">回收資結課的懸案</div>
+        <div style="font-size:.83rem;line-height:1.75;">vector push_back 加倍搬家：accounting 版每次 push 收 3 元（1 放自己、1 搬自己、1 搬「前輩」）→ 攤還 O(1)。§16.4 的 potential 版：Φ = 2·num − size。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P04 · MULTIPOP</div>
+    <p>堆疊支援 PUSH、POP、MULTIPOP(k)（彈出 min(k, s) 個）。n 次操作的序列，總成本為什麼是 O(n)？</p>
+    <div class="quiz-options" id="q04Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。每個元素一生最多被 push 一次、pop 一次——MULTIPOP 再貴也只是在「提領」之前 PUSH 存下的額度。accounting：PUSH 收 2 元（1 進 1 出）；potential：Φ = 堆疊大小。單次 MULTIPOP 最壞 O(n)，攤還 O(1)。" onclick="quizCheck('q04', this)"><span class="opt-letter">(A)</span> 每個元素最多被彈出一次，彈出的總量 ≤ push 的總量 ≤ n</div>
+      <div class="quiz-opt" data-correct="false" data-fb="MULTIPOP 單次可達 Θ(n)——攤還分析不是說單次便宜，是說序列總帳便宜。" onclick="quizCheck('q04', this)"><span class="opt-letter">(B)</span> MULTIPOP 單次最壞也是 O(1)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="攤還分析完全沒有機率——O(n) 是對任何操作序列的最壞情況保證，與期望值無關。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 因為平均而言使用者不會常呼叫 MULTIPOP</div>
+    </div>
+    <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="exercises">
+  <div class="section-number">EXERCISES · 綜合練習</div>
+  <h2>手算與證明</h2>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 1 · Huffman 手算</div>
+    <p>頻率 {A:40, B:25, C:20, D:10, E:5}。Huffman 編碼下，E 的編碼長度是幾位元？</p>
+    <div class="quiz-options" id="ex1Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。合併順序：E+D=15 → 15+C=35 → B+35=60?（比較 35 與 B:25、A:40：取 25+35=60）→ 40+60=100。E 深度 4 → 4 位元。頻率最小者最深——引理 15.2 的直接體現。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(A)</span> 4 位元</div>
+      <div class="quiz-opt" data-correct="false" data-fb="2 位元是 A 這種高頻字元的待遇；E 是最低頻，會被最先合併、壓到最深。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(B)</span> 2 位元</div>
+      <div class="quiz-opt" data-correct="false" data-fb="固定長度編碼 5 字元才需要 3 位元全部；Huffman 的 E 在這組頻率下是 4 位元（樹深 4）。動手畫合併過程。" onclick="quizCheck('ex1', this)"><span class="opt-letter">(C)</span> 3 位元</div>
+    </div>
+    <div class="quiz-feedback" id="ex1Feedback"></div>
+  </div>
+  <div class="quiz-box">
+    <div class="quiz-label">EXERCISE 2 · accounting 設計</div>
+    <p>動態表格只擴不縮（滿了就加倍搬家）。accounting method 中每次 INSERT 收 3 元的理由是？</p>
+    <div class="quiz-options" id="ex2Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。1 元付自己插入；1 元存著付「下次搬家搬自己」；1 元幫「上半表已經花光存款的前輩」付搬家費。加倍後有 m/2 個新元素，每人帶 2 元存款，恰好覆蓋下次搬 m 個元素的成本——存款不透支，攤還 O(1)。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(A)</span> 1 元插入自己＋1 元搬自己＋1 元幫前輩搬</div>
+      <div class="quiz-opt" data-correct="false" data-fb="收 1 元只夠付插入本身，搬家時存款不足——accounting 的鐵律是存款永不為負。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(B)</span> 1 元就夠，3 元是保守估計</div>
+      <div class="quiz-opt" data-correct="false" data-fb="攤還分析與機率無關；3 元是「最壞序列也不透支」的確定性設計。" onclick="quizCheck('ex2', this)"><span class="opt-letter">(C)</span> 因為搬家平均發生機率是 1/3</div>
+    </div>
+    <div class="quiz-feedback" id="ex2Feedback"></div>
+  </div>
+</section>
+
+<section id="reference">
+  <div class="section-number">REFERENCE · 總覽</div>
+  <h2>本章速查表</h2>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>主題</th><th>核心</th><th>複雜度</th><th>證明工具</th></tr></thead>
+    <tbody>
+      <tr><td>activity selection</td><td>最早結束優先</td><td class="best">O(n lg n)（排序主導）</td><td>exchange argument</td></tr>
+      <tr><td>Huffman</td><td>合併頻率最小兩樹</td><td class="best">O(n lg n)</td><td>引理 15.2／15.3</td></tr>
+      <tr><td>分數背包</td><td>單位價值優先</td><td class="best">O(n lg n)</td><td>exchange argument</td></tr>
+      <tr><td>0/1 背包</td><td class="worst">貪婪失敗 → DP</td><td>Θ(nW)</td><td>反例</td></tr>
+      <tr><td>aggregate</td><td>整段總帳 ÷ n</td><td colspan="2">binary counter：2n/n = O(1)</td></tr>
+      <tr><td>accounting</td><td>預收費存進物件</td><td colspan="2">存款永不透支即成立</td></tr>
+      <tr><td>potential</td><td>Φ(資料結構狀態)</td><td colspan="2">攤還 = 實際 + ΔΦ；Φ ≥ Φ₀</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="info-box" style="margin-top:1rem;">
+    <span class="info-label">關鍵概念複習</span>
+    ① greedy = 每步一個選擇、一個子問題；正確性靠 greedy-choice property ＋ 最佳子結構。<br>
+    ② exchange argument：任何最佳解都能「換成」含貪婪選擇的最佳解而不變差。<br>
+    ③ 貪婪驗證流程：先找反例，找不到再寫證明——0/1 背包是永遠的警世反例。<br>
+    ④ 攤還 = 序列總帳的最壞情況保證，無機率；三法（aggregate／accounting／potential）任選其一。<br>
+    ⑤ potential method 是最通用的：攤還成本 = 實際成本 + Φ(after) − Φ(before)。
+  </div>
+</section>
+
+<section id="cards">
+  <div class="section-number">CARDS · 關鍵詞彙卡</div>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch6.json · 12 張</span></h2>
+  <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
+  <div class="fc-controls">
+    <button id="fcShuffle">🔀 洗牌</button>
+    <button id="fcFlipAll">全部翻面</button>
+    <button id="fcUnflip">全部翻回</button>
+  </div>
+  <div class="fc-grid" id="fcGrid"></div>
+</section>
+
+<div class="chapter-nav"><a class="prev" href="dp.html"><div class="nav-dir">◂ 上一章</div><div class="nav-title">動態規劃</div></a><a class="home" href="index.html"><div class="nav-dir">INDEX</div><div class="nav-title">章節總覽</div></a><a class="next" href="graphs1.html"><div class="nav-dir">下一章 ▸</div><div class="nav-title">Disjoint Set 與圖的走訪</div></a></div>
+</div>
+<footer>
+  演算法互動自學教材 · 第 06 章 Greedy &amp; Amortized（CLRS 4e Ch 15–16）<br>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent3);">Interactive Algorithms Self-Study · NSYSU</span>
+</footer>
+<script>
+const FLASHCARDS = [
+  {"front":"貪婪演算法（Greedy Algorithm）","back":"每一步都做當下看起來最好的選擇、永不回頭，只留下一個子問題。比 DP 快，但只有在貪婪選擇性質成立時才正確。"},
+  {"front":"貪婪選擇性質（Greedy-Choice Property）","back":"存在一個全域最佳解包含局部貪婪選擇——可以先做貪婪選擇、再解剩下的子問題而不會錯過最佳解。greedy 正確性的第一要素。"},
+  {"front":"交換論證（Exchange Argument）","back":"證明貪婪安全的標準手法：拿任一最佳解，把其中的非貪婪部分換成貪婪選擇，證明不變差 → 存在含貪婪選擇的最佳解。"},
+  {"front":"活動選擇（Activity Selection）","back":"選最多互不重疊的活動：按結束時間排序、每次選最早結束的相容活動。O(n lg n)；正確性由交換論證（f(aₘ) ≤ f(aⱼ)）。"},
+  {"front":"前綴自由碼（Prefix-Free Code）","back":"沒有任何編碼是另一編碼的前綴 → 解碼無歧義、可貪吃式讀位元。對應二元樹：字元全在葉子上。"},
+  {"front":"Huffman 編碼","back":"最佳前綴碼：min-PQ 反覆取出頻率最小兩棵樹合併，n−1 次後得樹。O(n lg n)；高頻字元編碼短、低頻字元最深。"},
+  {"front":"分數 vs 0/1 背包","back":"分數背包：按單位價值 v/w 貪婪 → 最佳。0/1 背包：同樣貪婪會失敗（CLRS 圖 15.2：160 < 220）→ 需要 DP。可分割性決定貪婪成敗。"},
+  {"front":"攤還分析（Amortized Analysis）","back":"分析 n 次操作序列的總成本再平攤到每次——是最壞情況保證，完全不涉及機率。單次貴的操作由序列中便宜的操作分期吸收。"},
+  {"front":"聚合法（Aggregate Method）","back":"直接算 n 次操作的總成本 T(n)，攤還成本 = T(n)/n。binary counter：總翻轉 < 2n → 每次 INCREMENT 攤還 O(1)。"},
+  {"front":"記帳法（Accounting Method）","back":"每種操作預收固定「攤還費」，多收的存進資料結構的特定物件、給未來的貴操作提領。合法條件：存款永不透支。"},
+  {"front":"位能法（Potential Method）","back":"定義位能函數 Φ(D)（≥ Φ(D₀)）；攤還成本 = 實際成本 + Φ(after) − Φ(before)。最通用：counter 用 Φ=1 的個數、stack 用 Φ=大小、動態表用 Φ=2num−size。"},
+  {"front":"動態表格（Dynamic Table）","back":"滿了就加倍搬家的陣列（vector 原型）。單次 INSERT 最壞 Θ(n)（搬家），攤還 O(1)：accounting 每次收 3 元或 Φ = 2·num − size。"}
+];
+
+/* ---------- P01 activity selection 動畫 ---------- */
+const ACTS = [
+  {id:1,s:1,f:4},{id:2,s:3,f:5},{id:3,s:0,f:6},{id:4,s:5,f:7},{id:5,s:3,f:9},{id:6,s:5,f:9},
+  {id:7,s:6,f:10},{id:8,s:7,f:11},{id:9,s:8,f:12},{id:10,s:2,f:14},{id:11,s:12,f:16}];
+function actFrames() {
+  const frames = [];
+  const st = ACTS.map(() => 'pending');
+  let lastF = 0, count = 0;
+  frames.push({st:[...st], cur:-1, msg:'11 個活動已按結束時間排序。a1 必選（最早結束）。'});
+  ACTS.forEach((a, i) => {
+    if (a.s >= lastF) {
+      st[i] = 'chosen'; lastF = a.f; count++;
+      frames.push({st:[...st], cur:i, msg:`a${a.id}［${a.s}, ${a.f}）：s=${a.s} ≥ 上一個結束 ${i===0?0:'…'}，選！之後只接受 s ≥ ${a.f} 的活動。`});
+    } else {
+      st[i] = 'rejected';
+      frames.push({st:[...st], cur:i, msg:`a${a.id}［${a.s}, ${a.f}）：s=${a.s} < ${lastF}，與已選活動重疊，跳過。`});
+    }
+  });
+  frames.push({st:[...st], cur:-1, msg:`完成：選了 ${count} 個（a1, a4, a8, a11）——可證明為最大可能數。`});
+  return frames;
+}
+function actApply(f) {
+  const el = $('actTimeline'); el.innerHTML = '';
+  const scale = 100 / 16;
+  ACTS.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'position:relative;height:24px;margin:3px 0;';
+    const bar = document.createElement('div');
+    const color = f.st[i] === 'chosen' ? '#1a6b4a' : (f.st[i] === 'rejected' ? '#ccc' : '#5b7eb8');
+    bar.style.cssText = `position:absolute;left:${a.s*scale}%;width:${(a.f-a.s)*scale}%;height:100%;background:${color};border-radius:5px;color:#fff;font-family:'JetBrains Mono',monospace;font-size:.68rem;display:flex;align-items:center;padding-left:6px;${f.cur===i?'outline:3px solid #f39c12;':''}`;
+    bar.textContent = `a${a.id} [${a.s},${a.f})`;
+    row.appendChild(bar);
+    el.appendChild(row);
+  });
+  setStatus('actStatus', f.msg);
+}
+const actPlayer = new Player({frames: actFrames(), apply: actApply, delayInput: null});
+actPlayer.reset();
+
+/* ---------- P02 Huffman 合併動畫 ---------- */
+function hufFrames() {
+  let forest = [
+    {label:'f:5', freq:5},{label:'e:9', freq:9},{label:'c:12', freq:12},
+    {label:'b:13', freq:13},{label:'d:16', freq:16},{label:'a:45', freq:45}];
+  const frames = [{forest: forest.map(n => ({...n})), hl:[], msg:'六個葉節點入 min-PQ。每步取最小兩個合併。', codes:false}];
+  while (forest.length > 1) {
+    forest.sort((a,b) => a.freq - b.freq);
+    const [x, y] = [forest[0], forest[1]];
+    const z = {label:`(${x.freq}+${y.freq})=${x.freq+y.freq}`, freq:x.freq+y.freq};
+    forest = [z, ...forest.slice(2)];
+    frames.push({forest: forest.map(n => ({...n})), hl:[0],
+      msg:`EXTRACT-MIN ×2：${x.label} 與 ${y.label} 合併成頻率 ${z.freq} 的新節點，插回 PQ。`, codes:false});
+  }
+  frames.push({forest: forest.map(n => ({...n})), hl:[], codes:true,
+    msg:'完成！沿樹「左 0 右 1」讀出每個字元的編碼（下表）。期望長度 224（固定長度 3 位元要 300）。'});
+  return frames;
+}
+function hufApply(f) {
+  const el = $('hufForest'); el.innerHTML = '';
+  const row = document.createElement('div'); row.className = 'bq-row';
+  [...f.forest].sort((a,b) => a.freq - b.freq).forEach((n, i) => {
+    const d = document.createElement('div'); d.className = 'bq-item';
+    d.style.cssText = 'min-width:64px;font-size:.72rem;' + (f.hl.includes(i) && n.label.startsWith('(') ? 'background:#f39c12;' : (n.label.includes(':') ? '' : 'background:#8e44ad;'));
+    d.textContent = n.label;
+    row.appendChild(d);
+  });
+  el.appendChild(row);
+  const tbl = $('hufCodes');
+  tbl.innerHTML = f.codes
+    ? '<tr><th>字元</th><th>a</th><th>b</th><th>c</th><th>d</th><th>e</th><th>f</th></tr>' +
+      '<tr><td>頻率</td><td>45</td><td>13</td><td>12</td><td>16</td><td>9</td><td>5</td></tr>' +
+      '<tr><td>編碼</td><td class="nonzero">0</td><td class="nonzero">101</td><td class="nonzero">100</td><td class="nonzero">111</td><td class="nonzero">1101</td><td class="nonzero">1100</td></tr>'
+    : '';
+  setStatus('hufStatus', f.msg);
+}
+const hufPlayer = new Player({frames: hufFrames(), apply: hufApply, delayInput: null});
+hufPlayer.reset();
+
+/* ---------- P04 binary counter ---------- */
+function bcFrames() {
+  const k = 6, frames = [];
+  const bits = new Array(k).fill(0);
+  let total = 0;
+  frames.push({bits:[...bits], cost:null, total, n:0, msg:'計數器歸零。INCREMENT：把低位連續的 1 清成 0，再把第一個 0 設成 1。'});
+  for (let n = 1; n <= 16; n++) {
+    let i = 0, cost = 0;
+    while (i < k && bits[i] === 1) { bits[i] = 0; i++; cost++; }
+    if (i < k) { bits[i] = 1; cost++; }
+    total += cost;
+    frames.push({bits:[...bits], cost, total, n,
+      msg:`INCREMENT #${n}：翻了 ${cost} 個位元${cost > 2 ? '（貴！但它把一串 1 清掉了，之後好幾次都便宜）' : ''}。`});
+  }
+  return frames;
+}
+function bcApply(f) {
+  const el = $('bcBits'); el.innerHTML = '';
+  [...f.bits].reverse().forEach(b => {
+    const d = document.createElement('div'); d.className = 'bq-item';
+    d.style.cssText = 'min-width:34px;' + (b ? 'background:#1a6b4a;' : 'background:#bbb;');
+    d.textContent = b;
+    el.appendChild(d);
+  });
+  $('bcCost').textContent = f.cost ?? '—';
+  $('bcTotal').textContent = f.total;
+  $('bcAvg').textContent = f.n ? (f.total / f.n).toFixed(2) : '—';
+  setStatus('bcStatus', f.msg);
+}
+const bcPlayer = new Player({frames: bcFrames(), apply: bcApply, delayInput: null});
+bcPlayer.reset();
+</script>
+<script>
+/* ============ shared utilities ============ */
+const $ = id => document.getElementById(id);
+
+function quizCheck(quizId, optEl) {
+  const isCorrect = optEl.dataset.correct === 'true';
+  optEl.parentElement.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct','wrong'));
+  optEl.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = $(quizId + 'Feedback');
+  fb.classList.remove('correct','wrong');
+  fb.classList.add('show', isCorrect ? 'correct' : 'wrong');
+  fb.innerHTML = (isCorrect ? '<strong>正確 ✓</strong> ' : '<strong>不對 ✗</strong> ') + (optEl.dataset.fb || '');
+}
+
+function hlLine(rootId, n) {
+  const root = $(rootId);
+  if (!root) return;
+  root.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
+  if (n != null) {
+    const line = root.querySelector(`.line[data-l="${n}"]`);
+    if (line) line.classList.add('active');
+  }
+}
+
+/* step player: frames = [{...}], apply(frame) renders */
+class Player {
+  constructor({frames, apply, delayInput, onDone}) {
+    this.frames = frames; this.apply = apply;
+    this.delayInput = delayInput; this.i = -1; this.timer = null;
+    this.onDone = onDone || (()=>{});
+  }
+  step() {
+    if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+    this.i += 1; this.apply(this.frames[this.i]);
+  }
+  play() {
+    this.stop();
+    const tick = () => {
+      if (this.i + 1 >= this.frames.length) { this.stop(); this.onDone(); return; }
+      this.step();
+      this.timer = setTimeout(tick, this.delayInput ? parseInt(this.delayInput.value,10) : 700);
+    };
+    tick();
+  }
+  stop() { if (this.timer) { clearTimeout(this.timer); this.timer = null; } }
+  reset() { this.stop(); this.i = -1; if (this.frames.length) this.apply(this.frames[0]); }
+}
+
+function setStatus(id, html) {
+  const el = $(id); if (el) el.querySelector('.status-text').innerHTML = html;
+}
+
+/* vertical box stack renderer (DOM) */
+function renderBoxStack(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  const hl = opts.highlight ?? -1;   // index from top (0 = top)
+  el.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'bs-toplabel';
+  label.textContent = items.length ? 'top ↓' : '(empty)';
+  el.appendChild(label);
+  items.slice().reverse().forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bs-item' + (idx === hl ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+}
+
+/* horizontal queue renderer: front at left */
+function renderBoxQueue(containerId, items, opts={}) {
+  const el = $(containerId); if (!el) return;
+  el.innerHTML = '';
+  const front = document.createElement('div');
+  front.className = 'bq-label'; front.textContent = items.length ? 'front →' : '(empty)';
+  el.appendChild(front);
+  items.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item' + (idx === (opts.highlight ?? -1) ? ' bs-hl' : '');
+    d.textContent = v;
+    el.appendChild(d);
+  });
+  const rear = document.createElement('div');
+  rear.className = 'bq-label'; rear.textContent = items.length ? '← rear' : '';
+  el.appendChild(rear);
+}
+
+/* floating nav scroll spy */
+(function setupNav() {
+  const nav = $('floatNav');
+  const links = nav.querySelectorAll('a[data-target]');
+  const sections = Array.from(links).map(a => document.getElementById(a.dataset.target)).filter(Boolean);
+  function update() {
+    const y = window.scrollY + window.innerHeight * 0.3;
+    let active = sections[0]?.id;
+    for (const s of sections) if (s.offsetTop <= y) active = s.id;
+    links.forEach(a => a.classList.toggle('active', a.dataset.target === active));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+<script>
+/* ===== code tabs（pseudocode / C++ / Python 切換）===== */
+function tabShow(groupId, lang, btn) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('active'));
+  group.querySelectorAll('.ct-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = group.querySelector(`.ct-panel[data-lang="${lang}"]`);
+  if (panel) panel.classList.add('active');
+}
+
+/* ===== Flashcards engine ===== */
+(function(){
+  if (typeof FLASHCARDS === 'undefined') return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const grid = document.getElementById('fcGrid');
+  if (!grid) return;
+  const render = cards => {
+    grid.innerHTML = cards.map(c =>
+      `<div class="fc-card"><div class="fc-inner">
+         <div class="fc-face fc-front"><div>${esc(c.front)}</div><div class="fc-hint">CLICK TO FLIP</div></div>
+         <div class="fc-face fc-back">${esc(c.back)}</div>
+       </div></div>`).join('');
+  };
+  render(FLASHCARDS);
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.fc-card');
+    if (card) card.classList.toggle('flipped');
+  });
+  document.getElementById('fcShuffle').addEventListener('click', () => render([...FLASHCARDS].sort(() => Math.random() - .5)));
+  document.getElementById('fcUnflip').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.remove('flipped')));
+  document.getElementById('fcFlipAll').addEventListener('click', () => grid.querySelectorAll('.fc-card').forEach(c => c.classList.add('flipped')));
+})();
+</script>
+</body>
+</html>
