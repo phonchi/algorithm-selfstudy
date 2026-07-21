@@ -46,5 +46,29 @@
  {
   "front": "哨兵 NIL（Sentinel）",
   "back": "紅黑樹用單一黑色 NIL 節點代替所有空指標（葉子與根的父母）：邊界情況統一處理，FIXUP 的程式碼不必判空。"
+ },
+ {
+  "front": "除法／乘法雜湊",
+  "back": "division：h(k)=k mod m，m 選離 2 的冪遠的質數（m=2ᵖ 只看低位元）。multiplication：h(k)=⌊m(kA mod 1)⌋，A≈0.618，m 可取 2ᵖ 用位移。"
+ },
+ {
+  "front": "探測序列（Probe Sequence）",
+  "back": "open addressing 的 h(k,0), h(k,1), …。linear probing 只有 m 種序列（一次群聚）；double hashing 步距 h₂(k) 給 Θ(m²) 種，分布更散。"
+ },
+ {
+  "front": "墓碑 DELETED",
+  "back": "open addressing 刪除不能清空 slot——搜尋遇空格即停，會把探測路徑後方的元素隱形。改放 DELETED：搜尋跳過、插入重用。刪除頻繁改用 chaining。"
+ },
+ {
+  "front": "1/(1−α) 期望探測",
+  "back": "uniform hashing 下 open addressing 失敗搜尋/插入的期望探測數。α=0.5→2 次、0.9→10 次、→1 爆炸——必須提早 rehash 的數學理由。"
+ },
+ {
+  "front": "TREE-DELETE 三情境",
+  "back": "①無左子→右子 transplant 頂上；②無右子→左子頂上；③兩子俱在→後繼 y=MIN(z.right)（必無左子）先脫離原位再接手。O(h)。"
+ },
+ {
+  "front": "雙黑（Doubly Black）",
+  "back": "RB-DELETE 移走黑節點後，把「少的黑」記在接手節點 x 上。FIXUP 四 case 看兄弟 w：兄紅先轉、姪全黑上推、近紅轉遠、遠紅借黑落地。至多 3 次旋轉。"
  }
 ]

@@ -75,6 +75,82 @@ struct RBTree {
         }
         root->color = BLACK;                            // 性質 2 收尾
     }
+    void transplant(Node* u, Node* v) {         // 用子樹 v 整棵取代 u（v 可為 nil）
+        if (u->p == nil) root = v;
+        else if (u == u->p->left) u->p->left = v;
+        else u->p->right = v;
+        v->p = u->p;                            // 哨兵的好處：v == nil 也照設
+    }
+    Node* minimum(Node* x) const {
+        while (x->left != nil) x = x->left;
+        return x;
+    }
+    void deleteKey(int k) {
+        Node* z = root;
+        while (z != nil && z->key != k) z = (k < z->key) ? z->left : z->right;
+        if (z == nil) return;
+        Node* y = z;                            // y = 實際被移出/移動的節點
+        Color yOrig = y->color;
+        Node* x;                                // x = 接手 y 原位置的節點（可能是 nil）
+        if (z->left == nil) { x = z->right; transplant(z, z->right); }
+        else if (z->right == nil) { x = z->left; transplant(z, z->left); }
+        else {
+            y = minimum(z->right);              // 後繼（必無左子）
+            yOrig = y->color;
+            x = y->right;
+            if (y->p == z) x->p = y;            // x 可能是 nil，仍要記父母
+            else {
+                transplant(y, y->right);
+                y->right = z->right; y->right->p = y;
+            }
+            transplant(z, y);
+            y->left = z->left; y->left->p = y;
+            y->color = z->color;                // y 繼承 z 的顏色 → 上方性質不變
+        }
+        if (yOrig == BLACK) deleteFixup(x);     // 少了一個黑 → x 帶著「雙黑」修復
+    }
+    void deleteFixup(Node* x) {
+        while (x != root && x->color == BLACK) {
+            if (x == x->p->left) {
+                Node* w = x->p->right;                  // 兄弟
+                if (w->color == RED) {                  // Case 1：兄紅 → 轉成兄黑
+                    w->color = BLACK; x->p->color = RED;
+                    leftRotate(x->p); w = x->p->right;
+                }
+                if (w->left->color == BLACK && w->right->color == BLACK) {
+                    w->color = RED; x = x->p;           // Case 2：姪全黑 → 雙黑上推
+                } else {
+                    if (w->right->color == BLACK) {     // Case 3：遠姪黑 → 轉成 Case 4
+                        w->left->color = BLACK; w->color = RED;
+                        rightRotate(w); w = x->p->right;
+                    }
+                    w->color = x->p->color;             // Case 4：遠姪紅 → 借一個黑
+                    x->p->color = BLACK; w->right->color = BLACK;
+                    leftRotate(x->p);
+                    x = root;                           // 修復完成
+                }
+            } else {                                    // 鏡像
+                Node* w = x->p->left;
+                if (w->color == RED) {
+                    w->color = BLACK; x->p->color = RED;
+                    rightRotate(x->p); w = x->p->left;
+                }
+                if (w->right->color == BLACK && w->left->color == BLACK) {
+                    w->color = RED; x = x->p;
+                } else {
+                    if (w->left->color == BLACK) {
+                        w->right->color = BLACK; w->color = RED;
+                        leftRotate(w); w = x->p->left;
+                    }
+                    w->color = x->p->color;
+                    x->p->color = BLACK; w->left->color = BLACK;
+                    rightRotate(x->p);
+                    x = root;
+                }
+            }
+        }
+        x->color = BLACK;                               // 雙黑落地：吸收成單黑
+    }
     void inorder(Node* x) const {
         if (x == nil) return;
         inorder(x->left);
@@ -99,5 +175,11 @@ int main() {
     T.inorder(T.root); std::cout << '\n';
     std::cout << "root = " << T.root->key
               << ", 性質檢查(黑高度) = " << T.check(T.root) << '\n';
+    for (int k : {8, 12, 19, 31, 38, 41}) { // 依序全刪，逐步驗證五性質
+        T.deleteKey(k);
+        std::cout << "delete " << k << " → ";
+        T.inorder(T.root);
+        std::cout << "｜check = " << T.check(T.root) << '\n';
+    }
     return 0;
 }

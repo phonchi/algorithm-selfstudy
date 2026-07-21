@@ -476,10 +476,12 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 <nav class="float-nav" id="floatNav" aria-label="章節導覽">
   <div class="fn-title">章節導覽</div>
   <a href="#chaining" data-target="chaining"><span class="fn-num">P00</span><span class="fn-name">hash 與 chaining</span></a>
-  <a href="#universal" data-target="universal"><span class="fn-num">P01</span><span class="fn-name">open addressing 與 universal</span></a>
+  <a href="#universal" data-target="universal"><span class="fn-num">P01</span><span class="fn-name">universal hashing</span></a>
+  <a href="#openaddr" data-target="openaddr"><span class="fn-num">P01b</span><span class="fn-name">open addressing</span></a>
   <a href="#bst" data-target="bst"><span class="fn-num">P02</span><span class="fn-name">BST 複習</span></a>
   <a href="#rbprops" data-target="rbprops"><span class="fn-num">P03</span><span class="fn-name">紅黑樹五性質</span></a>
   <a href="#rbinsert" data-target="rbinsert"><span class="fn-num">P04</span><span class="fn-name">insert fixup</span></a>
+  <a href="#rbdelete" data-target="rbdelete"><span class="fn-num">P05</span><span class="fn-name">delete 與雙黑</span></a>
   <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
   <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
   <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
@@ -509,10 +511,12 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
   <div class="toc-title">CONTENTS · 內容目錄</div>
   <div class="toc-grid">
     <a href="#chaining"><span class="toc-num">P00</span>hash 與 chaining</a>
-    <a href="#universal"><span class="toc-num">P01</span>open addressing 與 universal hashing</a>
-    <a href="#bst"><span class="toc-num">P02</span>BST 複習</a>
+    <a href="#universal"><span class="toc-num">P01</span>universal hashing</a>
+    <a href="#openaddr"><span class="toc-num">P01b</span>open addressing（§11.4）</a>
+    <a href="#bst"><span class="toc-num">P02</span>BST 複習與刪除</a>
     <a href="#rbprops"><span class="toc-num">P03</span>紅黑樹五性質與旋轉</a>
     <a href="#rbinsert"><span class="toc-num">P04</span>RB-INSERT-FIXUP</a>
+    <a href="#rbdelete"><span class="toc-num">P05</span>RB-DELETE 與雙黑（§13.4）</a>
     <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
     <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
     <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
@@ -553,6 +557,111 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
     </div>
   </div>
 
+  <h3>雜湊函數怎麼選：division 與 multiplication <span class="sec-badge">§11.3</span></h3>
+  <div class="viz-layout">
+    <div>
+      <p><strong>除法（division）</strong>：h(k) = k mod m。快、一行搞定，但 <strong>m 的選擇是地雷</strong>：
+      m = 2ᵖ 時 h(k) 只看 k 的低 p 位元（高位全被丟掉）；m 靠近 2 的冪也不好。
+      經驗法則：<strong>選離 2 的冪遠的質數</strong>。
+      數值例：存 2000 個字串、可接受 α ≈ 3 → 選 m = 701（質數、離 512 與 1024 都遠），h(k) = k mod 701。</p>
+      <p><strong>乘法（multiplication）</strong>：h(k) = ⌊m·(kA mod 1)⌋，A ∈ (0,1)。
+      好處是 <strong>m 隨便選</strong>（取 2ᵖ 也行——位移實作超快）。
+      Knuth 建議 A ≈ (√5 − 1)/2 = 0.6180…（黃金比例倒數）。
+      數值例：k = 123456、m = 16384（= 2¹⁴）、A = 0.61803：kA = 76300.0045…，小數部分 0.0045 × 16384 ≈ <strong>h(k) = 67</strong>。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">兩法對照</div>
+        <div class="ic-row"><span class="ic-label">division 速度</span><span class="ic-value">一次取餘</span></div>
+        <div class="ic-row"><span class="ic-label">division 地雷</span><span class="ic-value highlight">m ≠ 2ᵖ、選質數</span></div>
+        <div class="ic-row"><span class="ic-label">multiplication</span><span class="ic-value">m 可取 2ᵖ（位移）</span></div>
+        <div class="ic-row"><span class="ic-label">共同弱點</span><span class="ic-value highlight">h 固定 → 有天敵鍵集</span></div>
+      </div>
+      <div class="info-card">
+        <div class="ic-title">為何 m = 2ᵖ 是地雷</div>
+        <div style="font-size:.84rem;line-height:1.7;">k mod 2ᵖ = k 的低 p 位元。若鍵是「4 的倍數的地址」，低 2 位恆 0 → 只用得到 1/4 的 slot。質數 m 讓每個位元都參與。</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>完整實作：三分頁</h3>
+  <div class="code-tabs" id="ctCh">
+    <div class="ct-bar">
+      <button class="ct-btn ct-pseudo active" onclick="tabShow('ctCh','pseudo',this)">Pseudocode</button>
+      <button class="ct-btn" onclick="tabShow('ctCh','cpp',this)">C++</button>
+      <button class="ct-btn" onclick="tabShow('ctCh','py',this)">Python</button>
+    </div>
+    <div class="ct-panel active" data-lang="pseudo">
+      <div class="clrs-code">
+        <div class="cc-title"><span class="fn">CHAINED-HASH-INSERT</span>(T, x)　／　<span class="fn">SEARCH</span>(T, k)</div>
+        <span class="line"><span class="ln">1</span>INSERT：把 x 插到串列 T[h(x.key)] 的開頭　<span class="com">// O(1)</span></span>
+        <span class="line"><span class="ln">2</span>SEARCH：在串列 T[h(k)] 中線性尋找 k　<span class="com">// 期望 Θ(1 + α)</span></span>
+        <span class="line"><span class="ln">3</span>DELETE：從串列 T[h(x.key)] 移除 x　<span class="com">// 雙向串列給定節點 O(1)</span></span>
+      </div>
+    </div>
+    <div class="ct-panel" data-lang="cpp">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">class</span> ChainedHashTable {</span>
+<span class="line">    std::vector&lt;std::list&lt;<span class="kw">int</span>&gt;&gt; T;</span>
+<span class="line">    std::<span class="kw">size_t</span> m;</span>
+<span class="line"><span class="kw">public</span>:</span>
+<span class="line">    <span class="kw">explicit</span> ChainedHashTable(std::<span class="kw">size_t</span> slots) : T(slots), m(slots) {}</span>
+<span class="line">    std::<span class="kw">size_t</span> <span class="fn">h</span>(<span class="kw">int</span> k) <span class="kw">const</span> { <span class="kw">return</span> <span class="kw">static_cast</span>&lt;std::<span class="kw">size_t</span>&gt;(k) % m; }</span>
+<span class="line">    <span class="kw">void</span> <span class="fn">insert</span>(<span class="kw">int</span> k) { T[h(k)].push_front(k); }          <span class="com">// O(1)</span></span>
+<span class="line">    <span class="kw">bool</span> <span class="fn">search</span>(<span class="kw">int</span> k) <span class="kw">const</span> {                              <span class="com">// 期望 O(1 + α)</span></span>
+<span class="line">        <span class="kw">for</span> (<span class="kw">int</span> x : T[h(k)]) <span class="kw">if</span> (x == k) <span class="kw">return</span> <span class="kw">true</span>;</span>
+<span class="line">        <span class="kw">return</span> <span class="kw">false</span>;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="kw">void</span> <span class="fn">remove</span>(<span class="kw">int</span> k) { T[h(k)].remove(k); }</span>
+<span class="line">};</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/structures/hash_chaining.cpp，m=9、CLRS 練習 11.2-2 的鍵）</span><pre>0:
+1: 10 19 28
+2: 20
+3: 12
+4:
+5: 5
+6: 33 15
+7:
+8: 17
+search(20) = 1, search(21) = 0</pre></div>
+    </div>
+    <div class="ct-panel" data-lang="py">
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 11/chained_hashtable.py（MIT License）：攤平成 list-of-list</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">chained_insert</span>(T, k):</span>
+<span class="line">    T[k % <span class="fn">len</span>(T)].insert(<span class="num">0</span>, k)          <span class="com"># 插到鏈開頭：O(1)</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">chained_search</span>(T, k):</span>
+<span class="line">    slot = T[k % <span class="fn">len</span>(T)]</span>
+<span class="line">    <span class="kw">for</span> i, x in <span class="fn">enumerate</span>(slot):        <span class="com"># 沿鏈找：期望 Θ(1 + α)</span></span>
+<span class="line">        <span class="kw">if</span> x == k:</span>
+<span class="line">            <span class="kw">return</span> <span class="str">"slot %d 第 %d 格"</span> % (k % <span class="fn">len</span>(T), i)</span>
+<span class="line">    <span class="kw">return</span> <span class="kw">None</span></span>
+<span class="line"> </span>
+<span class="line">m = <span class="num">9</span></span>
+<span class="line">T = [[] <span class="kw">for</span> _ in <span class="fn">range</span>(m)]</span>
+<span class="line"><span class="kw">for</span> k in [<span class="num">5</span>, <span class="num">28</span>, <span class="num">19</span>, <span class="num">15</span>, <span class="num">20</span>, <span class="num">33</span>, <span class="num">12</span>, <span class="num">17</span>, <span class="num">10</span>]:</span>
+<span class="line">    chained_insert(T, k)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"search(20):"</span>, chained_search(T, <span class="num">20</span>))</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/structures/chaining.py）</span><pre>1 → [10, 19, 28]
+2 → [20]
+6 → [33, 15]
+（其餘 slot 略）
+α = 9/9 = 1.00，最長鏈 = 3
+search(20): slot 2 第 0 格</pre></div>
+      <div class="ct-note">與 C++ 版同一批鍵：slot 1 的鏈長 3 正是動畫裡看到的最長鏈。</div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00b · 選 m</div>
+    <p>division hash 選 m = 1024（= 2¹⁰）存記憶體位址（皆為 8 的倍數）。後果是？</p>
+    <div class="quiz-options" id="q07Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。k mod 1024 只看低 10 位元；8 的倍數低 3 位恆為 0 → 有效 slot 只剩 1024/8 = 128 個，其餘 7/8 的表格永遠空著、碰撞率暴增 8 倍。這就是「選離 2 的冪遠的質數」的實戰理由。" onclick="quizCheck('q07', this)"><span class="opt-letter">(A)</span> 只用得到 1/8 的 slot，碰撞率暴增</div>
+      <div class="quiz-opt" data-correct="false" data-fb="速度沒問題（mod 2 的冪其實最快，可用位元 AND）——壞的是分布品質，不是速度。" onclick="quizCheck('q07', this)"><span class="opt-letter">(B)</span> 取餘變慢，效能下降</div>
+      <div class="quiz-opt" data-correct="false" data-fb="正確性不受影響（hash table 永遠正確）——被犧牲的是期望 O(1) 的性能前提（均勻分布）。" onclick="quizCheck('q07', this)"><span class="opt-letter">(C)</span> 會找不到已插入的鍵</div>
+    </div>
+    <div class="quiz-feedback" id="q07Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P00 · α 的意義</div>
     <p>chaining hash table 有 n 個元素、m 個 slot。下列哪個情況「期望 O(1) 搜尋」會失效？</p>
@@ -567,12 +676,9 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 
 <section id="universal">
   <div class="section-number">P01 · UNIVERSAL HASHING</div>
-  <h2>對手知道你的 hash 函數怎麼辦？——隨機選一個 <span class="sec-badge">§11.3–11.4</span></h2>
-  <p><strong>open addressing</strong> 複習：所有元素直接住在表格裡（α ≤ 1），碰撞就沿<strong>探測序列</strong>找下一格
-  （linear probing 有一次群聚問題；4e 主推的分析假設是 independent uniform permutation hashing）。
-  搜尋失敗的期望探測數約 <strong>1/(1−α)</strong>——α → 1 時爆炸，這就是 open addressing 必須提早 rehash 的原因。</p>
-  <p>更深的問題：任何<strong>固定的</strong> hash 函數 h 都有天敵——對手挑 n 個全部映到同一 slot 的鍵，表格退化成鏈結串列。
-  解法與 quicksort 一模一樣：<strong>把隨機性放進演算法</strong>。</p>
+  <h2>對手知道你的 hash 函數怎麼辦？——隨機選一個 <span class="sec-badge">§11.3.3</span></h2>
+  <p>不管 division 還是 multiplication，只要 h 是<strong>固定的</strong>，就有天敵——對手挑 n 個全部映到同一 slot 的鍵，
+  表格退化成鏈結串列、搜尋 Θ(n)。解法與 quicksort 一模一樣：<strong>把隨機性放進演算法</strong>。</p>
   <div class="info-box purple">
     <span class="info-label">universal hashing（§11.3.3）</span>
     從一族函數 ℋ 中<strong>隨機挑一個</strong> h 使用。ℋ 是 universal 的定義：對任兩個相異鍵 k ≠ l，
@@ -590,6 +696,135 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <div class="quiz-opt" data-correct="false" data-fb="假設輸入隨機是「機率分析」；universal hashing 恰恰是不想做這個假設才隨機選 h。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> 兩者都假設輸入是均勻隨機的</div>
     </div>
     <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="openaddr">
+  <div class="section-number">P01b · OPEN ADDRESSING</div>
+  <h2>開放定址：全部住表格裡，碰撞就往下走 <span class="sec-badge">§11.4</span></h2>
+  <p>chaining 之外的另一條路：<strong>所有元素直接存在表格中</strong>（α ≤ 1 硬限制），
+  碰撞時沿著<strong>探測序列 h(k, 0), h(k, 1), …</strong> 找下一格。省掉指標、cache 友善——
+  但探測序列的品質決定一切：</p>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.86rem;">
+    <thead><tr><th>方案</th><th>h(k, i)</th><th>探測序列數</th><th>毛病</th></tr></thead>
+    <tbody>
+      <tr><td>linear probing</td><td>(h₁(k) + i) mod m</td><td class="worst">m 種</td><td><strong>一次群聚</strong>：長條佔用區越長越容易被撞、越撞越長</td></tr>
+      <tr><td>double hashing</td><td>(h₁(k) + i·h₂(k)) mod m</td><td class="best">Θ(m²) 種</td><td>需 h₂(k) 與 m 互質（m 取質數或 h₂ 恆奇）</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">linear probing（步距固定 1）</div>
+      <div class="bq-row" id="oaLin"></div>
+      <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .2rem;">double hashing（步距 h₂(k) = 1 + k mod 10）</div>
+      <div class="bq-row" id="oaDbl"></div>
+      <div class="status-banner" id="oaStatus"><span class="status-icon">▸</span><span class="status-text">m = 11。按「單步」插入下一個鍵，比較兩種探測的落點。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="oaPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="oaPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="oaPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctOa">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctOa','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctOa','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctOa','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.74rem;">
+            <div class="cc-title"><span class="fn">HASH-INSERT</span>(T, k)　<span class="com">// 回傳放入的 slot</span></div>
+            <span class="line"><span class="ln">1</span><span class="kw">for</span> i = 0 <span class="kw">to</span> m − 1</span>
+            <span class="line"><span class="ln">2</span>    q = h(k, i)</span>
+            <span class="line"><span class="ln">3</span>    <span class="kw">if</span> T[q] == NIL <span class="kw">or</span> T[q] == DELETED</span>
+            <span class="line"><span class="ln">4</span>        T[q] = k；<span class="kw">return</span> q</span>
+            <span class="line"><span class="ln">5</span>error「hash table overflow」</span>
+          </div>
+          <div class="clrs-code" style="font-size:.74rem;margin-top:.6rem;">
+            <div class="cc-title"><span class="fn">HASH-SEARCH</span>(T, k)</div>
+            <span class="line"><span class="ln">1</span><span class="kw">for</span> i = 0 <span class="kw">to</span> m − 1</span>
+            <span class="line"><span class="ln">2</span>    q = h(k, i)</span>
+            <span class="line"><span class="ln">3</span>    <span class="kw">if</span> T[q] == k：<span class="kw">return</span> q</span>
+            <span class="line"><span class="ln">4</span>    <span class="kw">if</span> T[q] == NIL：<span class="kw">return</span> NIL　<span class="com">// 空格＝確定不在；DELETED 要繼續</span></span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">int</span> <span class="fn">probeInsert</span>(std::vector&lt;<span class="kw">int</span>&gt;&amp; T, <span class="kw">int</span> k, <span class="kw">bool</span> useDouble, <span class="kw">int</span>&amp; probes) {</span>
+<span class="line">    <span class="kw">int</span> h1 = k % M;</span>
+<span class="line">    <span class="kw">int</span> h2 = useDouble ? <span class="num">1</span> + (k % (M - <span class="num">1</span>)) : <span class="num">1</span>;   <span class="com">// linear = 步距 1</span></span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; M; ++i) {</span>
+<span class="line">        <span class="kw">int</span> s = (h1 + i * h2) % M;</span>
+<span class="line">        ++probes;</span>
+<span class="line">        <span class="kw">if</span> (T[s] == EMPTY || T[s] == DELETED) { T[s] = k; <span class="kw">return</span> s; }</span>
+<span class="line">    }</span>
+<span class="line">    <span class="kw">return</span> -<span class="num">1</span>;                                     <span class="com">// 表滿</span></span>
+<span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/structures/open_addressing.cpp，m=11、9 個鍵）</span><pre>linear probing：表 = 22 88 · · 4 15 28 17 59 31 10 ｜總探測 16 次
+double hashing：表 = 22 · 59 17 4 15 28 88 · 31 10 ｜總探測 16 次
+刪 22 後 search(55)（墓碑版）= 1
+若直接清空 slot，search(55) = 0（探測在空格提前停止 → 找不到還在表裡的 55！）</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 11/open_address_hashtable.py（MIT License）：攤平版</span></span>
+<span class="line">M = <span class="num">11</span></span>
+<span class="line">EMPTY, DELETED = <span class="kw">None</span>, <span class="str">"DEL"</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">probe</span>(k, i, use_double):</span>
+<span class="line">    h1 = k % M</span>
+<span class="line">    h2 = (<span class="num">1</span> + k % (M - <span class="num">1</span>)) <span class="kw">if</span> use_double <span class="kw">else</span> <span class="num">1</span></span>
+<span class="line">    <span class="kw">return</span> (h1 + i * h2) % M</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">oa_insert</span>(T, k, use_double):</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(M):              <span class="com"># 沿探測序列找第一個可用格</span></span>
+<span class="line">        s = probe(k, i, use_double)</span>
+<span class="line">        <span class="kw">if</span> T[s] <span class="kw">is</span> EMPTY <span class="kw">or</span> T[s] == DELETED:</span>
+<span class="line">            T[s] = k</span>
+<span class="line">            <span class="kw">return</span> i + <span class="num">1</span>            <span class="com"># 探測次數</span></span>
+<span class="line">    <span class="kw">raise</span> RuntimeError(<span class="str">"hash table overflow"</span>)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">oa_search</span>(T, k, use_double):</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(M):</span>
+<span class="line">        s = probe(k, i, use_double)</span>
+<span class="line">        <span class="kw">if</span> T[s] == k:</span>
+<span class="line">            <span class="kw">return</span> s</span>
+<span class="line">        <span class="kw">if</span> T[s] <span class="kw">is</span> EMPTY:               <span class="com"># 空格＝確定不在</span></span>
+<span class="line">            <span class="kw">return</span> <span class="kw">None</span></span>
+<span class="line">    <span class="kw">return</span> <span class="kw">None</span></span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/structures/open_addressing.py）</span><pre>linear probing：表 = 22 88 · · 4 15 28 17 59 31 10｜總探測 16 次
+double hashing：表 = 22 · 59 17 4 15 28 88 · 31 10｜總探測 16 次</pre></div>
+          <div class="ct-note">與 C++ 版同鍵同表——兩種語言、同一探測數學。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn-box"><b>刪除的墓碑（DELETED）：</b>open addressing 的 DELETE <b>不能直接把 slot 清空</b>——
+  搜尋是「遇到空格就停」，清空會把後面靠探測繞過此格的元素「隱形」（上面實跑：清空 slot 後 search(55) 找不到還在表裡的 55）。
+  必須放 DELETED 墓碑：搜尋跳過它、插入可重用它。墓碑一多搜尋變慢——<b>刪除頻繁的場景請改用 chaining</b>（課本同款建議）。</div>
+
+  <div class="thm-box">
+    <div class="thm-label">期望探測數（定理 11.6–11.8，uniform hashing 假設）</div>
+    <div style="font-size:.87rem;line-height:1.75;">
+    搜尋<strong>失敗</strong>／插入：期望 ≤ <strong>1/(1−α)</strong>（每次探測命中已占用格的機率 α，形成幾何級數）。
+    搜尋<strong>成功</strong>：期望 ≤ (1/α)·ln(1/(1−α))。實際數字感受一下：<br>
+    <span class="mono">α = 0.5 → 失敗 2 次｜α = 0.75 → 4 次｜α = 0.9 → 10 次｜α = 0.99 → 100 次</span><br>
+    α → 1 時爆炸——這就是 open addressing 必須<strong>提早 rehash</strong>（如 α 過 0.7 就擴表）的原因；
+    chaining 的 Θ(1+α) 溫和得多。</div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01b · 墓碑的理由</div>
+    <p>open addressing 刪除元素時，為什麼要放 DELETED 標記而不是直接清空 slot？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。HASH-SEARCH 的終止條件是「遇到空格＝這個鍵確定不在」；若把探測路徑中間的格子清空，後面靠探測越過此格的元素會被誤判不存在（實跑示範：search(55) 從 1 變 0）。墓碑保持「這裡曾經有人」的訊號，讓搜尋繼續走。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 清空會讓搜尋在探測路徑中途提前停止，誤判「不存在」</div>
+      <div class="quiz-opt" data-correct="false" data-fb="空間不是理由——DELETED 格反而佔著位置直到被重用；墓碑是為了搜尋的正確性。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 為了節省清空記憶體的時間</div>
+      <div class="quiz-opt" data-correct="false" data-fb="插入本來就可以重用 DELETED 格（HASH-INSERT 把它當可用格）——墓碑影響的是搜尋語意，不是插入能力。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 否則之後無法插入任何新元素</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
   </div>
 </section>
 
@@ -633,15 +868,103 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 2 5 9 15 17 18 19</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code"><span class="line"><span class="com"># 官方 Chapter 12/binary_search_tree.py（MIT License）</span></span><span class="line">T = BinarySearchTree()</span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> [<span class="num">12</span>, <span class="num">5</span>, <span class="num">18</span>, <span class="num">2</span>, <span class="num">9</span>, <span class="num">15</span>, <span class="num">19</span>, <span class="num">17</span>]:</span><span class="line">    T.tree_insert(k)</span><span class="line">T.inorder_tree_walk(T.get_root())</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[2, 5, 9, 12, 15, 17, 18, 19]</pre></div>
-          <div class="ct-note">官方類別另含 successor／predecessor／transplant／tree_delete，介面與課本 pseudocode 一一對應。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 12/binary_search_tree.py（MIT License）：Node＋平鋪函式</span></span>
+<span class="line"><span class="kw">class</span> <span class="fn">Node</span>:</span>
+<span class="line">    <span class="kw">def</span> <span class="fn">__init__</span>(self, key):</span>
+<span class="line">        self.key = key</span>
+<span class="line">        self.left = self.right = self.p = <span class="kw">None</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">tree_insert</span>(T, z):</span>
+<span class="line">    x, y = T[<span class="str">"root"</span>], <span class="kw">None</span></span>
+<span class="line">    <span class="kw">while</span> x <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:                 <span class="com"># 追蹤落點</span></span>
+<span class="line">        y = x</span>
+<span class="line">        x = x.left <span class="kw">if</span> z.key &lt; x.key <span class="kw">else</span> x.right</span>
+<span class="line">    z.p = y</span>
+<span class="line">    <span class="kw">if</span> y <span class="kw">is</span> <span class="kw">None</span>:</span>
+<span class="line">        T[<span class="str">"root"</span>] = z</span>
+<span class="line">    <span class="kw">elif</span> z.key &lt; y.key:</span>
+<span class="line">        y.left = z</span>
+<span class="line">    <span class="kw">else</span>:</span>
+<span class="line">        y.right = z</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">transplant</span>(T, u, v):                 <span class="com"># 子樹 v 整棵取代 u</span></span>
+<span class="line">    <span class="kw">if</span> u.p <span class="kw">is</span> <span class="kw">None</span>:</span>
+<span class="line">        T[<span class="str">"root"</span>] = v</span>
+<span class="line">    <span class="kw">elif</span> u <span class="kw">is</span> u.p.left:</span>
+<span class="line">        u.p.left = v</span>
+<span class="line">    <span class="kw">else</span>:</span>
+<span class="line">        u.p.right = v</span>
+<span class="line">    <span class="kw">if</span> v <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:</span>
+<span class="line">        v.p = u.p</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">tree_delete</span>(T, z):</span>
+<span class="line">    <span class="kw">if</span> z.left <span class="kw">is</span> <span class="kw">None</span>:                   <span class="com"># ① 無左子 → 右子頂上</span></span>
+<span class="line">        transplant(T, z, z.right)</span>
+<span class="line">    <span class="kw">elif</span> z.right <span class="kw">is</span> <span class="kw">None</span>:                <span class="com"># ② 無右子 → 左子頂上</span></span>
+<span class="line">        transplant(T, z, z.left)</span>
+<span class="line">    <span class="kw">else</span>:                                <span class="com"># ③ 兩子俱在 → 後繼接手</span></span>
+<span class="line">        y = tree_minimum(z.right)        <span class="com"># 後繼必無左子</span></span>
+<span class="line">        <span class="kw">if</span> y.p <span class="kw">is</span> <span class="kw">not</span> z:</span>
+<span class="line">            transplant(T, y, y.right)    <span class="com"># y 先脫離原位</span></span>
+<span class="line">            y.right = z.right</span>
+<span class="line">            y.right.p = y</span>
+<span class="line">        transplant(T, z, y)</span>
+<span class="line">        y.left = z.left</span>
+<span class="line">        y.left.p = y</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/structures/bst.py，含 tree_minimum/inorder/search 全文）</span><pre>inorder: [2, 5, 9, 12, 15, 17, 18, 19]
+刪 12 後: [2, 5, 9, 15, 17, 18, 19] ，新根 = 15</pre></div>
+          <div class="ct-note">刪根 12（兩子俱在）：後繼 15 = 右子樹最小值接手——inorder 順序保持遞增。</div>
         </div>
       </div>
     </div>
   </div>
-  <p><strong>TREE-DELETE 三情境</strong>（transplant 版）：① 無左子 → 右子頂上；② 無右子 → 左子頂上；
-  ③ 兩子俱在 → 用<strong>後繼 y = MINIMUM(z.right)</strong>接手（y 必無左子），y 先脫離原位再取代 z。inorder 順序保持不變。</p>
+  <h3>TREE-DELETE：transplant 拼出三情境 <span class="sec-badge">§12.3</span></h3>
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.75rem;">
+        <div class="cc-title"><span class="fn">TRANSPLANT</span>(T, u, v)　<span class="com">// v 整棵取代 u</span></div>
+        <span class="line"><span class="ln">1</span><span class="kw">if</span> u.p == NIL：T.root = v</span>
+        <span class="line"><span class="ln">2</span><span class="kw">elseif</span> u == u.p.left：u.p.left = v</span>
+        <span class="line"><span class="ln">3</span><span class="kw">else</span> u.p.right = v</span>
+        <span class="line"><span class="ln">4</span><span class="kw">if</span> v ≠ NIL：v.p = u.p</span>
+      </div>
+      <div class="clrs-code" style="font-size:.75rem;margin-top:.6rem;">
+        <div class="cc-title"><span class="fn">TREE-DELETE</span>(T, z)</div>
+        <span class="line"><span class="ln">1</span><span class="kw">if</span> z.left == NIL：<span class="fn">TRANSPLANT</span>(T, z, z.right)　<span class="com">// ①</span></span>
+        <span class="line"><span class="ln">2</span><span class="kw">elseif</span> z.right == NIL：<span class="fn">TRANSPLANT</span>(T, z, z.left)　<span class="com">// ②</span></span>
+        <span class="line"><span class="ln">3</span><span class="kw">else</span> y = <span class="fn">MINIMUM</span>(z.right)　<span class="com">// ③ 後繼，必無左子</span></span>
+        <span class="line"><span class="ln">4</span>    <span class="kw">if</span> y.p ≠ z　<span class="com">// y 不是 z 的直接右子</span></span>
+        <span class="line"><span class="ln">5</span>        <span class="fn">TRANSPLANT</span>(T, y, y.right)　<span class="com">// y 先脫離</span></span>
+        <span class="line"><span class="ln">6</span>        y.right = z.right；y.right.p = y</span>
+        <span class="line"><span class="ln">7</span>    <span class="fn">TRANSPLANT</span>(T, z, y)　<span class="com">// y 接手 z 的位置</span></span>
+        <span class="line"><span class="ln">8</span>    y.left = z.left；y.left.p = y</span>
+      </div>
+    </div>
+    <div>
+      <p>三情境的圖像（刪 z）：</p>
+      <div class="pseudo-code" style="font-size:.74rem;"><span class="line">①  z          r      ②   z         l      ③      z              y</span>
+<span class="line">     \    →              /     →              ／ \      →     ／ \</span>
+<span class="line">      r                 l                    l    …r          l    …r</span>
+<span class="line">                                                  ／              ／</span>
+<span class="line">                                              y(後繼)          (y 的右子頂上原位)</span></div>
+      <p style="font-size:.9rem;color:var(--muted);">情境③的細節最容易考：後繼 y = MINIMUM(z.right) <strong>保證沒有左子</strong>
+      （有左子就不是最小）——所以 y 脫離原位時只需把 y 的右子 transplant 上去（第 5 行）。
+      y 接手後繼承 z 的左右子樹，inorder 順序不變。整體成本 O(h)。</p>
+      <p style="font-size:.9rem;color:var(--muted);">左邊 Python 分頁有 transplant／tree_delete 全文；C++ 版
+      （src/structures/bst.cpp）同構。實跑：刪掉根 12 後新根是後繼 15。</p>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02b · 情境③手跑</div>
+    <p>上面建好的 BST（根 12，右子樹 18-15-19、15 下掛 17）刪除 <strong>18</strong>。接手 18 位置的是誰？</p>
+    <div class="quiz-options" id="q08Options">
+      <div class="quiz-opt" data-correct="false" data-fb="15 是 12 的後繼場景才對——刪 18 要找「18 的右子樹最小值」；18 的右子樹只有 19。" onclick="quizCheck('q08', this)"><span class="opt-letter">(A)</span> 15</div>
+      <div class="quiz-opt" data-correct="true" data-fb="正確。18 兩子俱在（左 15、右 19），後繼 = MINIMUM(18.right) = 19；19 無左子、直接 transplant 接手，並繼承 18 的左子樹（15-17）。inorder 仍是 2 5 9 12 15 17 19。" onclick="quizCheck('q08', this)"><span class="opt-letter">(B)</span> 19（18 的右子樹最小值）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="17 是 15 的右子、不在 18 的「右子樹」裡——後繼只往 z 的右子樹找最小。" onclick="quizCheck('q08', this)"><span class="opt-letter">(C)</span> 17</div>
+    </div>
+    <div class="quiz-feedback" id="q08Feedback"></div>
+  </div>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P02 · 高度敏感</div>
@@ -764,14 +1087,44 @@ root = 38, 性質檢查(黑高度) = 3</pre></div>
           <div class="ct-note">完整實作（含旋轉與性質驗證器）見 src/structures/rb_tree.cpp。</div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.75rem;"><span class="line"><span class="com"># 官方 Chapter 13/red_black_tree.py（MIT License）</span></span><span class="line">R = RedBlackTree()</span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> [<span class="num">41</span>, <span class="num">38</span>, <span class="num">31</span>, <span class="num">12</span>, <span class="num">19</span>, <span class="num">8</span>]:</span><span class="line">    R.tree_insert(k)</span><span class="line">print(R)　<span class="com"># pretty print 含顏色</span></span></div>
-          <div class="expected-out"><span class="eo-tag">輸出（root = 38: black；縮排表深度）</span><pre>  41: black
-38: black
-    31: black
-  19: red
-    12: black
-      8: red</pre></div>
-          <div class="ct-note">與 C++ 版結果一致：38B 為根、19R 掛 12B（8R）與 31B、41B 在右。官方類別繼承 BinarySearchTree 並覆寫 insert／delete。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 13/red_black_tree.py（MIT License）：nil 哨兵＋平鋪函式</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">rb_insert</span>(k):</span>
+<span class="line">    z = Node(k, RED, NIL)                <span class="com"># 新節點永遠先塗紅</span></span>
+<span class="line">    y, x = NIL, T[<span class="str">"root"</span>]</span>
+<span class="line">    <span class="kw">while</span> x <span class="kw">is</span> <span class="kw">not</span> NIL:</span>
+<span class="line">        y = x</span>
+<span class="line">        x = x.left <span class="kw">if</span> k &lt; x.key <span class="kw">else</span> x.right</span>
+<span class="line">    z.p = y</span>
+<span class="line">    <span class="kw">if</span> y <span class="kw">is</span> NIL:</span>
+<span class="line">        T[<span class="str">"root"</span>] = z</span>
+<span class="line">    <span class="kw">elif</span> k &lt; y.key:</span>
+<span class="line">        y.left = z</span>
+<span class="line">    <span class="kw">else</span>:</span>
+<span class="line">        y.right = z</span>
+<span class="line">    rb_insert_fixup(z)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">rb_insert_fixup</span>(z):</span>
+<span class="line">    <span class="kw">while</span> z.p.color == RED:</span>
+<span class="line">        left = z.p <span class="kw">is</span> z.p.p.left</span>
+<span class="line">        y = z.p.p.right <span class="kw">if</span> left <span class="kw">else</span> z.p.p.left      <span class="com"># 叔叔</span></span>
+<span class="line">        <span class="kw">if</span> y.color == RED:                           <span class="com"># Case 1：叔紅 → 變色上推</span></span>
+<span class="line">            z.p.color = y.color = BLACK</span>
+<span class="line">            z.p.p.color = RED</span>
+<span class="line">            z = z.p.p</span>
+<span class="line">        <span class="kw">else</span>:</span>
+<span class="line">            <span class="kw">if</span> z <span class="kw">is</span> (z.p.right <span class="kw">if</span> left <span class="kw">else</span> z.p.left):  <span class="com"># Case 2：內側 → 轉外側</span></span>
+<span class="line">                z = z.p</span>
+<span class="line">                (left_rotate <span class="kw">if</span> left <span class="kw">else</span> right_rotate)(z)</span>
+<span class="line">            z.p.color = BLACK                        <span class="com"># Case 3：變色＋旋轉收工</span></span>
+<span class="line">            z.p.p.color = RED</span>
+<span class="line">            (right_rotate <span class="kw">if</span> left <span class="kw">else</span> left_rotate)(z.p.p)</span>
+<span class="line">    T[<span class="str">"root"</span>].color = BLACK</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">for</span> k in [<span class="num">41</span>, <span class="num">38</span>, <span class="num">31</span>, <span class="num">12</span>, <span class="num">19</span>, <span class="num">8</span>]:</span>
+<span class="line">    rb_insert(k)</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/structures/rb_tree.py，含 left_rotate/right_rotate/黑高度驗證全文）</span><pre>8R 12B 19R 31B 38B 41B
+root = 38 , 黑高度 = 3</pre></div>
+          <div class="ct-note">左右對稱用 (left_rotate if left else right_rotate) 一段寫完，免去鏡像複製；與 C++ 版輸出逐字一致。</div>
         </div>
       </div>
     </div>
@@ -786,6 +1139,68 @@ root = 38, 性質檢查(黑高度) = 3</pre></div>
       <div class="quiz-opt" data-correct="false" data-fb="內側子直接做 Case 3 的旋轉修不好性質④——必須先用 Case 2 把 z 轉到外側。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 直接 Case 3：一次旋轉解決</div>
     </div>
     <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="rbdelete">
+  <div class="section-number">P05 · DELETE 與雙黑</div>
+  <h2>RB-DELETE：少一個黑怎麼辦——「雙黑」記帳 <span class="sec-badge">§13.4 · 概覽</span></h2>
+  <p>刪除比插入難一級，但骨架仍是「BST 刪除＋FIXUP」。關鍵差異：插入壞的是性質④（紅紅相連），
+  刪除壞的是<strong>性質⑤（黑高度）</strong>——當被移走的節點 y 是<strong>黑色</strong>，
+  它原本所在的路徑就少了一個黑。CLRS 的記帳法：把「少掉的黑」寄放在接手的節點 x 上，
+  說 x 是<strong>雙黑（doubly black）</strong>，FIXUP 的任務就是把這個多出來的黑「安置」掉。</p>
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.74rem;">
+        <div class="cc-title"><span class="fn">RB-DELETE</span>(T, z) <span class="com">— 骨架（比照 TREE-DELETE）</span></div>
+        <span class="line"><span class="ln">1</span>y = z；記 y 原色</span>
+        <span class="line"><span class="ln">2</span>三情境同 BST（transplant 換 RB-TRANSPLANT，NIL 哨兵讓 x 永遠存在）</span>
+        <span class="line"><span class="ln">3</span>情境③：後繼 y 接手並<strong>繼承 z 的顏色</strong>　<span class="com">// 上方性質不動</span></span>
+        <span class="line"><span class="ln">4</span><span class="kw">if</span> y 原色 == BLACK</span>
+        <span class="line"><span class="ln">5</span>    <span class="fn">RB-DELETE-FIXUP</span>(T, x)　<span class="com">// x = 接手 y 原位的節點，帶著雙黑</span></span>
+      </div>
+      <div style="overflow-x:auto;margin-top:.6rem;">
+      <table class="cmp-table" style="width:100%;font-size:.8rem;">
+        <thead><tr><th>Case</th><th>兄弟 w 的狀態</th><th>動作</th><th>效果</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>w 紅</td><td>w 塗黑、父塗紅、對父旋轉</td><td>轉成兄黑（Case 2/3/4）</td></tr>
+          <tr><td>2</td><td>w 黑、兩姪全黑</td><td>w 塗紅，雙黑上推給父</td><td>可能迭代（往根走）</td></tr>
+          <tr><td>3</td><td>w 黑、遠姪黑近姪紅</td><td>近姪塗黑、w 塗紅、對 w 反向旋轉</td><td>轉成 Case 4</td></tr>
+          <tr><td>4</td><td>w 黑、遠姪紅</td><td>w 承父色、父與遠姪塗黑、對父旋轉</td><td class="best">雙黑落地，結束</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div>
+      <p>直覺：雙黑的 x 想「借」一個黑——先看兄弟 w：
+      w 紅就先把它轉走（Case 1）；w 黑且幫不上忙（姪全黑）就把問題丟給爸爸（Case 2）；
+      w 黑且有紅姪，就靠旋轉＋變色把那個紅「轉」成 x 這條路徑上的黑（Case 3→4，一次搞定）。
+      至多 <strong>3 次旋轉</strong>、O(lg n) 次變色。</p>
+      <div class="deck-extra">
+        <div class="dx-label">實跑驗證：插入 6 鍵後依序全刪，逐步檢查五性質（src/structures/rb_tree.cpp）</div>
+        <div class="expected-out"><span class="eo-tag">執行輸出（check = 黑高度；違反任一性質會回 -1）</span><pre>8R 12B 19R 31B 38B 41B
+root = 38, 性質檢查(黑高度) = 3
+delete 8 → 12B 19R 31B 38B 41B ｜check = 3
+delete 12 → 19B 31R 38B 41B ｜check = 3
+delete 19 → 31B 38B 41B ｜check = 3
+delete 31 → 38B 41R ｜check = 2
+delete 38 → 41B ｜check = 2
+delete 41 → ｜check = 1</pre></div>
+        <p class="dx-note">deleteKey／deleteFixup 全文（含四 case 與鏡像）在 src/structures/rb_tree.cpp——
+        每刪一鍵 check 都非 −1：黑高度一致、無紅紅相連，五性質全程保持（check 值的下降是樹縮小後黑高度自然變矮）。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05 · 雙黑的來源</div>
+    <p>RB-DELETE 中，什麼情況<strong>不需要</strong>跑 DELETE-FIXUP？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。被移出/移動的節點 y 是紅色時：紅節點不算黑高度（性質⑤不動）、它的父與子都是黑（性質④不可能新violation）、也不可能是根——五性質全數保持，直接收工。只有 y 是黑才少一個黑、才需要雙黑修復。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> 被移走的節點 y 原色是紅</div>
+      <div class="quiz-opt" data-correct="false" data-fb="刪葉子照樣可能壞性質⑤——黑葉子被移走，該路徑就少一個黑。看的是「y 的顏色」不是「y 的位置」。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> 被刪的是葉子節點</div>
+      <div class="quiz-opt" data-correct="false" data-fb="情境③一樣要看 y（後繼）的原色：後繼是黑就得修。y 接手時繼承 z 的顏色，正是為了讓「上方」不用修——「下方」（y 原位）還是可能缺黑。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 被刪節點兩子俱在（情境③）</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
   </div>
 </section>
 
@@ -841,7 +1256,7 @@ root = 38, 性質檢查(黑高度) = 3</pre></div>
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch4.json · 12 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch4.json · 18 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -870,7 +1285,13 @@ const FLASHCARDS = [
   {"front":"黑高度（Black-Height）","back":"bh(x)：x 到後代葉子路徑上的黑節點數（不含 x）。性質⑤保證定義良好；以 x 為根的子樹至少有 2^bh − 1 個內部節點。"},
   {"front":"旋轉（Rotation）","back":"O(1) 的局部指標重排：子節點升上來、自己降一層、中間子樹過繼。inorder 順序不變（BST 性質保持），是所有平衡樹的修復板手。"},
   {"front":"RB-INSERT-FIXUP","back":"新節點塗紅後修復：叔紅 → Case 1 變色上推；叔黑內側 → Case 2 先旋成外側；叔黑外側 → Case 3 變色＋旋轉結束。最多 2 次旋轉、O(lg n) 次變色。"},
-  {"front":"哨兵 NIL（Sentinel）","back":"紅黑樹用單一黑色 NIL 節點代替所有空指標（葉子與根的父母）：邊界情況統一處理，FIXUP 的程式碼不必判空。"}
+  {"front":"哨兵 NIL（Sentinel）","back":"紅黑樹用單一黑色 NIL 節點代替所有空指標（葉子與根的父母）：邊界情況統一處理，FIXUP 的程式碼不必判空。"},
+  {"front":"除法／乘法雜湊","back":"division：h(k)=k mod m，m 選離 2 的冪遠的質數（m=2ᵖ 只看低位元）。multiplication：h(k)=⌊m(kA mod 1)⌋，A≈0.618，m 可取 2ᵖ 用位移。"},
+  {"front":"探測序列（Probe Sequence）","back":"open addressing 的 h(k,0), h(k,1), …。linear probing 只有 m 種序列（一次群聚）；double hashing 步距 h₂(k) 給 Θ(m²) 種，分布更散。"},
+  {"front":"墓碑 DELETED","back":"open addressing 刪除不能清空 slot——搜尋遇空格即停，會把探測路徑後方的元素隱形。改放 DELETED：搜尋跳過、插入重用。刪除頻繁改用 chaining。"},
+  {"front":"1/(1−α) 期望探測","back":"uniform hashing 下 open addressing 失敗搜尋/插入的期望探測數。α=0.5→2 次、0.9→10 次、→1 爆炸——必須提早 rehash 的數學理由。"},
+  {"front":"TREE-DELETE 三情境","back":"①無左子→右子 transplant 頂上；②無右子→左子頂上；③兩子俱在→後繼 y=MIN(z.right)（必無左子）先脫離原位再接手。O(h)。"},
+  {"front":"雙黑（Doubly Black）","back":"RB-DELETE 移走黑節點後，把「少的黑」記在接手節點 x 上。FIXUP 四 case 看兄弟 w：兄紅先轉、姪全黑上推、近紅轉遠、遠紅借黑落地。至多 3 次旋轉。"}
 ];
 
 /* ---------- 通用 SVG 樹渲染 ---------- */
@@ -953,6 +1374,52 @@ function chApply(f) {
 }
 const chPlayer = new Player({frames: chFrames(), apply: chApply, delayInput: null});
 chPlayer.reset();
+
+/* ---------- P01b open addressing 動畫（linear vs double 並排） ---------- */
+function oaFrames() {
+  const M2 = 11, keys = [10, 22, 31, 4, 15, 28, 17, 88, 59];
+  const lin = new Array(M2).fill(null), dbl = new Array(M2).fill(null);
+  const frames = [{lin: [...lin], dbl: [...dbl], hlL: -1, hlD: -1,
+    msg: '兩張空表（m = 11）。同一批鍵，上排 linear、下排 double hashing。'}];
+  const place = (T, k, useDouble) => {
+    const h1 = k % M2, h2 = useDouble ? 1 + (k % (M2 - 1)) : 1;
+    for (let i = 0; i < M2; i++) {
+      const s = (h1 + i * h2) % M2;
+      if (T[s] === null) { T[s] = k; return {s, probes: i + 1, h2}; }
+    }
+    return null;
+  };
+  keys.forEach(k => {
+    const a = place(lin, k, false), b = place(dbl, k, true);
+    frames.push({lin: [...lin], dbl: [...dbl], hlL: a.s, hlD: b.s,
+      msg: `insert(${k})：h₁=${k % M2}。linear 探 ${a.probes} 次落 slot ${a.s}；` +
+           `double（步距 ${b.h2}）探 ${b.probes} 次落 slot ${b.s}。` +
+           (a.probes > 1 ? ' linear 的長條佔用區開始「黏」住新鍵——一次群聚。' : '')});
+  });
+  frames.push({lin: [...lin], dbl: [...dbl], hlL: -1, hlD: -1,
+    msg: '完成：α = 9/11 ≈ 0.82。兩表布局不同——double 的落點分散，不易形成連續長條。'});
+  return frames;
+}
+function oaRow(el, T, hl) {
+  el.innerHTML = '';
+  T.forEach((v, idx) => {
+    const d = document.createElement('div');
+    d.className = 'bq-item';
+    d.style.minWidth = '36px';
+    d.style.fontSize = '.76rem';
+    d.innerHTML = '<div style="font-size:.6rem;opacity:.75;">' + idx + '</div>' + (v === null ? '·' : v);
+    if (v === null) d.style.background = '#bbb';
+    if (idx === hl) d.style.background = '#f39c12';
+    el.appendChild(d);
+  });
+}
+function oaApply(f) {
+  oaRow($('oaLin'), f.lin, f.hlL);
+  oaRow($('oaDbl'), f.dbl, f.hlD);
+  setStatus('oaStatus', f.msg);
+}
+const oaPlayer = new Player({frames: oaFrames(), apply: oaApply, delayInput: null});
+oaPlayer.reset();
 
 /* ---------- P02 BST 建樹動畫 ---------- */
 function bstFrames() {
