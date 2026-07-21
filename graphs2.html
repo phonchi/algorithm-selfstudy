@@ -479,6 +479,7 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
   <a href="#kruskal" data-target="kruskal"><span class="fn-num">P01</span><span class="fn-name">Kruskal</span></a>
   <a href="#prim" data-target="prim"><span class="fn-num">P02</span><span class="fn-name">Prim 正確性</span></a>
   <a href="#bellman" data-target="bellman"><span class="fn-num">P03</span><span class="fn-name">Bellman-Ford</span></a>
+  <a href="#dagsp" data-target="dagsp"><span class="fn-num">P03b</span><span class="fn-name">DAG 最短路</span></a>
   <a href="#dijkstra" data-target="dijkstra"><span class="fn-num">P04</span><span class="fn-name">Dijkstra 證明</span></a>
   <a href="#apsp" data-target="apsp"><span class="fn-num">P05</span><span class="fn-name">Floyd-Warshall</span></a>
   <a href="#maxflow" data-target="maxflow"><span class="fn-num">P06</span><span class="fn-name">max flow 概覽</span></a>
@@ -516,6 +517,7 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
     <a href="#kruskal"><span class="toc-num">P01</span>Kruskal（union-find 引擎）</a>
     <a href="#prim"><span class="toc-num">P02</span>Prim 的正確性</a>
     <a href="#bellman"><span class="toc-num">P03</span>鬆弛與 Bellman-Ford</a>
+    <a href="#dagsp"><span class="toc-num">P03b</span>DAG 最短路（§22.2）</a>
     <a href="#dijkstra"><span class="toc-num">P04</span>Dijkstra 的證明</a>
     <a href="#apsp"><span class="toc-num">P05</span>APSP：Floyd-Warshall</a>
     <a href="#maxflow"><span class="toc-num">P06</span>max flow 概覽</a>
@@ -601,10 +603,39 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
   總權重 = 37</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 21/mst.py（MIT License）</span></span><span class="line">G = AdjacencyListGraph(<span class="num">9</span>, directed=<span class="kw">False</span>, weighted=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 21.4 的 14 條邊 …</span></span><span class="line">K = kruskal(G)</span><span class="line">get_total_weight(K)</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>MST 邊 = {a-b, a-h, c-d, c-f, c-i, d-e, f-g, g-h}
-總權重 = 37</pre></div>
-          <div class="ct-note">官方版內部同樣用 Chapter 19 的 make_set／find_set／union——跨章複用。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 21/mst.py（MIT License）：排序邊＋union-find 平鋪版</span></span>
+<span class="line">V = <span class="str">"abcdefghi"</span></span>
+<span class="line">E = [(<span class="str">"a"</span>,<span class="str">"b"</span>,<span class="num">4</span>),(<span class="str">"a"</span>,<span class="str">"h"</span>,<span class="num">8</span>),(<span class="str">"b"</span>,<span class="str">"h"</span>,<span class="num">11</span>),(<span class="str">"b"</span>,<span class="str">"c"</span>,<span class="num">8</span>),(<span class="str">"c"</span>,<span class="str">"i"</span>,<span class="num">2</span>),(<span class="str">"c"</span>,<span class="str">"f"</span>,<span class="num">4</span>),</span>
+<span class="line">     (<span class="str">"c"</span>,<span class="str">"d"</span>,<span class="num">7</span>),(<span class="str">"d"</span>,<span class="str">"f"</span>,<span class="num">14</span>),(<span class="str">"d"</span>,<span class="str">"e"</span>,<span class="num">9</span>),(<span class="str">"e"</span>,<span class="str">"f"</span>,<span class="num">10</span>),(<span class="str">"f"</span>,<span class="str">"g"</span>,<span class="num">2</span>),(<span class="str">"g"</span>,<span class="str">"i"</span>,<span class="num">6</span>),</span>
+<span class="line">     (<span class="str">"g"</span>,<span class="str">"h"</span>,<span class="num">1</span>),(<span class="str">"h"</span>,<span class="str">"i"</span>,<span class="num">7</span>)]</span>
+<span class="line"> </span>
+<span class="line">parent = {v: v <span class="kw">for</span> v in V}</span>
+<span class="line">rank = {v: <span class="num">0</span> <span class="kw">for</span> v in V}</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">find</span>(x):</span>
+<span class="line">    <span class="kw">if</span> parent[x] != x:</span>
+<span class="line">        parent[x] = find(parent[x])     <span class="com"># 路徑壓縮</span></span>
+<span class="line">    <span class="kw">return</span> parent[x]</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">union</span>(x, y):</span>
+<span class="line">    rx, ry = find(x), find(y)</span>
+<span class="line">    <span class="kw">if</span> rx == ry:</span>
+<span class="line">        <span class="kw">return</span> <span class="kw">False</span>                    <span class="com"># 同集合：加了成環</span></span>
+<span class="line">    <span class="kw">if</span> rank[rx] &lt; rank[ry]:</span>
+<span class="line">        rx, ry = ry, rx</span>
+<span class="line">    parent[ry] = rx</span>
+<span class="line">    <span class="kw">if</span> rank[rx] == rank[ry]:</span>
+<span class="line">        rank[rx] += <span class="num">1</span></span>
+<span class="line">    <span class="kw">return</span> <span class="kw">True</span></span>
+<span class="line"> </span>
+<span class="line">total, picked = <span class="num">0</span>, []</span>
+<span class="line"><span class="kw">for</span> u, v, w in <span class="fn">sorted</span>(E, key=<span class="kw">lambda</span> e: e[<span class="num">2</span>]):</span>
+<span class="line">    <span class="kw">if</span> union(u, v):                     <span class="com"># FIND 不同才收邊</span></span>
+<span class="line">        picked.append(<span class="str">"%s-%s(%d)"</span> % (u, v, w))</span>
+<span class="line">        total += w</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"Kruskal MST："</span>, <span class="str">" "</span>.join(picked), <span class="str">"｜總權重 ="</span>, total)</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/mst.py）</span><pre>Kruskal MST： g-h(1) c-i(2) f-g(2) a-b(4) c-f(4) c-d(7) a-h(8) d-e(9) ｜總權重 = 37</pre></div>
+          <div class="ct-note">完整可跑：union-find 全文都在（上一章的引擎直接複用），收邊順序與 C++ 版逐字相同。</div>
         </div>
       </div>
     </div>
@@ -661,10 +692,29 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
   總權重 = 37</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 21/mst.py（MIT License）</span></span><span class="line">P = prim(G, <span class="num">0</span>)　<span class="com"># 從頂點 a 出發</span></span><span class="line">get_total_weight(P)</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>MST 邊 = {a-b, b-c, c-d, c-f, c-i, d-e, f-g, g-h}
-總權重 = 37</pre></div>
-          <div class="ct-note">官方版用 Chapter 6 的 MinHeapPriorityQueue 做真正的 decrease-key；我們的 C++ 用 lazy deletion——兩種都是 O(E lg V)。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 21/mst.py（MIT License）：heapq lazy deletion 版</span></span>
+<span class="line"><span class="kw">import</span> heapq</span>
+<span class="line">adj = {v: [] <span class="kw">for</span> v in V}</span>
+<span class="line"><span class="kw">for</span> u, v, w in E:</span>
+<span class="line">    adj[u].append((w, v))</span>
+<span class="line">    adj[v].append((w, u))</span>
+<span class="line"> </span>
+<span class="line">in_mst, edges_out, total = <span class="fn">set</span>(), [], <span class="num">0</span></span>
+<span class="line">h = [(<span class="num">0</span>, <span class="str">"a"</span>, <span class="str">""</span>)]                      <span class="com"># (key, 頂點, 來源)</span></span>
+<span class="line"><span class="kw">while</span> h:</span>
+<span class="line">    w, u, frm = heapq.heappop(h)</span>
+<span class="line">    <span class="kw">if</span> u in in_mst:                     <span class="com"># 過期項目跳過</span></span>
+<span class="line">        <span class="kw">continue</span></span>
+<span class="line">    in_mst.add(u)</span>
+<span class="line">    total += w</span>
+<span class="line">    <span class="kw">if</span> frm:</span>
+<span class="line">        edges_out.append(<span class="str">"%s-%s(%d)"</span> % (frm, u, w))</span>
+<span class="line">    <span class="kw">for</span> wv, v in adj[u]:                <span class="com"># 樹外鄰居入堆（可能重複，靠過濾）</span></span>
+<span class="line">        <span class="kw">if</span> v <span class="kw">not</span> in in_mst:</span>
+<span class="line">            heapq.heappush(h, (wv, v, u))</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"Prim MST："</span>, <span class="str">" "</span>.join(edges_out), <span class="str">"｜總權重 ="</span>, total)</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/mst.py，從 a 出發）</span><pre>Prim MST：    a-b(4) b-c(8) c-i(2) c-f(4) f-g(2) g-h(1) c-d(7) d-e(9) ｜總權重 = 37</pre></div>
+          <div class="ct-note">同一棵 MST（權重 8 的邊選了 b-c，與 Kruskal 的 a-h 不同——兩棵都對，呼應 P00 唯一性 quiz）。官方版用 MinHeapPriorityQueue 做真 decrease-key，成本同為 O(E lg V)。</div>
         </div>
       </div>
     </div>
@@ -724,8 +774,22 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
           <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/sssp.cpp，CLRS 圖 22.4）</span><pre>Bellman-Ford（源點 s）回傳 TRUE：s:0 t:2 x:4 y:7 z:-2</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 22/bellman_ford.py（MIT License）</span></span><span class="line">B = AdjacencyListGraph(<span class="num">5</span>, directed=<span class="kw">True</span>, weighted=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 22.4 …</span></span><span class="line">d, pi, no_neg_cycle = bellman_ford(B, <span class="num">0</span>)</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出（s t x y z）</span><pre>d = [0, 2, 4, 7, -2]，no_neg_cycle = True</pre></div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 22/bellman_ford.py（MIT License）：平鋪版</span></span>
+<span class="line">INF = <span class="fn">float</span>(<span class="str">"inf"</span>)</span>
+<span class="line">E = [(<span class="str">"s"</span>,<span class="str">"t"</span>,<span class="num">6</span>),(<span class="str">"s"</span>,<span class="str">"y"</span>,<span class="num">7</span>),(<span class="str">"t"</span>,<span class="str">"x"</span>,<span class="num">5</span>),(<span class="str">"t"</span>,<span class="str">"y"</span>,<span class="num">8</span>),(<span class="str">"t"</span>,<span class="str">"z"</span>,-<span class="num">4</span>),</span>
+<span class="line">     (<span class="str">"x"</span>,<span class="str">"t"</span>,-<span class="num">2</span>),(<span class="str">"y"</span>,<span class="str">"x"</span>,-<span class="num">3</span>),(<span class="str">"y"</span>,<span class="str">"z"</span>,<span class="num">9</span>),(<span class="str">"z"</span>,<span class="str">"x"</span>,<span class="num">7</span>),(<span class="str">"z"</span>,<span class="str">"s"</span>,<span class="num">2</span>)]</span>
+<span class="line"> </span>
+<span class="line">d = {v: INF <span class="kw">for</span> v in <span class="str">"stxyz"</span>}</span>
+<span class="line">d[<span class="str">"s"</span>] = <span class="num">0</span></span>
+<span class="line"><span class="kw">for</span> _ in <span class="fn">range</span>(<span class="num">4</span>):                          <span class="com"># |V| − 1 輪全邊鬆弛</span></span>
+<span class="line">    <span class="kw">for</span> u, v, w in E:</span>
+<span class="line">        <span class="kw">if</span> d[u] + w &lt; d[v]:</span>
+<span class="line">            d[v] = d[u] + w                 <span class="com"># RELAX(u, v, w)</span></span>
+<span class="line">ok = <span class="fn">all</span>(d[u] + w &gt;= d[v] <span class="kw">for</span> u, v, w in E)  <span class="com"># 第 |V| 輪驗負環</span></span>
+<span class="line"><span class="fn">print</span>(<span class="str">"Bellman-Ford 回傳"</span>, ok, <span class="str">"："</span>,</span>
+<span class="line">      <span class="str">" "</span>.join(<span class="str">"%s:%d"</span> % (v, d[v]) <span class="kw">for</span> v in <span class="str">"stxyz"</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/sssp.py）</span><pre>Bellman-Ford 回傳 True ： s:0 t:2 x:4 y:7 z:-2</pre></div>
+          <div class="ct-note">完整可跑；與 C++ 版同值。驗負環那行就是「第 |V| 輪還鬆得動 ⟺ 有可達負環」的程式化。</div>
         </div>
       </div>
     </div>
@@ -740,6 +804,79 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <div class="quiz-opt" data-correct="false" data-fb="Bellman-Ford 不猜也不隨機——輪數是由「簡單路徑長度上限」推出的確定保證。動畫裡第 4 輪其實已無變化，提前收斂是常態，但保證需要 |V|−1。" onclick="quizCheck('q03', this)"><span class="opt-letter">(C)</span> 經驗上跑這麼多輪通常會收斂</div>
     </div>
     <div class="quiz-feedback" id="q03Feedback"></div>
+  </div>
+</section>
+
+<section id="dagsp">
+  <div class="section-number">P03b · DAG 最短路</div>
+  <h2>DAG 最短路徑：拓撲序一趟掃完 <span class="sec-badge">§22.2</span></h2>
+  <p>圖若是 <strong>DAG</strong>，最短路徑突然變便宜：先拓撲排序，再<strong>按拓撲序把每個頂點的出邊各鬆弛一次</strong>——
+  一趟就好、允許負權、<strong>Θ(V + E)</strong>，比 Dijkstra 還快。正確性直接來自上一章的路徑鬆弛性質：
+  任何路徑都是拓撲序的子序列，按序鬆弛保證「路徑上的邊按順序各被鬆過一次」。</p>
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.75rem;">
+        <div class="cc-title"><span class="fn">DAG-SHORTEST-PATHS</span>(G, w, s)</div>
+        <span class="line"><span class="ln">1</span>拓撲排序 G 的頂點</span>
+        <span class="line"><span class="ln">2</span><span class="fn">INIT</span>：d[s]=0，其餘 ∞</span>
+        <span class="line"><span class="ln">3</span><span class="kw">for</span> 每個頂點 u（按拓撲序）</span>
+        <span class="line"><span class="ln">4</span>    <span class="kw">for</span> v ∈ Adj[u]：<span class="fn">RELAX</span>(u, v, w)</span>
+      </div>
+      <div class="info-box green" style="margin-top:.6rem;">
+        <span class="info-label">招牌應用：PERT 關鍵路徑</span>
+        工程排程：工序當邊、權重 = 工期，<strong>最長</strong>路徑 = 整案最短完工時間（關鍵路徑）。
+        把權重取負號跑 DAG 最短路（或把 RELAX 的 min 換成 max）就得解——負權在這裡是常態，Dijkstra 出局、DAG 法剛好。
+      </div>
+    </div>
+    <div>
+      <div class="code-tabs" id="ctDag">
+        <div class="ct-bar">
+          <button class="ct-btn" onclick="tabShow('ctDag','cpp',this)">C++</button>
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctDag','py',this)">Python</button>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// 先 DFS 拓撲排序（order 反轉），再按序鬆弛</span></span>
+<span class="line">std::vector&lt;<span class="kw">long long</span>&gt; d(n, INF);</span>
+<span class="line">d[<span class="num">1</span>] = <span class="num">0</span>;                               <span class="com">// 源點 s</span></span>
+<span class="line"><span class="kw">for</span> (<span class="kw">int</span> u : order) {                   <span class="com">// 按拓撲序</span></span>
+<span class="line">    <span class="kw">if</span> (d[u] == INF) <span class="kw">continue</span>;</span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">auto</span> [v, w] : adj[u])          <span class="com">// 每邊恰鬆弛一次</span></span>
+<span class="line">        <span class="kw">if</span> (d[u] + w &lt; d[v]) d[v] = d[u] + w;</span>
+<span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/dag_sssp.cpp，CLRS 圖 22.5、源點 s）</span><pre>DAG-SHORTEST-PATHS（源點 s）：r:∞ s:0 t:2 x:6 y:5 z:3</pre></div>
+        </div>
+        <div class="ct-panel active" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 22/dag_shortest_paths.py（MIT License）</span></span>
+<span class="line">adj = {<span class="str">"r"</span>: [(<span class="str">"s"</span>,<span class="num">5</span>),(<span class="str">"t"</span>,<span class="num">3</span>)], <span class="str">"s"</span>: [(<span class="str">"t"</span>,<span class="num">2</span>),(<span class="str">"x"</span>,<span class="num">6</span>)],</span>
+<span class="line">       <span class="str">"t"</span>: [(<span class="str">"x"</span>,<span class="num">7</span>),(<span class="str">"y"</span>,<span class="num">4</span>),(<span class="str">"z"</span>,<span class="num">2</span>)],</span>
+<span class="line">       <span class="str">"x"</span>: [(<span class="str">"y"</span>,-<span class="num">1</span>),(<span class="str">"z"</span>,<span class="num">1</span>)], <span class="str">"y"</span>: [(<span class="str">"z"</span>,-<span class="num">2</span>)], <span class="str">"z"</span>: []}</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">dag_shortest_paths</span>(adj, s):</span>
+<span class="line">    d = {v: <span class="fn">float</span>(<span class="str">"inf"</span>) <span class="kw">for</span> v in adj}</span>
+<span class="line">    d[s] = <span class="num">0</span></span>
+<span class="line">    <span class="kw">for</span> u in topological_sort(adj):     <span class="com"># 按拓撲序（DFS 完成時間反序）</span></span>
+<span class="line">        <span class="kw">if</span> d[u] == <span class="fn">float</span>(<span class="str">"inf"</span>):</span>
+<span class="line">            <span class="kw">continue</span></span>
+<span class="line">        <span class="kw">for</span> v, w in adj[u]:                 <span class="com"># 每條邊恰鬆弛一次</span></span>
+<span class="line">            <span class="kw">if</span> d[u] + w &lt; d[v]:</span>
+<span class="line">                d[v] = d[u] + w</span>
+<span class="line">    <span class="kw">return</span> d</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/dag_sssp.py，含 topological_sort 全文）</span><pre>DAG-SHORTEST-PATHS（源點 s）： r:∞ s:0 t:2 x:6 y:5 z:3</pre></div>
+          <div class="ct-note">r 在 s 的「上游」，從 s 到不了 → ∞；y 走 s→x→y = 5（負權邊 x→y 幫了忙）。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03c · 為何一趟就夠</div>
+    <p>Bellman-Ford 要 |V|−1 輪，DAG 最短路只要一趟。差別的本質是？</p>
+    <div class="quiz-options" id="q10Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。路徑鬆弛性質說：只要最短路徑的邊「按路徑順序」各被鬆過一次就定案。DAG 中任何路徑都沿拓撲序前進——按拓撲序處理頂點，天然保證每條路徑的邊按序被鬆。一般圖沒有這種全域順序（可能有環），只好暴力 |V|−1 輪蓋所有可能順序。" onclick="quizCheck('q10', this)"><span class="opt-letter">(A)</span> 拓撲序讓「路徑順序 = 處理順序」，路徑鬆弛性質一趟兌現</div>
+      <div class="quiz-opt" data-correct="false" data-fb="DAG 也可以有負權邊（本例就有 −1、−2）——DAG 少的是「環」，不是負權。" onclick="quizCheck('q10', this)"><span class="opt-letter">(B)</span> 因為 DAG 沒有負權邊</div>
+      <div class="quiz-opt" data-correct="false" data-fb="邊數與輪數無關；Bellman-Ford 每輪也是掃全部邊。省的是輪數（順序資訊換來的）。" onclick="quizCheck('q10', this)"><span class="opt-letter">(C)</span> DAG 的邊比較少</div>
+    </div>
+    <div class="quiz-feedback" id="q10Feedback"></div>
   </div>
 </section>
 
@@ -786,9 +923,25 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
           <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/sssp.cpp，CLRS 圖 22.6）</span><pre>Dijkstra（源點 s）：s:0 t:8 x:9 y:5 z:7</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 22/dijkstra.py（MIT License）</span></span><span class="line">D = AdjacencyListGraph(<span class="num">5</span>, directed=<span class="kw">True</span>, weighted=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 22.6 …</span></span><span class="line">d, pi = dijkstra(D, <span class="num">0</span>)</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出（s t x y z）</span><pre>d = [0, 8, 9, 5, 7]</pre></div>
-          <div class="ct-note">官方版用 MinHeapPriorityQueue 的 decrease_key；輸出與 C++ lazy 版一致。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 22/dijkstra.py（MIT License）：heapq lazy deletion 版</span></span>
+<span class="line"><span class="kw">import</span> heapq</span>
+<span class="line">adj = {<span class="str">"s"</span>: [(<span class="str">"t"</span>,<span class="num">10</span>),(<span class="str">"y"</span>,<span class="num">5</span>)], <span class="str">"t"</span>: [(<span class="str">"x"</span>,<span class="num">1</span>),(<span class="str">"y"</span>,<span class="num">2</span>)], <span class="str">"x"</span>: [(<span class="str">"z"</span>,<span class="num">4</span>)],</span>
+<span class="line">       <span class="str">"y"</span>: [(<span class="str">"t"</span>,<span class="num">3</span>),(<span class="str">"x"</span>,<span class="num">9</span>),(<span class="str">"z"</span>,<span class="num">2</span>)], <span class="str">"z"</span>: [(<span class="str">"s"</span>,<span class="num">7</span>),(<span class="str">"x"</span>,<span class="num">6</span>)]}</span>
+<span class="line"> </span>
+<span class="line">dist = {v: <span class="fn">float</span>(<span class="str">"inf"</span>) <span class="kw">for</span> v in adj}</span>
+<span class="line">dist[<span class="str">"s"</span>] = <span class="num">0</span></span>
+<span class="line">h = [(<span class="num">0</span>, <span class="str">"s"</span>)]</span>
+<span class="line"><span class="kw">while</span> h:</span>
+<span class="line">    du, u = heapq.heappop(h)                <span class="com"># 取 d 最小的未定案頂點</span></span>
+<span class="line">    <span class="kw">if</span> du &gt; dist[u]:                        <span class="com"># 過期項目跳過</span></span>
+<span class="line">        <span class="kw">continue</span></span>
+<span class="line">    <span class="kw">for</span> v, w in adj[u]:                     <span class="com"># 鬆弛出邊</span></span>
+<span class="line">        <span class="kw">if</span> dist[u] + w &lt; dist[v]:</span>
+<span class="line">            dist[v] = dist[u] + w</span>
+<span class="line">            heapq.heappush(h, (dist[v], v))</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"Dijkstra："</span>, <span class="str">" "</span>.join(<span class="str">"%s:%d"</span> % (v, dist[v]) <span class="kw">for</span> v in <span class="str">"stxyz"</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/sssp.py，CLRS 圖 22.6）</span><pre>Dijkstra： s:0 t:8 x:9 y:5 z:7</pre></div>
+          <div class="ct-note">完整可跑；heapq 是 min-heap，lazy deletion 與 P02 的 Prim 同款技巧。</div>
         </div>
       </div>
     </div>
@@ -845,14 +998,75 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
    8   5   1   6   0</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 23/floyd_warshall.py（MIT License）</span></span><span class="line">W = np.array([[<span class="num">0</span>,<span class="num">3</span>,<span class="num">8</span>,inf,-<span class="num">4</span>], [inf,<span class="num">0</span>,inf,<span class="num">1</span>,<span class="num">7</span>], [inf,<span class="num">4</span>,<span class="num">0</span>,inf,inf],</span><span class="line">              [<span class="num">2</span>,inf,-<span class="num">5</span>,<span class="num">0</span>,inf], [inf,inf,inf,<span class="num">6</span>,<span class="num">0</span>]])</span><span class="line">D = floyd_warshall(W, <span class="num">5</span>)</span></div>
-      <div class="expected-out"><span class="eo-tag">輸出</span><pre>[[ 0  1 -3  2 -4]
- [ 3  0 -4  1 -1]
- [ 7  4  0  5  3]
- [ 2 -1 -5  0 -2]
- [ 8  5  1  6  0]]</pre></div>
-      <div class="ct-note">另一條 APSP 路線：Johnson 演算法（Bellman-Ford 重賦權 + V 次 Dijkstra），稀疏圖 O(VE + V² lg V) 更快——官方 johnson.py。</div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 23/floyd_warshall.py（MIT License）：純 list 完整版</span></span>
+<span class="line">INF = <span class="fn">float</span>(<span class="str">"inf"</span>)</span>
+<span class="line">W = [[<span class="num">0</span>,   <span class="num">3</span>,   <span class="num">8</span>,   INF, -<span class="num">4</span>],</span>
+<span class="line">     [INF, <span class="num">0</span>,   INF, <span class="num">1</span>,   <span class="num">7</span>],</span>
+<span class="line">     [INF, <span class="num">4</span>,   <span class="num">0</span>,   INF, INF],</span>
+<span class="line">     [<span class="num">2</span>,   INF, -<span class="num">5</span>,  <span class="num">0</span>,   INF],</span>
+<span class="line">     [INF, INF, INF, <span class="num">6</span>,   <span class="num">0</span>]]              <span class="com"># CLRS 圖 23.1</span></span>
+<span class="line"> </span>
+<span class="line">n = <span class="num">5</span></span>
+<span class="line">d = [row[:] <span class="kw">for</span> row in W]</span>
+<span class="line"><span class="kw">for</span> k in <span class="fn">range</span>(n):                           <span class="com"># 中繼點只准用 {1..k}</span></span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(n):</span>
+<span class="line">        <span class="kw">for</span> j in <span class="fn">range</span>(n):</span>
+<span class="line">            <span class="kw">if</span> d[i][k] + d[k][j] &lt; d[i][j]:</span>
+<span class="line">                d[i][j] = d[i][k] + d[k][j]</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">for</span> row in d:</span>
+<span class="line">    <span class="fn">print</span>(<span class="str">"  "</span>, [<span class="fn">int</span>(x) <span class="kw">for</span> x in row])</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/floyd_warshall.py）</span><pre>D（所有點對最短路徑權重）：
+   [0, 1, -3, 2, -4]
+   [3, 0, -4, 1, -1]
+   [7, 4, 0, 5, 3]
+   [2, -1, -5, 0, -2]
+   [8, 5, 1, 6, 0]</pre></div>
+      <div class="ct-note">完整可跑：五行三重迴圈就是整個演算法。與 C++ 版矩陣逐格相同。</div>
     </div>
+  </div>
+
+  <h3>稀疏圖的另一條路：Johnson 重加權 <span class="sec-badge">§23.3</span></h3>
+  <div class="viz-layout">
+    <div>
+      <p>FW 是 Θ(V³)；圖很稀疏（E ≪ V²）時「每個頂點跑一次 Dijkstra」只要 O(VE + V² lg V) 更划算——
+      但 Dijkstra 怕負權。<strong>Johnson 的絕招：把權重「改造」成非負，而且不改變最短路徑</strong>：</p>
+      <div class="thm-box proof">
+        <div class="thm-label">重加權引理（引理 23.1）</div>
+        <div style="font-size:.86rem;line-height:1.7;">
+        給每個頂點一個值 h(v)，令 <strong>w′(u,v) = w(u,v) + h(u) − h(v)</strong>。
+        任何 u→v 路徑 p 的新長度 = 舊長度 + h(u) − h(v)——中間項<strong>望遠鏡式相消</strong>，
+        差額只跟端點有關 ⟹ <strong>最短路徑不變</strong>（大家都加同一個常數）。<br>
+        怎麼挑 h 讓 w′ ≥ 0？加一個<strong>超級源點 q</strong>（連到所有頂點、權 0），令 <strong>h(v) = δ(q, v)</strong>
+        （Bellman-Ford 算）：三角不等式 δ(q,v) ≤ δ(q,u) + w(u,v) 整理即 w′(u,v) ≥ 0。∎</div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="deck-extra" style="margin:0;">
+        <div class="dx-label">實跑：Johnson 對 CLRS 圖 23.1（src/graphs2/johnson.py／johnson.cpp）</div>
+        <div class="expected-out" style="margin-top:0;"><span class="eo-tag">執行輸出</span><pre>h = [0, -1, -5, 0, -4]
+D（與 Floyd-Warshall 相同）：
+   [0, 1, -3, 2, -4]
+   [3, 0, -4, 1, -1]
+   [7, 4, 0, 5, 3]
+   [2, -1, -5, 0, -2]
+   [8, 5, 1, 6, 0]</pre></div>
+        <p class="dx-note">h 值正是課本圖 23.6 的標註；重加權後跑 V 次 Dijkstra、最後把距離「還原」
+        （加回 h(v) − h(src)），矩陣與 FW 逐格相同——兩條路線互相驗證。
+        流程 = Bellman-Ford ×1 ＋ Dijkstra ×V，全是本頁學過的積木。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05b · Johnson 的 h</div>
+    <p>Johnson 中為什麼「所有 w′(u,v) = w + h(u) − h(v) ≥ 0」一定辦得到（無負環時）？</p>
+    <div class="quiz-options" id="q11Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。h(v) = δ(q,v)（超級源點的最短距離）滿足三角不等式 δ(q,v) ≤ δ(q,u) + w(u,v)——移項就是 w(u,v) + h(u) − h(v) ≥ 0。「最短距離天生滿足三角不等式」這個性質被反過來當工具用，是本章最漂亮的一手。" onclick="quizCheck('q11', this)"><span class="opt-letter">(A)</span> h 取 δ(q,·)，三角不等式移項就是 w′ ≥ 0</div>
+      <div class="quiz-opt" data-correct="false" data-fb="把所有邊加常數會改變最短路徑（邊多的路徑被多加）——22 章的經典陷阱。Johnson 的巧妙正在於「端點差額」形式不改路徑排名。" onclick="quizCheck('q11', this)"><span class="opt-letter">(B)</span> 把每條邊都加上最大負權的絕對值</div>
+      <div class="quiz-opt" data-correct="false" data-fb="h 不是隨便挑的——亂挑的 h 無法保證 w′ ≥ 0。必須用 Bellman-Ford 從超級源點算出的真實最短距離。" onclick="quizCheck('q11', this)"><span class="opt-letter">(C)</span> 任何 h 函數都可以，挑計算方便的</div>
+    </div>
+    <div class="quiz-feedback" id="q11Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -885,6 +1099,28 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
     最大流的值恰等於<strong>最小切割容量</strong>——「瓶頸」的嚴格數學版。下例：切割 ({s,v₁,v₂,v₄}, {v₃,t}) 的容量
     12 + 7 + 4 = 23，正是最大流。</div>
   </div>
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <svg id="ekSvg" viewBox="0 0 360 240" style="width:100%;max-width:460px;background:rgba(255,255,255,.03);border-radius:10px;"></svg>
+      <div class="status-banner" id="ekStatus"><span class="status-icon">▸</span><span class="status-text">CLRS 圖 24.2（Lucky Puck）。邊標「流/容量」。按「單步」跑一輪 BFS 增廣。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="ekPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="ekPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="ekPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">動畫讀法</div>
+        <div style="font-size:.85rem;line-height:1.8;">
+        ▸ 邊標 <span class="mono">f/c</span>：目前流量／容量。<br>
+        ▸ 橘色 = 本輪增廣路徑；流量推滿（f = c）的邊變紅。<br>
+        ▸ 第三輪 s→v2→v4→v3→t 中的 v4→v3 用的是該邊剩餘的殘餘容量（7 全推滿）。<br>
+        ▸ 結束時：BFS 從 s 只能到 {s, v1, v2, v4}（塗綠）—— 這個可達集就是<strong>最小割</strong>的 S 側。</div>
+      </div>
+    </div>
+  </div>
+
   <div class="code-tabs" id="ctFlow">
     <div class="ct-bar">
       <button class="ct-btn ct-pseudo active" onclick="tabShow('ctFlow','pseudo',this)">Pseudocode</button>
@@ -892,13 +1128,20 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <button class="ct-btn" onclick="tabShow('ctFlow','py',this)">Python</button>
     </div>
     <div class="ct-panel active" data-lang="pseudo">
-      <div class="clrs-code">
-        <div class="cc-title"><span class="fn">FORD-FULKERSON</span>(G, s, t)</div>
-        <span class="line"><span class="ln">1</span>所有邊 f = 0</span>
-        <span class="line"><span class="ln">2</span><span class="kw">while</span> G<sub>f</sub> 存在 s→t 增廣路徑 p</span>
-        <span class="line"><span class="ln">3</span>  c<sub>f</sub>(p) = p 上最小殘餘容量　<span class="com">// 瓶頸</span></span>
-        <span class="line"><span class="ln">4</span>  沿 p 增流 c<sub>f</sub>(p)（反向邊則退流）</span>
+      <div class="clrs-code" style="font-size:.76rem;">
+        <div class="cc-title"><span class="fn">EDMONDS-KARP</span>(G, s, t) <span class="com">// Ford-Fulkerson＋BFS 找路</span></div>
+        <span class="line"><span class="ln">1</span>所有邊 f = 0；建殘餘網路 G<sub>f</sub></span>
+        <span class="line"><span class="ln">2</span><span class="kw">while</span> <span class="kw">true</span></span>
+        <span class="line"><span class="ln">3</span>    在 G<sub>f</sub> 上 <span class="fn">BFS</span>(s)：只走殘餘容量 &gt; 0 的邊</span>
+        <span class="line"><span class="ln">4</span>    <span class="kw">if</span> t 不可達：<span class="kw">break</span>　<span class="com">// 無增廣路徑 → 最大流</span></span>
+        <span class="line"><span class="ln">5</span>    p = BFS 樹上 s→t 的路徑（最少邊數）</span>
+        <span class="line"><span class="ln">6</span>    c<sub>f</sub>(p) = min{c<sub>f</sub>(u,v) : (u,v) ∈ p}　<span class="com">// 瓶頸</span></span>
+        <span class="line"><span class="ln">7</span>    <span class="kw">for</span> (u,v) ∈ p：c<sub>f</sub>(u,v) −= c<sub>f</sub>(p)；c<sub>f</sub>(v,u) += c<sub>f</sub>(p)</span>
+        <span class="line"><span class="ln">8</span><span class="kw">return</span> 累計推的流量</span>
       </div>
+      <div class="ct-note"><strong>O(VE²) 的理由（定理 24.10 骨架）</strong>：BFS 走最短增廣路徑 ⟹ 每個頂點的
+      BFS 距離 δ<sub>f</sub>(s,v) 隨增廣<strong>單調不減</strong>；每次增廣至少讓一條「瓶頸邊」飽和消失，
+      同一條邊要再成為瓶頸、兩端距離必須先 +2——每條邊至多當 O(V) 次瓶頸 ⟹ 增廣至多 O(VE) 輪、每輪 BFS O(E)。</div>
     </div>
     <div class="ct-panel" data-lang="cpp">
       <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// Edmonds-Karp：BFS 在殘餘網路找路（cap[u][v] &gt; 0 才能走）</span></span><span class="line"><span class="kw">int</span> f = <span class="num">1e9</span>;   <span class="com">// 瓶頸 = 路徑上最小殘餘容量</span></span><span class="line"><span class="kw">for</span> (<span class="kw">int</span> v = t; v != s; v = parent[v]) f = std::min(f, cap[parent[v]][v]);</span><span class="line"><span class="kw">for</span> (<span class="kw">int</span> v = t; v != s; v = parent[v]) {</span><span class="line">    cap[parent[v]][v] -= f;   <span class="com">// 正向扣</span></span><span class="line">    cap[v][parent[v]] += f;   <span class="com">// 反悔邊加</span></span><span class="line">}</span><span class="line">maxFlow += f;</span></div>
@@ -908,9 +1151,45 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 最大流 |f*| = 23</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 24/ford_fulkerson.py（MIT License）</span></span><span class="line">G = FlowNetwork(<span class="num">6</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 24.2（容量 16,13,12,4,14,9,20,7,4）…</span></span><span class="line">edmonds_karp(G, <span class="num">0</span>, <span class="num">5</span>)</span></div>
-      <div class="expected-out"><span class="eo-tag">輸出</span><pre>23</pre></div>
-      <div class="ct-note">應用：二分圖最大匹配可化約成最大流（官方 maximum_bipartite_matching.py）——「化約」正是下一章 NP 的主角。</div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 24/ford_fulkerson.py（MIT License）：殘餘矩陣平鋪版</span></span>
+<span class="line"><span class="kw">from</span> collections <span class="kw">import</span> deque</span>
+<span class="line"> </span>
+<span class="line">names = [<span class="str">"s"</span>, <span class="str">"v1"</span>, <span class="str">"v2"</span>, <span class="str">"v3"</span>, <span class="str">"v4"</span>, <span class="str">"t"</span>]</span>
+<span class="line">n, s, t = <span class="num">6</span>, <span class="num">0</span>, <span class="num">5</span></span>
+<span class="line">cap = [[<span class="num">0</span>] * n <span class="kw">for</span> _ in <span class="fn">range</span>(n)]        <span class="com"># 殘餘容量（含反悔邊）</span></span>
+<span class="line"><span class="kw">for</span> u, v, c in [(<span class="num">0</span>,<span class="num">1</span>,<span class="num">16</span>),(<span class="num">0</span>,<span class="num">2</span>,<span class="num">13</span>),(<span class="num">1</span>,<span class="num">3</span>,<span class="num">12</span>),(<span class="num">2</span>,<span class="num">1</span>,<span class="num">4</span>),(<span class="num">2</span>,<span class="num">4</span>,<span class="num">14</span>),</span>
+<span class="line">                (<span class="num">3</span>,<span class="num">2</span>,<span class="num">9</span>),(<span class="num">3</span>,<span class="num">5</span>,<span class="num">20</span>),(<span class="num">4</span>,<span class="num">3</span>,<span class="num">7</span>),(<span class="num">4</span>,<span class="num">5</span>,<span class="num">4</span>)]:</span>
+<span class="line">    cap[u][v] = c</span>
+<span class="line"> </span>
+<span class="line">max_flow = <span class="num">0</span></span>
+<span class="line"><span class="kw">while</span> <span class="kw">True</span>:</span>
+<span class="line">    parent = [-<span class="num">1</span>] * n                    <span class="com"># BFS 找增廣路徑</span></span>
+<span class="line">    parent[s] = s</span>
+<span class="line">    Q = deque([s])</span>
+<span class="line">    <span class="kw">while</span> Q <span class="kw">and</span> parent[t] &lt; <span class="num">0</span>:</span>
+<span class="line">        u = Q.popleft()</span>
+<span class="line">        <span class="kw">for</span> v in <span class="fn">range</span>(n):</span>
+<span class="line">            <span class="kw">if</span> parent[v] &lt; <span class="num">0</span> <span class="kw">and</span> cap[u][v] &gt; <span class="num">0</span>:</span>
+<span class="line">                parent[v] = u</span>
+<span class="line">                Q.append(v)</span>
+<span class="line">    <span class="kw">if</span> parent[t] &lt; <span class="num">0</span>:                    <span class="com"># 無增廣路徑 → 最大流</span></span>
+<span class="line">        <span class="kw">break</span></span>
+<span class="line">    f, v = <span class="fn">float</span>(<span class="str">"inf"</span>), t               <span class="com"># 路徑瓶頸</span></span>
+<span class="line">    <span class="kw">while</span> v != s:</span>
+<span class="line">        f = <span class="fn">min</span>(f, cap[parent[v]][v])</span>
+<span class="line">        v = parent[v]</span>
+<span class="line">    v = t</span>
+<span class="line">    <span class="kw">while</span> v != s:                        <span class="com"># 正向扣、反悔邊加</span></span>
+<span class="line">        cap[parent[v]][v] -= f</span>
+<span class="line">        cap[v][parent[v]] += f</span>
+<span class="line">        v = parent[v]</span>
+<span class="line">    max_flow += f</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"最大流 |f*| ="</span>, max_flow)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs2/edmonds_karp.py）</span><pre>增廣路徑：s→v1→v3→t，推 12 單位
+增廣路徑：s→v2→v4→t，推 4 單位
+增廣路徑：s→v2→v4→v3→t，推 7 單位
+最大流 |f*| = 23</pre></div>
+      <div class="ct-note">完整可跑；三條增廣路徑與 C++ 版逐字相同。應用：二分圖最大匹配可化約成最大流——「化約」正是下一章 NP 的主角。</div>
     </div>
   </div>
 
@@ -923,6 +1202,17 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
       <div class="quiz-opt" data-correct="false" data-fb="偵測負環是 Bellman-Ford 的事；max flow 的圖沒有負權概念（容量非負）。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 用來偵測負環</div>
     </div>
     <div class="quiz-feedback" id="q06Feedback"></div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P06b · 找出最小割</div>
+    <p>最大流跑完後（|f*| = 23），怎麼「找出」一個最小割 (S, T)？</p>
+    <div class="quiz-options" id="q12Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。最後一次 BFS 失敗時，S = 殘餘網路中 s 可達的頂點集 = {s, v1, v2, v4}、T = {v3, t}。跨割的原始邊 v1→v3(12)、v4→v3(7)、v4→t(4) 全部飽和，容量和 = 23 = |f*| ✓——max-flow min-cut 定理的建構性一面：最大流「免費附贈」一個最小割。" onclick="quizCheck('q12', this)"><span class="opt-letter">(A)</span> S = 最終殘餘網路中 s 的可達集，T = 其餘</div>
+      <div class="quiz-opt" data-correct="false" data-fb="枚舉割有 2^(V−2) 種——指數爆炸。殘餘網路的可達性一次 BFS O(E) 就給出答案。" onclick="quizCheck('q12', this)"><span class="opt-letter">(B)</span> 枚舉所有 (S, T) 分割、逐一算容量取最小</div>
+      <div class="quiz-opt" data-correct="false" data-fb="飽和邊不一定都在最小割上（可能有飽和邊兩端都在 S）——正確的判準是「殘餘網路的可達性」，不是「飽和與否」。" onclick="quizCheck('q12', this)"><span class="opt-letter">(C)</span> 取所有飽和邊（f = c）當割</div>
+    </div>
+    <div class="quiz-feedback" id="q12Feedback"></div>
   </div>
 </section>
 
@@ -980,7 +1270,7 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch8.json · 14 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch8.json · 20 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -1011,7 +1301,13 @@ const FLASHCARDS = [
   {"front":"Floyd-Warshall 演算法","back":"APSP 的 DP：d_ij^(k) = 中繼點限用 {1..k} 的最短路徑；遞迴 min(不經過 k, 經過 k)。三層迴圈 O(V³)，允許負權無負環。"},
   {"front":"流網路（Flow Network）","back":"邊有容量 c 的有向圖＋源點 s、匯點 t。流需守恆（中間頂點流入=流出）且 0 ≤ f ≤ c；目標最大化 |f| = 離開 s 的淨流量。"},
   {"front":"殘餘網路與增廣路徑（Residual Network & Augmenting Path）","back":"G_f：正向剩 c−f、反向有容量 f 的反悔邊。增廣路徑 = G_f 中 s→t 的路，可再推「瓶頸」單位的流。BFS 找路 = Edmonds-Karp，O(VE²)。"},
-  {"front":"最大流最小割定理（Max-Flow Min-Cut Theorem）","back":"f 是最大流 ⟺ G_f 無增廣路徑 ⟺ 某切割容量 = |f|。最大流的值等於最小切割容量——瓶頸的數學化。"}
+  {"front":"最大流最小割定理（Max-Flow Min-Cut Theorem）","back":"f 是最大流 ⟺ G_f 無增廣路徑 ⟺ 某切割容量 = |f|。最大流的值等於最小切割容量——瓶頸的數學化。"},
+  {"front":"DAG 最短路徑","back":"拓撲排序後按序把每頂點出邊各鬆弛一次：Θ(V+E)、允許負權。正確性 = 路徑鬆弛性質（路徑必沿拓撲序）。比 Dijkstra 快且不怕負權——但僅限 DAG。"},
+  {"front":"PERT／關鍵路徑","back":"工序 DAG 中的最長路徑 = 專案最短完工時間。權重取負跑 DAG 最短路（或 RELAX 改 max）即得。負權是常態 → 天然是 DAG 法的地盤。"},
+  {"front":"Johnson 演算法","back":"稀疏圖 APSP：超級源點 Bellman-Ford 求 h → 重加權 w′=w+h(u)−h(v)≥0 → V 次 Dijkstra → 還原距離。O(VE + V² lg V)，稀疏時勝 FW 的 Θ(V³)。"},
+  {"front":"重加權（Reweighting）","back":"w′(u,v) = w + h(u) − h(v)：路徑長的變化只依端點（望遠鏡相消）→ 最短路徑不變。h = δ(q,·) 時三角不等式保證 w′ ≥ 0。"},
+  {"front":"Edmonds-Karp 的 O(VE²)","back":"BFS 走最短增廣路徑 → δ_f(s,v) 隨增廣單調不減；每輪至少一條瓶頸邊飽和、同一邊再當瓶頸需距離 +2 → 每邊 O(V) 次瓶頸 → O(VE) 輪 × O(E)。"},
+  {"front":"從最大流讀出最小割","back":"最後一次 BFS 失敗時，S = 殘餘網路中 s 的可達集。跨割原始邊全飽和、容量和 = |f*|。Lucky Puck：S = {s,v1,v2,v4}，割容量 12+7+4 = 23。"}
 ];
 
 /* ---------- P01 Kruskal 動畫 ---------- */
@@ -1103,6 +1399,76 @@ function bfApply(f) {
 }
 const bfPlayer = new Player({frames: bfFrames(), apply: bfApply, delayInput: null});
 bfPlayer.reset();
+
+/* ---------- P06 Edmonds-Karp 增廣動畫 ---------- */
+const EK_POS = [[35,120],[125,55],[125,185],[240,55],[240,185],[330,120]];
+const EK_NAMES = ['s','v1','v2','v3','v4','t'];
+const EK_EDGES = [[0,1,16],[0,2,13],[1,3,12],[2,1,4],[2,4,14],[3,2,9],[3,5,20],[4,3,7],[4,5,4]];
+function ekFrames() {
+  const n = 6, s = 0, t = 5;
+  const cap = Array.from({length: n}, () => new Array(n).fill(0));
+  const orig = Array.from({length: n}, () => new Array(n).fill(0));
+  EK_EDGES.forEach(([u, v, c]) => { cap[u][v] = c; orig[u][v] = c; });
+  const flowOf = () => EK_EDGES.map(([u, v, c]) => Math.max(0, c - cap[u][v]));
+  const frames = [{flow: flowOf(), path: [], reach: null, total: 0,
+    msg: '初始：所有邊 f = 0。按「單步」跑一輪 BFS 增廣。'}];
+  let total = 0;
+  while (true) {
+    const parent = new Array(n).fill(-1);
+    parent[s] = s;
+    const Q = [s];
+    while (Q.length && parent[t] < 0) {
+      const u = Q.shift();
+      for (let v = 0; v < n; v++)
+        if (parent[v] < 0 && cap[u][v] > 0) { parent[v] = u; Q.push(v); }
+    }
+    if (parent[t] < 0) {
+      const reach = [];
+      for (let v = 0; v < n; v++) if (parent[v] >= 0) reach.push(v);
+      frames.push({flow: flowOf(), path: [], reach, total,
+        msg: 'BFS 到不了 t：結束。s 的可達集 {' + reach.map(v => EK_NAMES[v]).join(', ') +
+             '} 就是最小割的 S 側——跨割容量 12+7+4 = 23 = |f*| ✓'});
+      break;
+    }
+    let f = Infinity;
+    const path = [];
+    for (let v = t; v !== s; v = parent[v]) { f = Math.min(f, cap[parent[v]][v]); path.push([parent[v], v]); }
+    path.reverse();
+    for (const [u, v] of path) { cap[u][v] -= f; cap[v][u] += f; }
+    total += f;
+    frames.push({flow: flowOf(), path, reach: null, total,
+      msg: '增廣路徑 ' + [ ...path.map(e => EK_NAMES[e[0]]), 't'].join('→') +
+           '，瓶頸 ' + f + ' 單位；累計 |f| = ' + total + '。'});
+  }
+  return frames;
+}
+function ekApply(f) {
+  let svg = '';
+  EK_EDGES.forEach(([u, v, c], i) => {
+    const [x1, y1] = EK_POS[u], [x2, y2] = EK_POS[v];
+    const onPath = f.path.some(([a, b]) => a === u && b === v);
+    const fl = f.flow[i];
+    const color = onPath ? '#f39c12' : (fl >= c ? '#c0392b' : '#5a5a7a');
+    const midx = (x1 + x2) / 2, midy = (y1 + y2) / 2 - 6;
+    svg += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 +
+           '" stroke="' + color + '" stroke-width="' + (onPath ? 3.2 : 1.8) + '" marker-end="url(#ekArrow)"/>' +
+           '<text x="' + midx + '" y="' + midy + '" text-anchor="middle" font-size="10.5" fill="' +
+           (fl > 0 ? '#e5c07b' : '#9aa') + '" font-family="JetBrains Mono,monospace">' + fl + '/' + c + '</text>';
+  });
+  let defs = '<defs><marker id="ekArrow" markerWidth="7" markerHeight="7" refX="16" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#5a5a7a"/></marker></defs>';
+  let nodes = '';
+  EK_POS.forEach(([x, y], v) => {
+    const inS = f.reach && f.reach.includes(v);
+    nodes += '<circle cx="' + x + '" cy="' + y + '" r="14" fill="' + (inS ? '#1a6b4a' : '#282c34') +
+             '" stroke="#61afef" stroke-width="2"/>' +
+             '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="middle" font-size="11" fill="#e6e6e6" font-family="JetBrains Mono,monospace">' +
+             EK_NAMES[v] + '</text>';
+  });
+  $('ekSvg').innerHTML = defs + svg + nodes;
+  setStatus('ekStatus', f.msg);
+}
+const ekPlayer = new Player({frames: ekFrames(), apply: ekApply, delayInput: null});
+ekPlayer.reset();
 </script>
 <script>
 /* ===== code tabs（pseudocode / C++ / Python 切換）===== */

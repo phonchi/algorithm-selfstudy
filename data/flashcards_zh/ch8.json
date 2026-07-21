@@ -54,5 +54,29 @@
  {
   "front": "最大流最小割定理（Max-Flow Min-Cut Theorem）",
   "back": "f 是最大流 ⟺ G_f 無增廣路徑 ⟺ 某切割容量 = |f|。最大流的值等於最小切割容量——瓶頸的數學化。"
+ },
+ {
+  "front": "DAG 最短路徑",
+  "back": "拓撲排序後按序把每頂點出邊各鬆弛一次：Θ(V+E)、允許負權。正確性 = 路徑鬆弛性質（路徑必沿拓撲序）。比 Dijkstra 快且不怕負權——但僅限 DAG。"
+ },
+ {
+  "front": "PERT／關鍵路徑",
+  "back": "工序 DAG 中的最長路徑 = 專案最短完工時間。權重取負跑 DAG 最短路（或 RELAX 改 max）即得。負權是常態 → 天然是 DAG 法的地盤。"
+ },
+ {
+  "front": "Johnson 演算法",
+  "back": "稀疏圖 APSP：超級源點 Bellman-Ford 求 h → 重加權 w′=w+h(u)−h(v)≥0 → V 次 Dijkstra → 還原距離。O(VE + V² lg V)，稀疏時勝 FW 的 Θ(V³)。"
+ },
+ {
+  "front": "重加權（Reweighting）",
+  "back": "w′(u,v) = w + h(u) − h(v)：路徑長的變化只依端點（望遠鏡相消）→ 最短路徑不變。h = δ(q,·) 時三角不等式保證 w′ ≥ 0。"
+ },
+ {
+  "front": "Edmonds-Karp 的 O(VE²)",
+  "back": "BFS 走最短增廣路徑 → δ_f(s,v) 隨增廣單調不減；每輪至少一條瓶頸邊飽和、同一邊再當瓶頸需距離 +2 → 每邊 O(V) 次瓶頸 → O(VE) 輪 × O(E)。"
+ },
+ {
+  "front": "從最大流讀出最小割",
+  "back": "最後一次 BFS 失敗時，S = 殘餘網路中 s 的可達集。跨割原始邊全飽和、容量和 = |f*|。Lucky Puck：S = {s,v1,v2,v4}，割容量 12+7+4 = 23。"
  }
 ]
