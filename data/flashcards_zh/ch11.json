@@ -54,5 +54,29 @@
  {
   "front": "KMP 演算法",
   "back": "π 表＋逐字元掃描：失配退 q（不回頭讀文字）→ O(n+m)。攤還論證：q 每輪最多+1，總下修 ≤ 總上修 ≤ n。"
+ },
+ {
+  "front": "重疊三分律（Interval Trichotomy）",
+  "back": "兩區間恰有一種關係：重疊／i 全在 j 左／i 全在 j 右。「不重疊」判斷式 x.hi < i.lo or i.hi < x.lo 是三分律的直接程式化。"
+ },
+ {
+  "front": "定理 17.2（INTERVAL-SEARCH 正確性）",
+  "back": "往右走 = 左子樹 max < i.lo、必無解；往左走賭 left.max 那個區間——若它都不重疊（i.hi < j.lo），右子樹的 lo 更大也全出局。單邊下行即正確。"
+ },
+ {
+  "front": "B-TREE-INSERT-NONFULL",
+  "back": "單趟下行：路過全滿孩子先 SPLIT（預防性分裂），保證遞迴永遠進非滿節點、不用回頭。CPU O(t·log_t n)、I/O O(log_t n)。"
+ },
+ {
+  "front": "CONSOLIDATE",
+  "back": "EXTRACT-MIN 的整理步：把根串列上同 degree 的樹兩兩 link（小根當爸），直到 degree 兩兩相異——樹數壓到 O(lg n)，欠的帳用位能付。"
+ },
+ {
+  "front": "Φ = t + 2m（Fib heap 位能）",
+  "back": "t = 樹數、m = 標記數。INSERT 攤還 O(1)（ΔΦ=1）；EXTRACT-MIN O(lg n)（樹數收斂付帳）；DECREASE-KEY O(1)（每次連剪清一個標記、ΔΦ=−1 抵銷）。"
+ },
+ {
+  "front": "simplex 的停機憑證",
+  "back": "pivot 到目標列係數全 ≤ 0 時：z = 常數 −（非負組合）≤ 常數，目前解恰達等號——重寫後的目標式自帶最佳性證明（對偶性雛形）。"
  }
 ]

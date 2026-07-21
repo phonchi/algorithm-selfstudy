@@ -1,6 +1,7 @@
 <nav class="float-nav" id="floatNav" aria-label="章節導覽">
   <div class="fn-title">章節導覽</div>
   <a href="#augment" data-target="augment"><span class="fn-num">P00</span><span class="fn-name">擴充資料結構</span></a>
+  <a href="#interval" data-target="interval"><span class="fn-num">P00b</span><span class="fn-name">區間樹</span></a>
   <a href="#btree" data-target="btree"><span class="fn-num">P01</span><span class="fn-name">B-tree</span></a>
   <a href="#fib" data-target="fib"><span class="fn-num">P02</span><span class="fn-name">Fibonacci heap</span></a>
   <a href="#lp" data-target="lp"><span class="fn-num">P03</span><span class="fn-name">線性規劃</span></a>
@@ -33,7 +34,8 @@
 <div class="toc">
   <div class="toc-title">CONTENTS · 內容目錄</div>
   <div class="toc-grid">
-    <a href="#augment"><span class="toc-num">P00</span>擴充資料結構（OS-tree／區間樹）</a>
+    <a href="#augment"><span class="toc-num">P00</span>擴充資料結構（OS-tree）</a>
+    <a href="#interval"><span class="toc-num">P00b</span>區間樹（§17.3）</a>
     <a href="#btree"><span class="toc-num">P01</span>B-tree：為磁碟而生</a>
     <a href="#fib"><span class="toc-num">P02</span>Fibonacci heap 概覽</a>
     <a href="#lp"><span class="toc-num">P03</span>線性規劃概念</a>
@@ -59,7 +61,7 @@
         插入/刪除/旋轉時就能 O(1) 局部修復、整體維護仍 O(lg n)。
         size = size(左) + size(右) + 1 ✓；反之「x 的全域名次」直接掛會壞——插入最小鍵時全部名次都要改。</div>
       </div>
-      <p style="font-size:.9rem;color:var(--muted);">同框架的第二個範例<strong>區間樹</strong>：掛 max（子樹內最大右端點），INTERVAL-SEARCH 找「與 [lo, hi] 重疊的區間」O(lg n)——行程衝突偵測的核心。</p>
+      <p style="font-size:.9rem;color:var(--muted);">同框架的第二個範例<strong>區間樹</strong>掛的是 max 欄位——完整解剖見下一節 <a href="#interval">P00b</a>。</p>
     </div>
     <div class="side-panel">
       <div class="code-tabs" id="ctOs">
@@ -85,9 +87,37 @@ root 的 size = 18（= 全部 18 個鍵）</pre></div>
           <div class="ct-note">示範版掛在未平衡 BST 上聚焦 size 欄位；課本掛紅黑樹保證 O(lg n)。</div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 17/order_statistic_tree.py（MIT License，掛在紅黑樹上）</span></span><span class="line">T = OrderStatisticTree()</span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> keys: T.tree_insert(k)</span><span class="line">T.OS_select(T.get_root(), <span class="num">10</span>).data</span><span class="line">T.OS_Rank(T.search(T.get_root(), <span class="num">38</span>))</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出（同一組 18 鍵）</span><pre>OS-SELECT(root, 10) = 21
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 17/order_statistic_tree.py（MIT License）精簡版</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">sz</span>(x):</span>
+<span class="line">    <span class="kw">return</span> x.size <span class="kw">if</span> x <span class="kw">else</span> <span class="num">0</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">insert</span>(root, k):</span>
+<span class="line">    z = Node(k)</span>
+<span class="line">    x, y = root, <span class="kw">None</span></span>
+<span class="line">    <span class="kw">while</span> x <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:</span>
+<span class="line">        x.size += <span class="num">1</span>                          <span class="com"># 沿路每個祖先 size + 1</span></span>
+<span class="line">        y = x</span>
+<span class="line">        x = x.l <span class="kw">if</span> k &lt; x.key <span class="kw">else</span> x.r</span>
+<span class="line">    z.p = y</span>
+<span class="line">    <span class="com"># …（掛到 y 的左或右，見 src 全文）</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">os_select</span>(x, i):                        <span class="com"># 第 i 小</span></span>
+<span class="line">    r = sz(x.l) + <span class="num">1</span>                           <span class="com"># x 在子樹內的名次</span></span>
+<span class="line">    <span class="kw">if</span> i == r:</span>
+<span class="line">        <span class="kw">return</span> x</span>
+<span class="line">    <span class="kw">return</span> os_select(x.l, i) <span class="kw">if</span> i &lt; r <span class="kw">else</span> os_select(x.r, i - r)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">os_rank</span>(root, x):                       <span class="com"># x 的整體名次</span></span>
+<span class="line">    r = sz(x.l) + <span class="num">1</span></span>
+<span class="line">    y = x</span>
+<span class="line">    <span class="kw">while</span> y <span class="kw">is</span> <span class="kw">not</span> root:</span>
+<span class="line">        <span class="kw">if</span> y <span class="kw">is</span> y.p.r:                        <span class="com"># 右孩子：加左兄弟＋父</span></span>
+<span class="line">            r += sz(y.p.l) + <span class="num">1</span></span>
+<span class="line">        y = y.p</span>
+<span class="line">    <span class="kw">return</span> r</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/os_tree.py，同一組 18 鍵）</span><pre>OS-SELECT(root, 10) = 21
 OS-RANK(38) = 15</pre></div>
+          <div class="ct-note">與 C++ 版逐字同值；官方版掛紅黑樹（旋轉時 O(1) 修 size），介面完全相同。</div>
         </div>
       </div>
     </div>
@@ -102,6 +132,96 @@ OS-RANK(38) = 15</pre></div>
       <div class="quiz-opt" data-correct="false" data-fb="「距離根的深度」依賴祖先而非子樹：旋轉會讓整棵子樹的深度整批改變，違反定理 17.1 的局部性。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> 該節點的深度</div>
     </div>
     <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="interval">
+  <div class="section-number">P00b · 區間樹</div>
+  <h2>區間樹：max 欄位讓「找重疊」變 O(lg n) <span class="sec-badge">§17.3 · 補充</span></h2>
+  <p>行程表塞了一堆時段 [lo, hi]，新會議來了要立刻知道「跟誰撞」。
+  擴充食譜再走一遍：底層 BST（鍵 = 區間左端點 lo）＋每節點掛 <strong>max = 子樹內最大右端點</strong>
+  （max = max(自己的 hi, 左子.max, 右子.max)——只依自己與孩子，定理 17.1 ✓）。</p>
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.75rem;">
+        <div class="cc-title"><span class="fn">INTERVAL-SEARCH</span>(T, i) <span class="com">// 找任一與 i 重疊者</span></div>
+        <span class="line"><span class="ln">1</span>x = T.root</span>
+        <span class="line"><span class="ln">2</span><span class="kw">while</span> x ≠ NIL <span class="kw">and</span> i 與 x 不重疊</span>
+        <span class="line"><span class="ln">3</span>    <span class="kw">if</span> x.left ≠ NIL <span class="kw">and</span> x.left.max ≥ i.lo</span>
+        <span class="line"><span class="ln">4</span>        x = x.left　<span class="com">// 左子樹「可能」有解</span></span>
+        <span class="line"><span class="ln">5</span>    <span class="kw">else</span> x = x.right</span>
+        <span class="line"><span class="ln">6</span><span class="kw">return</span> x</span>
+      </div>
+      <div class="info-box" style="margin-top:.6rem;">
+        <span class="info-label">重疊三分律（trichotomy）</span>
+        兩區間 i、j 恰有三種關係之一：重疊／i 全在 j 左（i.hi &lt; j.lo）／i 全在 j 右（j.hi &lt; i.lo）。
+        「不重疊」的判斷式 <span class="mono">x.hi &lt; i.lo or i.hi &lt; x.lo</span> 就是三分律的後兩支。
+      </div>
+    </div>
+    <div>
+      <div class="thm-box proof">
+        <div class="thm-label">定理 17.2：為什麼「往左走」是安全的賭注</div>
+        <div style="font-size:.86rem;line-height:1.7;">
+        主張：迴圈的每一步，若目前子樹有重疊區間，走的那一邊仍然找得到。<br>
+        <strong>往右走時</strong>（左子不存在或 left.max &lt; i.lo）：左子樹所有區間的 hi ≤ left.max &lt; i.lo
+        ——全部在 i 左邊、必無重疊 ⟹ 解只可能在右邊，放棄左邊零風險。<br>
+        <strong>往左走時</strong>（left.max ≥ i.lo）：左子樹裡存在 hi = left.max ≥ i.lo 的區間 j。
+        若 j 與 i 重疊，賭對了；若不重疊，必是 i.hi &lt; j.lo——而左子樹的 lo 都 ≤ 右子樹的 lo（BST 性質），
+        右子樹每個區間的 lo ≥ j.lo &gt; i.hi ⟹ 右子樹也全部不重疊。<strong>賭錯的那一刻，右邊也已經沒戲</strong>——
+        所以單邊下行就夠，O(lg n)（紅黑樹版）。∎</div>
+      </div>
+      <div class="code-tabs" id="ctIv">
+        <div class="ct-bar">
+          <button class="ct-btn" onclick="tabShow('ctIv','cpp',this)">C++</button>
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctIv','py',this)">Python</button>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line">Node* <span class="fn">intervalSearch</span>(Node* x, <span class="kw">int</span> lo, <span class="kw">int</span> hi) {</span>
+<span class="line">    <span class="kw">while</span> (x &amp;&amp; (x-&gt;hi &lt; lo || hi &lt; x-&gt;lo)) {    <span class="com">// 不重疊才繼續走</span></span>
+<span class="line">        <span class="kw">if</span> (x-&gt;l &amp;&amp; x-&gt;l-&gt;mx &gt;= lo) x = x-&gt;l;    <span class="com">// 左子樹可能有解</span></span>
+<span class="line">        <span class="kw">else</span> x = x-&gt;r;</span>
+<span class="line">    }</span>
+<span class="line">    <span class="kw">return</span> x;</span>
+<span class="line">}</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/interval_tree.cpp，CLRS 圖 17.4 的十個區間）</span><pre>SEARCH([22,25]) = [15,23]
+SEARCH([11,14]) = NIL（無重疊區間）</pre></div>
+        </div>
+        <div class="ct-panel active" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 17/interval_tree.py（MIT License）精簡版</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">insert</span>(x, lo, hi):</span>
+<span class="line">    <span class="kw">if</span> x <span class="kw">is</span> <span class="kw">None</span>:</span>
+<span class="line">        <span class="kw">return</span> Node(lo, hi)</span>
+<span class="line">    <span class="kw">if</span> lo &lt; x.lo:</span>
+<span class="line">        x.l = insert(x.l, lo, hi)</span>
+<span class="line">    <span class="kw">else</span>:</span>
+<span class="line">        x.r = insert(x.r, lo, hi)</span>
+<span class="line">    x.mx = <span class="fn">max</span>(x.mx, hi)               <span class="com"># 沿路維護 max</span></span>
+<span class="line">    <span class="kw">return</span> x</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">interval_search</span>(x, lo, hi):</span>
+<span class="line">    <span class="kw">while</span> x <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">and</span> (x.hi &lt; lo <span class="kw">or</span> hi &lt; x.lo):</span>
+<span class="line">        <span class="kw">if</span> x.l <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">and</span> x.l.mx &gt;= lo:</span>
+<span class="line">            x = x.l                     <span class="com"># 左子樹的 max 夠大 → 往左</span></span>
+<span class="line">        <span class="kw">else</span>:</span>
+<span class="line">            x = x.r</span>
+<span class="line">    <span class="kw">return</span> x</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/interval_tree.py）</span><pre>SEARCH([22,25]) = [15,23]
+SEARCH([11,14]) = NIL（無重疊區間）</pre></div>
+          <div class="ct-note">[11,14] 落在 [8,9]（hi=9 太小）與 [15,23]（lo=15 太大）之間的空隙——課本同款查詢，雙語同答。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00c · 賭注的邏輯</div>
+    <p>INTERVAL-SEARCH 往左走後在左子樹「沒找到」重疊。為什麼不用回頭再搜右子樹？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。往左的條件是 left.max ≥ i.lo：左子樹有個右端點很大的區間 j；j 都不重疊表示 i.hi < j.lo。右子樹所有 lo ≥（左邊任何 lo）… 精確地說 ≥ j 所在位置之後的鍵 > i.hi → 右子樹全部從 i 右邊開始、無重疊。「左邊落空 ⟹ 右邊必空」正是定理 17.2，單邊下行 O(lg n) 的關鍵。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 左邊落空時可證明右子樹的區間全部起點 &gt; i.hi</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不是機率賭注——是有定理背書的確定性論證：走錯邊的情況根本不存在。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 演算法賭運氣，偶爾會漏報</div>
+      <div class="quiz-opt" data-correct="false" data-fb="區間樹一次只回一個重疊區間（要全部就反覆刪除再查）——但「找不到會誤報 NIL」這件事不會發生。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 因為右子樹的區間會在下次查詢時回傳</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
   </div>
 </section>
 
@@ -130,13 +250,23 @@ OS-RANK(38) = 15</pre></div>
           <button class="ct-btn" onclick="tabShow('ctBt','py',this)">Python</button>
         </div>
         <div class="ct-panel active" data-lang="pseudo">
-          <div class="clrs-code" style="font-size:.75rem;">
+          <div class="clrs-code" style="font-size:.74rem;">
             <div class="cc-title"><span class="fn">B-TREE-SPLIT-CHILD</span>(x, i)</div>
             <span class="line"><span class="ln">1</span>y = x.c<sub>i</sub>（滿：2t−1 鍵）；新節點 z</span>
             <span class="line"><span class="ln">2</span>z 接收 y 的後 t−1 個鍵（與後 t 個孩子）</span>
             <span class="line"><span class="ln">3</span>y 剩前 t−1 個鍵</span>
             <span class="line"><span class="ln">4</span>y 的中位鍵上浮插入 x；z 成為 x 的新孩子</span>
+            <span class="line"><span class="ln">5</span><span class="com">// 兩次 DISK-WRITE(y, z)＋一次 DISK-WRITE(x)</span></span>
           </div>
+          <div class="clrs-code" style="font-size:.74rem;margin-top:.6rem;">
+            <div class="cc-title"><span class="fn">B-TREE-INSERT</span>(T, k)　／　<span class="fn">INSERT-NONFULL</span>(x, k)</div>
+            <span class="line"><span class="ln">1</span>INSERT：<span class="kw">if</span> root 滿 → 新根 s、root 當其獨子、<span class="fn">SPLIT-CHILD</span>(s, 1)　<span class="com">// 唯一長高</span></span>
+            <span class="line"><span class="ln">2</span><span class="fn">INSERT-NONFULL</span>(root, k)</span>
+            <span class="line"><span class="ln">3</span>NONFULL：<span class="kw">if</span> x 是葉 → k 插入 x.keys（有序）</span>
+            <span class="line"><span class="ln">4</span><span class="kw">else</span> 找下行孩子 c<sub>i</sub>；<span class="kw">if</span> c<sub>i</sub> 滿 → <span class="fn">SPLIT-CHILD</span>(x, i) 再決定走哪半</span>
+            <span class="line"><span class="ln">5</span>    <span class="fn">INSERT-NONFULL</span>(c<sub>i</sub>, k)　<span class="com">// 一趟下行、不回頭</span></span>
+          </div>
+          <div class="ct-note">「路過就拆」的預防性分裂讓遞迴永遠進入非滿節點——單趟下行 O(t·log<sub>t</sub> n)、磁碟 I/O O(log<sub>t</sub> n)。</div>
         </div>
         <div class="ct-panel" data-lang="cpp">
           <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com">// t = 2（2-3-4 樹），插入 F S Q K C L H T V W M R N</span></span><span class="line"><span class="kw">char</span> mid = y-&gt;keys[T - <span class="num">1</span>];</span><span class="line">z-&gt;keys.assign(y-&gt;keys.begin() + T, y-&gt;keys.end());</span><span class="line">y-&gt;keys.resize(T - <span class="num">1</span>);</span><span class="line">x-&gt;keys.insert(x-&gt;keys.begin() + i, mid);  <span class="com">// 上浮</span></span></div>
@@ -151,9 +281,51 @@ split：K 上浮
           <div class="ct-note">逐層讀：C F H K L M N Q R S T V W——中序展開正是 13 個鍵的排序。</div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 18/b_tree.py（MIT License）</span></span><span class="line">B = BTree(<span class="num">2</span>)　<span class="com"># t = 2</span></span><span class="line"><span class="kw">for</span> k <span class="kw">in</span> <span class="str">"FSQKCLHTVWMRN"</span>: B.insert(k)</span><span class="line">B.search(B.root, <span class="str">"R"</span>)</span></div>
-          <div class="expected-out"><span class="eo-tag">說明</span><pre>官方版含 disk_read/disk_write 掛勾——
-點出「每個節點一次 I/O」的成本模型</pre></div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 18/b_tree.py（MIT License）精簡版：t = 2</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">split_child</span>(x, i):</span>
+<span class="line">    y = x.ch[i]</span>
+<span class="line">    z = BNode(y.leaf)</span>
+<span class="line">    mid = y.keys[T - <span class="num">1</span>]                  <span class="com"># 中位鍵上浮</span></span>
+<span class="line">    z.keys = y.keys[T:]</span>
+<span class="line">    y.keys = y.keys[:T - <span class="num">1</span>]</span>
+<span class="line">    <span class="kw">if</span> <span class="kw">not</span> y.leaf:</span>
+<span class="line">        z.ch = y.ch[T:]</span>
+<span class="line">        y.ch = y.ch[:T]</span>
+<span class="line">    x.keys.insert(i, mid)</span>
+<span class="line">    x.ch.insert(i + <span class="num">1</span>, z)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">insert_nonfull</span>(x, k):</span>
+<span class="line">    <span class="kw">if</span> x.leaf:</span>
+<span class="line">        x.keys.append(k)</span>
+<span class="line">        x.keys.sort()</span>
+<span class="line">    <span class="kw">else</span>:</span>
+<span class="line">        i = <span class="fn">len</span>(x.keys)</span>
+<span class="line">        <span class="kw">while</span> i &gt; <span class="num">0</span> <span class="kw">and</span> k &lt; x.keys[i - <span class="num">1</span>]:</span>
+<span class="line">            i -= <span class="num">1</span></span>
+<span class="line">        <span class="kw">if</span> <span class="fn">len</span>(x.ch[i].keys) == <span class="num">2</span> * T - <span class="num">1</span>:   <span class="com"># 路過全滿先分裂</span></span>
+<span class="line">            split_child(x, i)</span>
+<span class="line">            <span class="kw">if</span> k &gt; x.keys[i]:</span>
+<span class="line">                i += <span class="num">1</span></span>
+<span class="line">        insert_nonfull(x.ch[i], k)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">insert</span>(root, k):</span>
+<span class="line">    <span class="kw">if</span> <span class="fn">len</span>(root.keys) == <span class="num">2</span> * T - <span class="num">1</span>:      <span class="com"># 根滿：長高一層</span></span>
+<span class="line">        s = BNode(leaf=<span class="kw">False</span>)</span>
+<span class="line">        s.ch.append(root)</span>
+<span class="line">        split_child(s, <span class="num">0</span>)</span>
+<span class="line">        insert_nonfull(s, k)</span>
+<span class="line">        <span class="kw">return</span> s</span>
+<span class="line">    insert_nonfull(root, k)</span>
+<span class="line">    <span class="kw">return</span> root</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/b_tree.py，插入 F S Q K C L H T V W M R N）</span><pre>split：Q 上浮
+split：F 上浮
+split：T 上浮
+split：Q 上浮
+split：K 上浮
+第 0 層：[Q]
+第 1 層：[F K] [T]
+第 2 層：[C] [H] [L M N] [R S] [V W]</pre></div>
+          <div class="ct-note">與 C++ 版逐層相同；官方完整版另含 disk_read/disk_write 掛勾——「每節點一次 I/O」的成本模型寫在介面上。</div>
         </div>
       </div>
     </div>
@@ -196,6 +368,46 @@ split：K 上浮
     實務上常數大、指標繁複，多數場景 binary heap 就夠；它的價值一半在理論界標、一半在攤還分析教科書級示範。
   </div>
 
+  <div class="viz-layout">
+    <div>
+      <div class="thm-box proof">
+        <div class="thm-label">位能 Φ = t + 2m 的攤還帳（t = 樹數、m = 標記數）</div>
+        <div style="font-size:.86rem;line-height:1.75;">
+        <strong>INSERT</strong>：實際 O(1)、樹 +1 → ΔΦ = 1 ⟹ 攤還 O(1)。<br>
+        <strong>EXTRACT-MIN</strong>：實際 O(D + t)（D = 最大度數 = O(lg n)、t 棵樹整理）；
+        CONSOLIDATE 後樹數 ≤ D+1 → ΔΦ ≤ D + 1 − t ⟹ 攤還 O(D) = <strong>O(lg n)</strong>——
+        欠的整理費在這裡用位能付清。<br>
+        <strong>DECREASE-KEY</strong>：實際 O(c)（c = cascading cut 連剪次數）；
+        每次連剪：樹 +1、但<strong>清掉一個標記</strong>（ΔΦ = 1 − 2 = −1）⟹ 攤還 = c + (4 − c) = <strong>O(1)</strong>。
+        標記位就是「預付的剪切費」：每個節點最多失去一個孩子後被標記、失去第二個就被剪走——
+        度數因此壓在 O(lg n)（與 Fibonacci 數的關聯即出於此，堆因而得名）。∎</div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="deck-extra" style="margin:0;">
+        <div class="dx-label">實跑：精簡版 Fibonacci heap（src/advanced/fib_heap.cpp）</div>
+        <div class="expected-out" style="margin-top:0;"><span class="eo-tag">執行輸出</span><pre>INSERT ×10（全掛根串列，O(1) 各自）：n = 10
+EXTRACT-MIN = 3（此刻才 CONSOLIDATE：同 degree 樹合併）
+DECREASE-KEY(39 → 1) 後 MINIMUM = 1
+依序 EXTRACT-MIN：1 7 17 18 21 23 38 41 52
+（= 全部鍵排序：懶歸懶，正確性一分不少）</pre></div>
+        <p class="dx-note">insert/link/consolidate/cut/cascadingCut 全文約百行——「懶惰＋攤還」的完整可跑示範。
+        INSERT 十次沒有任何整理（根串列躺十棵單點樹）；第一次 EXTRACT-MIN 才把帳結清。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02b · 標記的角色</div>
+    <p>DECREASE-KEY 的 cascading cut 中，「失去第二個孩子的節點也被剪走」的目的為何？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。若放任節點無限失去孩子，樹會變得又瘦又高、度數 D 失控，EXTRACT-MIN 的 O(D) 就毀了。cascading cut 保證每個節點至多失去一個孩子——由此可證 degree 為 k 的子樹至少有 F(k+2) ≥ φᵏ 個節點（Fibonacci 數！）⟹ D = O(lg n)。標記位的 2 元位能恰好預付這次剪切。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> 防止樹被「掏空」變瘦高——保證度數 D = O(lg n)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="連剪不是為了找最小值（mn 指標另外維護）——它守護的是樹的「胖度」下界。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> 為了更快找到新的最小值</div>
+      <div class="quiz-opt" data-correct="false" data-fb="連剪讓「單次」DECREASE-KEY 可能很貴（一路剪到根）——是位能付帳才攤還 O(1)；目的在結構品質不在單次速度。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 讓每次 DECREASE-KEY 的實際成本都是 O(1)</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P02 · 值不值得換</div>
     <p>什麼情況下把 Dijkstra 的 binary heap 換成 Fibonacci heap 收益最大？</p>
@@ -223,6 +435,53 @@ split：K 上浮
   <p>它是「共同語言」：最大流、最短路徑、二人零和賽局都能寫成 LP；
   上一章 vertex cover 的近似還能走「LP 鬆弛 → 解實數版 → 捨入」的路線（x ≥ ½ 就選，另一個 2-近似）。
   <strong>整數規劃（ILP）則是 NP-hard</strong>——「整數」二字就是 P 與 NP-hard 的分界線。</p>
+
+  <h3>兩變數麻雀範例：simplex 逛頂點全程</h3>
+  <div class="viz-layout">
+    <div>
+      <p>max z = 3x₁ + 2x₂，限制 x₁ + x₂ ≤ 4、x₁ + 3x₂ ≤ 6、x₁, x₂ ≥ 0。
+      可行域是四邊形，頂點 (0,0)、(4,0)、(3,1)、(0,2)——最佳解必在其中：</p>
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.84rem;">
+        <thead><tr><th>頂點</th><th>z = 3x₁ + 2x₂</th><th>simplex 的走法</th></tr></thead>
+        <tbody>
+          <tr><td>(0, 0)</td><td>0</td><td>起點（slack form 的基本解）</td></tr>
+          <tr><td>(4, 0)</td><td class="best">12 ★</td><td>pivot ①：x₁ 進基（係數 3 最大），比值測試 min(4/1, 6/1) = 4 → x₁ = 4</td></tr>
+          <tr><td>(3, 1)</td><td>11</td><td>pivot ① 之後檢查：x₂ 的化簡係數已 ≤ 0 → 不再走</td></tr>
+          <tr><td>(0, 2)</td><td>4</td><td>從未拜訪（沿邊只往變好的方向）</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="font-size:.9rem;color:var(--muted);">一次 pivot 收工：z 從 0 → 12、之後所有方向都變差 → 由凸性即全域最佳。
+      simplex 每步「沿邊走向更好的鄰頂點」，最壞會逛指數多個頂點（Klee–Minty 立方體），
+      實務卻幾乎永遠飛快——理論與實務落差的著名案例。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">slack form 速寫</div>
+        <div class="pseudo-code" style="font-size:.72rem;"><span class="line">s₁ = 4 − x₁ − x₂      <span class="com">// 鬆弛變數</span></span>
+<span class="line">s₂ = 6 − x₁ − 3x₂</span>
+<span class="line">z  = 3x₁ + 2x₂</span>
+<span class="line"> </span>
+<span class="line"><span class="com">// pivot：x₁ 與 s₁ 交換角色</span></span>
+<span class="line">x₁ = 4 − x₂ − s₁</span>
+<span class="line">s₂ = 2 − 2x₂ + s₁</span>
+<span class="line">z  = 12 − x₂ − 3s₁    <span class="com">// 係數全負 → 停</span></span></div>
+        <div style="font-size:.82rem;line-height:1.7;margin-top:.4rem;">目標列係數全 ≤ 0 就是最佳性證明——z = 12 −（非負項）≤ 12。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03b · 停機證據</div>
+    <p>pivot 後目標列變成 z = 12 − x₂ − 3s₁。為什麼這一行就「證明」了 12 是最佳值？</p>
+    <div class="quiz-options" id="q07Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。任何可行解的 x₂、s₁ 都 ≥ 0 ⟹ z = 12 − x₂ − 3s₁ ≤ 12，而目前解（x₂ = s₁ = 0）恰好達到 12。「重寫後的目標式自帶上界證明」——這就是 LP 對偶性的雛形：pivot 順手生產了最佳性憑證。" onclick="quizCheck('q07', this)"><span class="opt-letter">(A)</span> 變數皆 ≥ 0 ⟹ z ≤ 12，且目前解達到 12</div>
+      <div class="quiz-opt" data-correct="false" data-fb="不是枚舉——simplex 只拜訪了兩個頂點就停；證明來自目標式的代數形式，不是把頂點走完。" onclick="quizCheck('q07', this)"><span class="opt-letter">(B)</span> 因為所有頂點都走過了</div>
+      <div class="quiz-opt" data-correct="false" data-fb="凸性保證「局部最佳＝全域最佳」，但停機當下的憑證是「係數全負 → z 有上界 12」這行代數。" onclick="quizCheck('q07', this)"><span class="opt-letter">(C)</span> 因為 12 比上一個頂點的 0 大</div>
+    </div>
+    <div class="quiz-feedback" id="q07Feedback"></div>
+  </div>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P03 · 分界線</div>
@@ -279,10 +538,43 @@ split：K 上浮
 在 shift 2 找到 pattern</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 32/kmp_matcher.py（MIT License）</span></span><span class="line">compute_prefix_function(<span class="str">"ababaca"</span>, <span class="num">7</span>)</span><span class="line">kmp_matcher(<span class="str">"abababacaba"</span>, <span class="str">"ababaca"</span>, <span class="num">11</span>, <span class="num">7</span>)</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[-1, -1, 0, 1, 2, -1, 0]
-Pattern occurs with shift 2</pre></div>
-          <div class="ct-note">官方用 0-indexed 慣例（−1 = 無真前綴），書中 1-indexed π = [0 0 1 2 3 0 1]——同一張表兩種座標。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 32/kmp_matcher.py（MIT License）：1-based π 表版</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">prefix_function</span>(P):</span>
+<span class="line">    m = <span class="fn">len</span>(P)</span>
+<span class="line">    pi = [<span class="num">0</span>] * (m + <span class="num">1</span>)                   <span class="com"># pi[q] = 最長真前綴兼後綴長</span></span>
+<span class="line">    k = <span class="num">0</span></span>
+<span class="line">    <span class="kw">for</span> q in <span class="fn">range</span>(<span class="num">2</span>, m + <span class="num">1</span>):</span>
+<span class="line">        <span class="kw">while</span> k &gt; <span class="num">0</span> <span class="kw">and</span> P[k] != P[q - <span class="num">1</span>]:</span>
+<span class="line">            k = pi[k]                    <span class="com"># π 對自己迭代（π* 鏈）</span></span>
+<span class="line">        <span class="kw">if</span> P[k] == P[q - <span class="num">1</span>]:</span>
+<span class="line">            k += <span class="num">1</span></span>
+<span class="line">        pi[q] = k</span>
+<span class="line">    <span class="kw">return</span> pi</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">kmp_matcher</span>(T, P):</span>
+<span class="line">    pi = prefix_function(P)</span>
+<span class="line">    q = <span class="num">0</span>                                <span class="com"># 已匹配的字元數</span></span>
+<span class="line">    hits = []</span>
+<span class="line">    <span class="kw">for</span> i, ch in <span class="fn">enumerate</span>(T):</span>
+<span class="line">        <span class="kw">while</span> q &gt; <span class="num">0</span> <span class="kw">and</span> P[q] != ch:      <span class="com"># 失配：q 退 π[q]，i 不回頭</span></span>
+<span class="line">            q = pi[q]</span>
+<span class="line">        <span class="kw">if</span> P[q] == ch:</span>
+<span class="line">            q += <span class="num">1</span></span>
+<span class="line">        <span class="kw">if</span> q == <span class="fn">len</span>(P):</span>
+<span class="line">            hits.append(i - <span class="fn">len</span>(P) + <span class="num">1</span>)</span>
+<span class="line">            q = pi[q]                    <span class="com"># 找下一個出現位置</span></span>
+<span class="line">    <span class="kw">return</span> pi, hits</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/advanced/kmp.py，含逐 q 的 π 全表）</span><pre>π 表（q=1..7）：
+  q=1  P[:q]=a        π[q]=0
+  q=2  P[:q]=ab       π[q]=0
+  q=3  P[:q]=aba      π[q]=1
+  q=4  P[:q]=abab     π[q]=2
+  q=5  P[:q]=ababa    π[q]=3
+  q=6  P[:q]=ababac   π[q]=0
+  q=7  P[:q]=ababaca  π[q]=1
+在 shift [2] 找到 pattern</pre></div>
+          <div class="ct-note">完整可跑（1-based π）。官方版用 0-indexed 慣例（−1 = 無），同一張表兩種座標。
+      對照 §32.3 的有限自動機法：把「失配跳轉」預編成 δ(q, a) 全表——O(m·|Σ|) 預處理換 O(n) 掃描零 while 迴圈；KMP 的 π 表正是它的壓縮版。</div>
         </div>
       </div>
     </div>
@@ -353,7 +645,7 @@ Pattern occurs with shift 2</pre></div>
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch11.json · 14 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch11.json · 20 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -384,7 +676,13 @@ const FLASHCARDS = [
   {"front":"整數規劃（ILP）","back":"變數限整數的 LP——NP-hard。整數限制毀掉凸性，0/1 變數可編碼 SAT 等 NPC 問題；「連續 vs 離散」正是 P 與 NP-hard 的分界。"},
   {"front":"LP 鬆弛與捨入","back":"把 NPC 問題的 0/1 變數放寬成 [0,1] 解 LP，再按規則捨入（如 x ≥ ½ 取 1）。vertex cover 由此得另一個 2-近似。"},
   {"front":"前綴函數 π","back":"π[q] = P₁..q 的最長「真前綴兼後綴」長度——pattern 對自己的結構分析，預處理 O(m)。失配時 q 退到 π[q]。"},
-  {"front":"KMP 演算法","back":"π 表＋逐字元掃描：失配退 q（不回頭讀文字）→ O(n+m)。攤還論證：q 每輪最多+1，總下修 ≤ 總上修 ≤ n。"}
+  {"front":"KMP 演算法","back":"π 表＋逐字元掃描：失配退 q（不回頭讀文字）→ O(n+m)。攤還論證：q 每輪最多+1，總下修 ≤ 總上修 ≤ n。"},
+  {"front":"重疊三分律（Interval Trichotomy）","back":"兩區間恰有一種關係：重疊／i 全在 j 左／i 全在 j 右。「不重疊」判斷式 x.hi < i.lo or i.hi < x.lo 是三分律的直接程式化。"},
+  {"front":"定理 17.2（INTERVAL-SEARCH 正確性）","back":"往右走 = 左子樹 max < i.lo、必無解；往左走賭 left.max 那個區間——若它都不重疊（i.hi < j.lo），右子樹的 lo 更大也全出局。單邊下行即正確。"},
+  {"front":"B-TREE-INSERT-NONFULL","back":"單趟下行：路過全滿孩子先 SPLIT（預防性分裂），保證遞迴永遠進非滿節點、不用回頭。CPU O(t·log_t n)、I/O O(log_t n)。"},
+  {"front":"CONSOLIDATE","back":"EXTRACT-MIN 的整理步：把根串列上同 degree 的樹兩兩 link（小根當爸），直到 degree 兩兩相異——樹數壓到 O(lg n)，欠的帳用位能付。"},
+  {"front":"Φ = t + 2m（Fib heap 位能）","back":"t = 樹數、m = 標記數。INSERT 攤還 O(1)（ΔΦ=1）；EXTRACT-MIN O(lg n)（樹數收斂付帳）；DECREASE-KEY O(1)（每次連剪清一個標記、ΔΦ=−1 抵銷）。"},
+  {"front":"simplex 的停機憑證","back":"pivot 到目標列係數全 ≤ 0 時：z = 常數 −（非負組合）≤ 常數，目前解恰達等號——重寫後的目標式自帶最佳性證明（對偶性雛形）。"}
 ];
 
 /* ---------- P04 KMP 動畫 ---------- */
