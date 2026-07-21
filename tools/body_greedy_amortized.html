@@ -5,6 +5,7 @@
   <a href="#huffman" data-target="huffman"><span class="fn-num">P02</span><span class="fn-name">Huffman</span></a>
   <a href="#knapsack" data-target="knapsack"><span class="fn-num">P03</span><span class="fn-name">背包對照</span></a>
   <a href="#amortized" data-target="amortized"><span class="fn-num">P04</span><span class="fn-name">攤還三法</span></a>
+  <a href="#table" data-target="table"><span class="fn-num">P05</span><span class="fn-name">動態表格</span></a>
   <a href="#exercises" data-target="exercises"><span class="fn-num">EX</span><span class="fn-name">練習題</span></a>
   <a href="#reference" data-target="reference"><span class="fn-num">REF</span><span class="fn-name">總覽比較</span></a>
   <a href="#cards" data-target="cards"><span class="fn-num">CARD</span><span class="fn-name">關鍵詞彙卡</span></a>
@@ -39,6 +40,7 @@
     <a href="#huffman"><span class="toc-num">P02</span>Huffman coding</a>
     <a href="#knapsack"><span class="toc-num">P03</span>0/1 vs 分數背包</a>
     <a href="#amortized"><span class="toc-num">P04</span>攤還分析三法</a>
+    <a href="#table"><span class="toc-num">P05</span>動態表格（§16.4）</a>
     <a href="#exercises"><span class="toc-num">EX</span>練習題</a>
     <a href="#reference"><span class="toc-num">REF</span>總覽比較</a>
     <a href="#cards"><span class="toc-num">CARD</span>關鍵詞彙卡</a>
@@ -126,9 +128,33 @@
           <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>選了 4 個活動：a1 a4 a8 a11</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 15/activity_selector.py（MIT License）</span></span><span class="line">s = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">0</span>, <span class="num">5</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">2</span>, <span class="num">12</span>]</span><span class="line">f = [<span class="num">0</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">9</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">11</span>, <span class="num">12</span>, <span class="num">14</span>, <span class="num">16</span>]</span><span class="line">A = greedy_activity_selector(s, f, len(s))</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出（雙向鏈結串列走訪）</span><pre>['activity1', 'activity4', 'activity8', 'activity11']</pre></div>
-          <div class="ct-note">官方版把結果存進 Ch10 的 DLLSentinel；索引 0 需放哨兵值（s[0]=f[0]=0）。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 15/activity_selector.py（MIT License）：遞迴＋迭代兩版</span></span>
+<span class="line">s = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">3</span>, <span class="num">0</span>, <span class="num">5</span>, <span class="num">3</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>, <span class="num">2</span>, <span class="num">12</span>]      <span class="com"># 索引 0 為哨兵</span></span>
+<span class="line">f = [<span class="num">0</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">9</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">11</span>, <span class="num">12</span>, <span class="num">14</span>, <span class="num">16</span>]  <span class="com"># 已按結束時間排序</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">recursive_activity_selector</span>(s, f, k, n):</span>
+<span class="line">    m = k + <span class="num">1</span></span>
+<span class="line">    <span class="kw">while</span> m &lt;= n <span class="kw">and</span> s[m] &lt; f[k]:      <span class="com"># 找第一個相容的活動</span></span>
+<span class="line">        m += <span class="num">1</span></span>
+<span class="line">    <span class="kw">if</span> m &lt;= n:</span>
+<span class="line">        <span class="kw">return</span> [m] + recursive_activity_selector(s, f, m, n)</span>
+<span class="line">    <span class="kw">return</span> []</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">greedy_activity_selector</span>(s, f, n):</span>
+<span class="line">    A = [<span class="num">1</span>]                            <span class="com"># a1 必選（最早結束）</span></span>
+<span class="line">    k = <span class="num">1</span></span>
+<span class="line">    <span class="kw">for</span> m in <span class="fn">range</span>(<span class="num">2</span>, n + <span class="num">1</span>):</span>
+<span class="line">        <span class="kw">if</span> s[m] &gt;= f[k]:               <span class="com"># 與上一個選中活動相容</span></span>
+<span class="line">            A.append(m)</span>
+<span class="line">            k = m</span>
+<span class="line">    <span class="kw">return</span> A</span>
+<span class="line"> </span>
+<span class="line">n = <span class="fn">len</span>(s) - <span class="num">1</span></span>
+<span class="line"><span class="fn">print</span>(<span class="str">"遞迴版："</span>, recursive_activity_selector(s, f, <span class="num">0</span>, n))</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"迭代版："</span>, greedy_activity_selector(s, f, n))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/greedy/activity_selection.py）</span><pre>遞迴版： [1, 4, 8, 11]
+迭代版： [1, 4, 8, 11]</pre></div>
+          <div class="ct-note">課本的兩個版本都在：遞迴版對應「先做貪婪選擇、遞迴解剩下」；迭代版是同一件事攤平。</div>
         </div>
       </div>
     </div>
@@ -194,14 +220,70 @@ e: 1101
 d: 111</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># heapq 簡例（官方 Chapter 15/huffman.py 是完整檔案壓縮器）</span></span><span class="line">h = [(f, c, c) <span class="kw">for</span> c, f <span class="kw">in</span> freq.items()]</span><span class="line">heapq.heapify(h)</span><span class="line"><span class="kw">while</span> len(h) &gt; <span class="num">1</span>:</span><span class="line">    f1, _, x = heapq.heappop(h)</span><span class="line">    f2, _, y = heapq.heappop(h)</span><span class="line">    tree[node] = (x, y)</span><span class="line">    heapq.heappush(h, (f1 + f2, node, node))</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>codes: {'a':'0','b':'101','c':'100',
- 'd':'111','e':'1101','f':'1100'}
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 15/huffman.py（MIT License）：heapq 平鋪完整版</span></span>
+<span class="line"><span class="kw">import</span> heapq</span>
+<span class="line"> </span>
+<span class="line">freq = {<span class="str">"a"</span>: <span class="num">45</span>, <span class="str">"b"</span>: <span class="num">13</span>, <span class="str">"c"</span>: <span class="num">12</span>, <span class="str">"d"</span>: <span class="num">16</span>, <span class="str">"e"</span>: <span class="num">9</span>, <span class="str">"f"</span>: <span class="num">5</span>}</span>
+<span class="line"> </span>
+<span class="line"><span class="com"># heap 元素 (頻率, 序號, 節點)；序號避免頻率平手時比較 dict</span></span>
+<span class="line">counter = <span class="num">0</span></span>
+<span class="line">h = []</span>
+<span class="line"><span class="kw">for</span> ch, fr in <span class="fn">sorted</span>(freq.items()):</span>
+<span class="line">    h.append((fr, counter, {<span class="str">"ch"</span>: ch}))</span>
+<span class="line">    counter += <span class="num">1</span></span>
+<span class="line">heapq.heapify(h)</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">while</span> <span class="fn">len</span>(h) &gt; <span class="num">1</span>:                       <span class="com"># n−1 次合併</span></span>
+<span class="line">    f1, _, x = heapq.heappop(h)         <span class="com"># 頻率最小</span></span>
+<span class="line">    f2, _, y = heapq.heappop(h)         <span class="com"># 次小</span></span>
+<span class="line">    counter += <span class="num">1</span></span>
+<span class="line">    heapq.heappush(h, (f1 + f2, counter, {<span class="str">"left"</span>: x, <span class="str">"right"</span>: y}))</span>
+<span class="line"> </span>
+<span class="line">root = h[<span class="num">0</span>][<span class="num">2</span>]</span>
+<span class="line">codes = {}</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">walk</span>(node, code):                   <span class="com"># 左 0 右 1 走到葉</span></span>
+<span class="line">    <span class="kw">if</span> <span class="str">"ch"</span> in node:</span>
+<span class="line">        codes[node[<span class="str">"ch"</span>]] = code <span class="kw">or</span> <span class="str">"0"</span></span>
+<span class="line">        <span class="kw">return</span></span>
+<span class="line">    walk(node[<span class="str">"left"</span>], code + <span class="str">"0"</span>)</span>
+<span class="line">    walk(node[<span class="str">"right"</span>], code + <span class="str">"1"</span>)</span>
+<span class="line"> </span>
+<span class="line">walk(root, <span class="str">""</span>)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"codes:"</span>, <span class="fn">dict</span>(<span class="fn">sorted</span>(codes.items())))</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"期望編碼長度:"</span>, <span class="fn">sum</span>(freq[c] * <span class="fn">len</span>(codes[c]) <span class="kw">for</span> c in freq))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/greedy/huffman.py）</span><pre>codes: {'a': '0', 'b': '101', 'c': '100', 'd': '111', 'e': '1101', 'f': '1100'}
 期望編碼長度: 224</pre></div>
-          <div class="ct-note">官方 huffman.py 可對真實檔案（附 moby-dick.txt）壓縮／解壓，行有餘力值得一讀。</div>
+          <div class="ct-note">與 C++ 版編碼完全一致；固定長度 3 位元要 300，Huffman 省 25%。官方 huffman.py 另可對真實檔案（moby-dick.txt）壓縮／解壓。</div>
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="thm-box proof">
+    <div class="thm-label">兩條引理撐起整個 Huffman（正確性證明骨架）</div>
+    <div style="font-size:.87rem;line-height:1.75;">
+    <strong>引理 15.2（貪婪選擇性質）</strong>：設 x、y 是頻率最低的兩個字元，
+    則存在最佳前綴碼樹，其中 x、y 是<strong>深度最大的一對兄弟葉子</strong>。<br>
+    證明（交換論證）：取任一最佳樹 T，設 a、b 是 T 中最深的一對兄弟葉。不妨設 freq(x) ≤ freq(a)、freq(y) ≤ freq(b)。
+    把 x↔a 對調：成本變化 = (freq(a) − freq(x))·(d(a) − d(x)) ≤ 0——頻率小的往深處換<strong>不會變貴</strong>；
+    再把 y↔b 對調同理。得到的樹仍最佳且 x、y 是最深兄弟。∎<br>
+    <strong>引理 15.3（最佳子結構）</strong>：把 x、y 換成一個頻率 freq(x)+freq(y) 的新字元 z 得字元集 C′。
+    若 T′ 是 C′ 的最佳樹，把 T′ 中的葉 z 展開成內部節點（掛 x、y）得到的 T 是 C 的最佳樹。<br>
+    證明要點：成本關係 <strong>B(T) = B(T′) + freq(x) + freq(y)</strong>（x、y 比 z 深一層，恰多付一次頻率和）；
+    若 T 非最佳，存在更好的 T″，由引理 15.2 可讓 x、y 在 T″ 中是兄弟，縮回去得到比 T′ 更好的 C′ 樹——矛盾。∎<br>
+    兩條合體：每次「合併最小兩個」都安全、剩下的子問題遞迴同理 → HUFFMAN 產生最佳前綴碼（定理 15.4）。</div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02b · 引理 15.3 的帳</div>
+    <p>合併 x、y 成 z 後（C → C′），成本關係是 B(T) = B(T′) + freq(x) + freq(y)。多出來的那筆是什麼？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。z 在 T′ 中深度 d，展開後 x、y 深度 d+1——兩者的頻率各多算一層：freq(x)·(d+1) + freq(y)·(d+1) = (freq(x)+freq(y))·d + (freq(x)+freq(y))。前半就是 z 原本的貢獻，多出的正是 freq(x)+freq(y)。這個「固定差額」讓 C 的最佳性可以歸約到 C′ 的最佳性。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> x、y 比 z 各深一層，多付一次 freq(x)+freq(y)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="合併不是憑空加成本——是「展開 z 成兩片葉」的深度 +1 帳；PQ 操作成本是執行時間、不進編碼長度。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> priority queue 的操作成本</div>
+      <div class="quiz-opt" data-correct="false" data-fb="差額與樹高無關——不管 z 在 T′ 哪一層，展開都恰好多 freq(x)+freq(y)。固定差額正是歸約能成立的關鍵。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 差額取決於樹高，不固定</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -293,6 +375,29 @@ d: 111</pre></div>
     </div>
   </div>
 
+  <div class="deck-extra">
+    <div class="dx-label">實跑：INCREMENT 與 MULTIPOP 的總帳（src/greedy/counter_multipop.py）</div>
+    <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 16/increment.py＋multipop.py（MIT License）</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">increment</span>(A):                      <span class="com"># 二進位計數器 +1，回傳翻轉數</span></span>
+<span class="line">    i = flips = <span class="num">0</span></span>
+<span class="line">    <span class="kw">while</span> i &lt; <span class="fn">len</span>(A) <span class="kw">and</span> A[i] == <span class="num">1</span>:  <span class="com"># 低位連續 1 清成 0</span></span>
+<span class="line">        A[i] = <span class="num">0</span>; i += <span class="num">1</span>; flips += <span class="num">1</span></span>
+<span class="line">    <span class="kw">if</span> i &lt; <span class="fn">len</span>(A):                      <span class="com"># 第一個 0 設成 1</span></span>
+<span class="line">        A[i] = <span class="num">1</span>; flips += <span class="num">1</span></span>
+<span class="line">    <span class="kw">return</span> flips</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">multipop</span>(S, k):                    <span class="com"># 彈出 min(k, |S|) 個</span></span>
+<span class="line">    cost = <span class="num">0</span></span>
+<span class="line">    <span class="kw">while</span> S <span class="kw">and</span> k &gt; <span class="num">0</span>:</span>
+<span class="line">        S.pop(); k -= <span class="num">1</span>; cost += <span class="num">1</span></span>
+<span class="line">    <span class="kw">return</span> cost</span></div>
+    <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>16 次 INCREMENT 總翻轉 = 31（&lt; 2n = 32），平均 1.94
+9 個操作（7 push＋2 multipop）總成本 = 14 ≤ 2×push 數 = 14</pre></div>
+    <p class="dx-note">兩個經典一次驗證：counter 的總翻轉貼著 2n 的上界（每次攤還 2）；
+    stack 序列的 pop 總量永遠 ≤ push 總量（每個元素「一進一出」，PUSH 收 2 元的記帳法）。
+    MULTIPOP 的三法都好寫：aggregate（pop ≤ push ≤ n）、accounting（PUSH 收 2 元）、potential（Φ = 堆疊大小）。</p>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P04 · MULTIPOP</div>
     <p>堆疊支援 PUSH、POP、MULTIPOP(k)（彈出 min(k, s) 個）。n 次操作的序列，總成本為什麼是 O(n)？</p>
@@ -302,6 +407,66 @@ d: 111</pre></div>
       <div class="quiz-opt" data-correct="false" data-fb="攤還分析完全沒有機率——O(n) 是對任何操作序列的最壞情況保證，與期望值無關。" onclick="quizCheck('q04', this)"><span class="opt-letter">(C)</span> 因為平均而言使用者不會常呼叫 MULTIPOP</div>
     </div>
     <div class="quiz-feedback" id="q04Feedback"></div>
+  </div>
+</section>
+
+<section id="table">
+  <div class="section-number">P05 · DYNAMIC TABLE</div>
+  <h2>動態表格：三種記帳法同台驗算 <span class="sec-badge">§16.4</span></h2>
+  <p>資結課的懸案正式結案：vector「滿了就加倍搬家」，單次 INSERT 最壞 Θ(n)，為什麼敢說攤還 O(1)？
+  按單步看 16 次 INSERT 的實際成本——尖峰在 2 的冪出現、其餘全是 1：</p>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div id="dtBars" style="display:flex;align-items:flex-end;gap:4px;height:130px;padding:0 4px;"></div>
+      <div class="stats-grid" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="stat-tile"><div class="stat-label">本次實際成本</div><div class="stat-value" id="dtCost">—</div></div>
+        <div class="stat-tile"><div class="stat-label">num / size</div><div class="stat-value" id="dtNS" style="font-size:1rem;">—</div></div>
+        <div class="stat-tile"><div class="stat-label">Φ = 2num−size</div><div class="stat-value" id="dtPhi">—</div></div>
+      </div>
+      <div class="status-banner" id="dtStatus"><span class="status-icon">▸</span><span class="status-text">按「單步」INSERT。虛線 = 攤還線 3。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="dtPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="dtPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="dtPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="thm-box proof" style="margin:0;">
+        <div class="thm-label">位能法完整推導（Φ = 2·num − size）</div>
+        <div style="font-size:.84rem;line-height:1.7;">
+        Φ 永遠 ≥ 0（表格至少半滿：num ≥ size/2），Φ₀ = 0 ✓。<br>
+        <strong>不搬家的 INSERT</strong>：實際 1，num+1 → ΔΦ = 2，攤還 = 1 + 2 = <strong>3</strong>。<br>
+        <strong>搬家的 INSERT</strong>（num = size = m 時）：實際 m + 1；
+        搬家前 Φ = 2m − m = m，搬家＋插入後 num = m+1、size = 2m → Φ = 2 ⟹ ΔΦ = 2 − m。<br>
+        攤還 = (m + 1) + (2 − m) = <strong>3</strong>——擴張瞬間位能「存款」m 全數放出，恰好付掉搬家費。∎</div>
+      </div>
+      <div class="deck-extra" style="margin-top:.8rem;">
+        <div class="dx-label">實跑全表（src/greedy/dynamic_table.cpp）</div>
+        <div class="expected-out" style="margin-top:0;"><span class="eo-tag">i＝1..16 的 成本/num/size/Φ/攤還</span><pre> i  實際成本  num  size   Φ   攤還(=實際+ΔΦ)
+ 1       1     1     1    1         2
+ 2       2     2     2    2         3
+ 3       3     3     4    2         3
+ 4       1     4     4    4         3
+ 5       5     5     8    2         3
+ 8       1     8     8    8         3
+ 9       9     9    16    2         3
+16       1    16    16   16         3</pre></div>
+        <p class="dx-note">（節錄；全表 16 列攤還除第 1 次外恆為 3。）三法對照：aggregate 總帳 Σcost ≤ 3n；
+        accounting 每次收 3 元（1 插自己＋1 搬自己＋1 幫前輩）；potential 如左——同一個真相，三種語言。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P05 · Φ 的設計感</div>
+    <p>為什麼動態表的位能函數要選 Φ = 2·num − size，而不是簡單的 Φ = num？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。Φ 的任務是「在貴操作來臨前存夠錢」：搬家成本 ≈ m（= 當時的 size），所以擴張前一刻 Φ 必須恰好積到 ≈ m。Φ = 2num − size 從擴張後的 2 每次 +2、擴張前剛好存到 m，搬家瞬間全數放出（ΔΦ = 2 − m）把帳打平成 3。若改用 Φ = num：搬家時 ΔΦ = +1，攤還 = (m+1) + 1 = m + 2 —— 存款根本不夠付。係數 2 是「每格存 2 元（搬自己＋幫前輩）」的精確設計，與 accounting 法的 3 元互相呼應。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 搬家要付 ≈ size 的錢，Φ 必須在擴張前恰好積到那麼多</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩者都非負、都滿足 Φ ≥ Φ₀——合法性不是問題，問題是 Φ=num 積蓄太慢、付不起搬家費（攤還會變 Θ(n)）。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> Φ = num 可能變成負值，不合法</div>
+      <div class="quiz-opt" data-correct="false" data-fb="位能法不要求 Φ 有物理意義——它是分析工具，唯一標準是「讓每種操作的攤還成本都好看」。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 因為 2num−size 有明確的物理意義</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
   </div>
 </section>
 
@@ -359,7 +524,7 @@ d: 111</pre></div>
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch6.json · 12 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch6.json · 17 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -388,7 +553,12 @@ const FLASHCARDS = [
   {"front":"聚合法（Aggregate Method）","back":"直接算 n 次操作的總成本 T(n)，攤還成本 = T(n)/n。binary counter：總翻轉 < 2n → 每次 INCREMENT 攤還 O(1)。"},
   {"front":"記帳法（Accounting Method）","back":"每種操作預收固定「攤還費」，多收的存進資料結構的特定物件、給未來的貴操作提領。合法條件：存款永不透支。"},
   {"front":"位能法（Potential Method）","back":"定義位能函數 Φ(D)（≥ Φ(D₀)）；攤還成本 = 實際成本 + Φ(after) − Φ(before)。最通用：counter 用 Φ=1 的個數、stack 用 Φ=大小、動態表用 Φ=2num−size。"},
-  {"front":"動態表格（Dynamic Table）","back":"滿了就加倍搬家的陣列（vector 原型）。單次 INSERT 最壞 Θ(n)（搬家），攤還 O(1)：accounting 每次收 3 元或 Φ = 2·num − size。"}
+  {"front":"動態表格（Dynamic Table）","back":"滿了就加倍搬家的陣列（vector 原型）。單次 INSERT 最壞 Θ(n)（搬家），攤還 O(1)：accounting 每次收 3 元或 Φ = 2·num − size。"},
+  {"front":"引理 15.2（Huffman 貪婪選擇）","back":"頻率最低的 x、y 必可安排為某最佳樹「最深的一對兄弟葉」。證法：與最深兄弟對調，(freq 差)×(深度差) ≤ 0 不變貴。"},
+  {"front":"引理 15.3（Huffman 最佳子結構）","back":"合併 x、y 成 z 後：B(T) = B(T′) + freq(x) + freq(y)（固定差額）。C′ 的最佳樹展開 z 即 C 的最佳樹——歸約成立、遞迴到底。"},
+  {"front":"MULTIPOP 攤還","back":"單次最壞 O(n)，但序列總 pop ≤ 總 push ≤ n。三法：aggregate 直接數、accounting PUSH 收 2 元、potential Φ = 堆疊大小。"},
+  {"front":"二進位計數器攤還 2","back":"bit i 每 2^i 次翻一次 → 總翻轉 Σn/2^i < 2n。potential 版：Φ = 1 的個數，攤還 = (t+1) + (1−t) = 2。實測 16 次共 31 翻。"},
+  {"front":"Φ = 2num − size 的設計","back":"擴張後 Φ=2、每次 INSERT +2、擴張前積到 m——恰好付掉搬 m 個元素的帳（ΔΦ = 2−m），攤還恆 3。位能函數 =「為貴操作預存的能量」。"}
 ];
 
 /* ---------- P01 activity selection 動畫 ---------- */
@@ -500,4 +670,54 @@ function bcApply(f) {
 }
 const bcPlayer = new Player({frames: bcFrames(), apply: bcApply, delayInput: null});
 bcPlayer.reset();
+
+/* ---------- P05 動態表格成本長條動畫 ---------- */
+function dtFrames() {
+  const frames = [{costs: [], num: 0, size: 0, phi: 0, msg: '空表：num = size = 0。第一次 INSERT 會配置大小 1。'}];
+  let num = 0, size = 0;
+  const costs = [];
+  for (let i = 1; i <= 16; i++) {
+    let cost;
+    if (num === size) {
+      cost = num + 1;
+      size = size === 0 ? 1 : 2 * size;
+    } else {
+      cost = 1;
+    }
+    num++;
+    costs.push(cost);
+    const phi = 2 * num - size;
+    frames.push({costs: [...costs], num, size, phi,
+      msg: 'INSERT #' + i + '：實際成本 ' + cost +
+           (cost > 1 ? '（搬家 ' + (cost - 1) + ' 個＋插入）——位能存款瞬間放出，攤還仍是 3。' : '。Φ 又存了 2 元。')});
+  }
+  frames.push({costs: [...costs], num, size, phi: 2 * num - size,
+    msg: '16 次總成本 = ' + costs.reduce((a, b) => a + b, 0) + ' ≤ 3n = 48：尖峰全被便宜操作攤平。'});
+  return frames;
+}
+function dtApply(f) {
+  const el = $('dtBars'); el.innerHTML = '';
+  const maxC = 10;
+  for (let i = 0; i < 16; i++) {
+    const bar = document.createElement('div');
+    const c = f.costs[i];
+    const h = c ? Math.max(8, c / maxC * 120) : 0;
+    bar.style.cssText = 'flex:1;border-radius:3px 3px 0 0;position:relative;' +
+      (c ? 'height:' + h + 'px;background:' + (c > 3 ? '#c0392b' : '#1a6b4a') + ';' : 'height:2px;background:#ddd;');
+    if (c) {
+      bar.title = 'INSERT #' + (i + 1) + '：成本 ' + c;
+      const lab = document.createElement('div');
+      lab.style.cssText = 'position:absolute;top:-16px;left:0;right:0;text-align:center;font-size:.6rem;font-family:JetBrains Mono,monospace;color:var(--muted);';
+      lab.textContent = c;
+      bar.appendChild(lab);
+    }
+    el.appendChild(bar);
+  }
+  $('dtCost').textContent = f.costs.length ? f.costs[f.costs.length - 1] : '—';
+  $('dtNS').textContent = f.num + ' / ' + f.size;
+  $('dtPhi').textContent = f.phi;
+  setStatus('dtStatus', f.msg);
+}
+const dtPlayer = new Player({frames: dtFrames(), apply: dtApply, delayInput: null});
+dtPlayer.reset();
 </script>

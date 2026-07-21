@@ -46,5 +46,25 @@
  {
   "front": "動態表格（Dynamic Table）",
   "back": "滿了就加倍搬家的陣列（vector 原型）。單次 INSERT 最壞 Θ(n)（搬家），攤還 O(1)：accounting 每次收 3 元或 Φ = 2·num − size。"
+ },
+ {
+  "front": "引理 15.2（Huffman 貪婪選擇）",
+  "back": "頻率最低的 x、y 必可安排為某最佳樹「最深的一對兄弟葉」。證法：與最深兄弟對調，(freq 差)×(深度差) ≤ 0 不變貴。"
+ },
+ {
+  "front": "引理 15.3（Huffman 最佳子結構）",
+  "back": "合併 x、y 成 z 後：B(T) = B(T′) + freq(x) + freq(y)（固定差額）。C′ 的最佳樹展開 z 即 C 的最佳樹——歸約成立、遞迴到底。"
+ },
+ {
+  "front": "MULTIPOP 攤還",
+  "back": "單次最壞 O(n)，但序列總 pop ≤ 總 push ≤ n。三法：aggregate 直接數、accounting PUSH 收 2 元、potential Φ = 堆疊大小。"
+ },
+ {
+  "front": "二進位計數器攤還 2",
+  "back": "bit i 每 2^i 次翻一次 → 總翻轉 Σn/2^i < 2n。potential 版：Φ = 1 的個數，攤還 = (t+1) + (1−t) = 2。實測 16 次共 31 翻。"
+ },
+ {
+  "front": "Φ = 2num − size 的設計",
+  "back": "擴張後 Φ=2、每次 INSERT +2、擴張前積到 m——恰好付掉搬 m 個元素的帳（ΔΦ = 2−m），攤還恆 3。位能函數 =「為貴操作預存的能量」。"
  }
 ]
