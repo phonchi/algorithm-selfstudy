@@ -1,6 +1,7 @@
 <nav class="float-nav" id="floatNav" aria-label="章節導覽">
   <div class="fn-title">章節導覽</div>
   <a href="#dsu" data-target="dsu"><span class="fn-num">P00</span><span class="fn-name">disjoint set</span></a>
+  <a href="#repr" data-target="repr"><span class="fn-num">P00b</span><span class="fn-name">圖的表示</span></a>
   <a href="#bfs" data-target="bfs"><span class="fn-num">P01</span><span class="fn-name">BFS 深化</span></a>
   <a href="#dfs" data-target="dfs"><span class="fn-num">P02</span><span class="fn-name">DFS 時間戳</span></a>
   <a href="#toposort" data-target="toposort"><span class="fn-num">P03</span><span class="fn-name">topological sort</span></a>
@@ -35,6 +36,7 @@
   <div class="toc-title">CONTENTS · 內容目錄</div>
   <div class="toc-grid">
     <a href="#dsu"><span class="toc-num">P00</span>disjoint set（union-find）</a>
+    <a href="#repr"><span class="toc-num">P00b</span>圖的表示（§20.1）</a>
     <a href="#bfs"><span class="toc-num">P01</span>BFS 深化</a>
     <a href="#dfs"><span class="toc-num">P02</span>DFS 時間戳與括號定理</a>
     <a href="#toposort"><span class="toc-num">P03</span>topological sort</a>
@@ -93,12 +95,83 @@
 SAME-COMPONENT(e, g) = 0</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 19/disjoint_set_forest.py（MIT License）</span></span><span class="line">nodes = {c: make_set(c) <span class="kw">for</span> c <span class="kw">in</span> <span class="str">'abcdefghij'</span>}</span><span class="line"><span class="kw">for</span> x, y <span class="kw">in</span> [(<span class="str">'b'</span>,<span class="str">'c'</span>), (<span class="str">'a'</span>,<span class="str">'c'</span>), (<span class="str">'a'</span>,<span class="str">'b'</span>), (<span class="str">'d'</span>,<span class="str">'c'</span>),</span><span class="line">             (<span class="str">'e'</span>,<span class="str">'f'</span>), (<span class="str">'g'</span>,<span class="str">'h'</span>), (<span class="str">'i'</span>,<span class="str">'j'</span>)]:</span><span class="line">    union(nodes[x], nodes[y])</span><span class="line">find_set(nodes[<span class="str">'a'</span>]) <span class="kw">is</span> find_set(nodes[<span class="str">'d'</span>])</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>same(a,d): True  same(e,g): False</pre></div>
-          <div class="ct-note">官方版是 ForestNode 物件（x.parent、x.rank），與課本 pseudocode 逐行對應。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 19/disjoint_set_forest.py（MIT License）：parent/rank dict</span></span>
+<span class="line">parent, rank = {}, {}</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">make_set</span>(x):</span>
+<span class="line">    parent[x] = x</span>
+<span class="line">    rank[x] = <span class="num">0</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">find_set</span>(x):</span>
+<span class="line">    <span class="kw">if</span> parent[x] != x:</span>
+<span class="line">        parent[x] = find_set(parent[x])     <span class="com"># 路徑壓縮：沿途全改指根</span></span>
+<span class="line">    <span class="kw">return</span> parent[x]</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">union</span>(x, y):</span>
+<span class="line">    rx, ry = find_set(x), find_set(y)</span>
+<span class="line">    <span class="kw">if</span> rx == ry:</span>
+<span class="line">        <span class="kw">return</span></span>
+<span class="line">    <span class="kw">if</span> rank[rx] &lt; rank[ry]:                 <span class="com"># union by rank：矮樹掛高樹</span></span>
+<span class="line">        rx, ry = ry, rx</span>
+<span class="line">    parent[ry] = rx</span>
+<span class="line">    <span class="kw">if</span> rank[rx] == rank[ry]:</span>
+<span class="line">        rank[rx] += <span class="num">1</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">for</span> c in <span class="str">"abcdefghij"</span>:</span>
+<span class="line">    make_set(c)</span>
+<span class="line"><span class="kw">for</span> x, y in [(<span class="str">"b"</span>,<span class="str">"c"</span>), (<span class="str">"a"</span>,<span class="str">"c"</span>), (<span class="str">"a"</span>,<span class="str">"b"</span>), (<span class="str">"d"</span>,<span class="str">"c"</span>),</span>
+<span class="line">             (<span class="str">"e"</span>,<span class="str">"f"</span>), (<span class="str">"g"</span>,<span class="str">"h"</span>), (<span class="str">"i"</span>,<span class="str">"j"</span>)]:</span>
+<span class="line">    union(x, y)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"SAME-COMPONENT(a, d) ="</span>, find_set(<span class="str">"a"</span>) == find_set(<span class="str">"d"</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs1/disjoint_set.py，CLRS 圖 19.1）</span><pre>SAME-COMPONENT(a, d) = True
+SAME-COMPONENT(e, g) = False
+各頂點代表： {'a': 'b', 'b': 'b', 'c': 'b', 'd': 'b', 'e': 'e', 'f': 'e', 'g': 'g', 'h': 'g', 'i': 'i', 'j': 'i'}</pre></div>
+          <div class="ct-note">完整可跑；find_set 的遞迴寫法讓路徑壓縮只有一行。與 C++ 版同一組邊、同樣的代表結果。</div>
         </div>
       </div>
     </div>
+  </div>
+
+  <h3>α(n) 有多慢？塔函數的直觀</h3>
+  <div class="viz-layout">
+    <div>
+      <p>兩優化合用的 O(m·α(n)) 中，α 是<strong>反 Ackermann 函數</strong>——
+      它是「A<sub>k</sub>(1) ≥ n 所需的最小 k」，而 A<sub>k</sub> 成長快到失控：</p>
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.84rem;">
+        <thead><tr><th>n 的範圍</th><th>α(n)</th><th>對照</th></tr></thead>
+        <tbody>
+          <tr><td>0 – 2</td><td>0</td><td></td></tr>
+          <tr><td>3</td><td>1</td><td></td></tr>
+          <tr><td>4 – 7</td><td>2</td><td></td></tr>
+          <tr><td>8 – 2047</td><td>3</td><td>2047 = 2^11 − 1</td></tr>
+          <tr><td>2048 – A₄(1)</td><td class="best">4</td><td>A₄(1) ≫ 10^80（宇宙原子數）</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="font-size:.9rem;color:var(--muted);">實務上 α(n) ≤ 4 永遠成立——「幾乎常數」不是修辭，是定理。
+      證明用 Ch16 的 potential method（每節點按 rank 設位能），是攤還分析最華麗的應用之一（§19.4，課堂不證）。</p>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="ic-title">另一條路：linked-list 表示</div>
+        <div style="font-size:.84rem;line-height:1.75;">每個集合一條串列＋back 指標指向集合物件：FIND O(1)、
+        但 UNION 要整條改 back 指標。<strong>加權合併啟發式</strong>（短的併入長的）讓 m 次操作
+        O(m + n lg n)——每個元素每被改一次指標、所屬集合至少翻倍，最多被改 lg n 次。
+        森林＋兩優化仍然更快，但「小的併入大的」這個思想到處可用。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00b · 加權合併</div>
+    <p>linked-list 表示配加權合併啟發式，為什麼單一元素的 back 指標最多被更新 ⌈lg n⌉ 次？</p>
+    <div class="quiz-options" id="q10Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。x 的指標被更新 ⟺ x 所在的（較短）集合被併入較長集合 ⟹ 合併後集合大小至少是原來的兩倍。大小從 1 出發、每次至少翻倍、上限 n → 至多 lg n 次翻倍。「每次代價發生時規模翻倍」是攤還論證的經典模式（動態表同款）。" onclick="quizCheck('q10', this)"><span class="opt-letter">(A)</span> 每次被更新，所在集合大小至少翻倍，翻不到 lg n 次就到 n</div>
+      <div class="quiz-opt" data-correct="false" data-fb="rank 是森林實作的概念；linked-list 版靠的是「短併入長 → 大小翻倍」的計數論證。" onclick="quizCheck('q10', this)"><span class="opt-letter">(B)</span> 因為樹高被 rank 壓在 lg n</div>
+      <div class="quiz-opt" data-correct="false" data-fb="UNION 次數可以到 n−1 次；關鍵是「每個元素」自己被波及的次數有 lg n 上限，不是總次數。" onclick="quizCheck('q10', this)"><span class="opt-letter">(C)</span> 因為 UNION 最多只能執行 lg n 次</div>
+    </div>
+    <div class="quiz-feedback" id="q10Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -110,6 +183,53 @@ SAME-COMPONENT(e, g) = 0</pre></div>
       <div class="quiz-opt" data-correct="false" data-fb="O(m²) 是「兩個優化都不用」時可能退化成鏈的量級；by rank 已經把高度壓到對數。" onclick="quizCheck('q00', this)"><span class="opt-letter">(C)</span> O(m²)</div>
     </div>
     <div class="quiz-feedback" id="q00Feedback"></div>
+  </div>
+</section>
+
+<section id="repr">
+  <div class="section-number">P00b · 圖的表示</div>
+  <h2>鄰接串列 vs 鄰接矩陣：所有圖演算法的地基 <span class="sec-badge">§20.1</span></h2>
+  <p>G = (V, E) 進電腦只有兩種主流姿勢。選錯表示法，後面每個演算法都跟著慢：</p>
+  <div class="viz-layout">
+    <div>
+      <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="com">// 同一張圖（1—2、1—5、2—3、2—4）兩種長相</span></span>
+<span class="line"> </span>
+<span class="line">鄰接串列 Adj：            鄰接矩陣 A：</span>
+<span class="line">  1 → [2, 5]                 1 2 3 4 5</span>
+<span class="line">  2 → [1, 3, 4]           1  0 1 0 0 1</span>
+<span class="line">  3 → [2]                 2  1 0 1 1 0</span>
+<span class="line">  4 → [2]                 3  0 1 0 0 0</span>
+<span class="line">  5 → [1]                 4  0 1 0 0 0</span>
+<span class="line">                          5  1 0 0 0 0</span></div>
+      <p style="font-size:.9rem;color:var(--muted);">無向圖的矩陣沿對角線對稱（A = Aᵀ）；有向圖的<strong>轉置圖 Gᵀ</strong> 在矩陣下就是轉置、
+      在串列下要 Θ(V+E) 重建（SCC 第二趟用得到）。出度 = 掃自己的串列；<strong>入度</strong>在串列下要掃全部 Θ(V+E)——
+      需要頻繁查入度就先預算一次存起來（Kahn 拓撲排序的第一步）。</p>
+    </div>
+    <div class="side-panel">
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.82rem;">
+        <thead><tr><th></th><th>鄰接串列</th><th>鄰接矩陣</th></tr></thead>
+        <tbody>
+          <tr><td>空間</td><td class="best">Θ(V + E)</td><td class="worst">Θ(V²)</td></tr>
+          <tr><td>查邊 (u,v)</td><td>O(deg(u))</td><td class="best">O(1)</td></tr>
+          <tr><td>枚舉 u 的鄰居</td><td class="best">O(deg(u))</td><td class="worst">Θ(V)</td></tr>
+          <tr><td>適合</td><td class="best">稀疏圖（E ≪ V²）</td><td>稠密圖、需 O(1) 查邊</td></tr>
+          <tr><td>本課預設</td><td class="best">✓（BFS/DFS/MST/SSSP）</td><td>Floyd-Warshall（Ch23）</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00c · 選表示</div>
+    <p>社群網站好友圖：10⁷ 個使用者、平均每人 200 個好友。用鄰接矩陣存的下場是？</p>
+    <div class="quiz-options" id="q08Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。矩陣要 (10⁷)² = 10¹⁴ 格——就算一格 1 位元也要 12.5 TB，而實際邊數只有 10⁷×200/2 = 10⁹ 條。稀疏圖（E ≪ V²）用鄰接串列：Θ(V+E) ≈ 10⁹ 級，差五個數量級。BFS/DFS 的 O(V+E) 成本也只有在串列表示下才成立。" onclick="quizCheck('q08', this)"><span class="opt-letter">(A)</span> 空間爆炸：10¹⁴ 格 vs 實際只有 10⁹ 條邊</div>
+      <div class="quiz-opt" data-correct="false" data-fb="O(1) 查邊確實是矩陣的優點，但為了它付 10¹⁴ 的空間在稀疏圖上完全不划算——串列查邊 O(200) 也夠快。" onclick="quizCheck('q08', this)"><span class="opt-letter">(B)</span> 沒問題，矩陣查邊 O(1) 最快</div>
+      <div class="quiz-opt" data-correct="false" data-fb="正確性不受表示法影響——所有演算法兩種表示都能跑；差的是空間與時間常數。" onclick="quizCheck('q08', this)"><span class="opt-letter">(C)</span> BFS 會算出錯誤的距離</div>
+    </div>
+    <div class="quiz-feedback" id="q08Feedback"></div>
   </div>
 </section>
 
@@ -154,9 +274,28 @@ SAME-COMPONENT(e, g) = 0</pre></div>
           <div class="expected-out"><span class="eo-tag">執行輸出（CLRS 圖 20.3，源點 s）</span><pre>BFS 距離：r:1 s:0 t:2 u:3 v:2 w:1 x:2 y:3</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 20/bfs.py（MIT License）</span></span><span class="line">G = AdjacencyListGraph(<span class="num">8</span>, directed=<span class="kw">False</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 20.3 …</span></span><span class="line">d, pi = bfs(G, <span class="num">1</span>)　<span class="com"># 源點 s = 1</span></span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>[1, 0, 2, 3, 2, 1, 2, 3]</pre></div>
-          <div class="ct-note">回傳 (d, pi)：距離與 BFS tree 前驅；print_path.py 可沿 π 印出最短路徑。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 20/bfs.py（MIT License）：dict 鄰接表平鋪版</span></span>
+<span class="line"><span class="kw">from</span> collections <span class="kw">import</span> deque</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">bfs</span>(adj, s):</span>
+<span class="line">    d = {v: <span class="kw">None</span> <span class="kw">for</span> v in adj}          <span class="com"># None = WHITE（未發現）</span></span>
+<span class="line">    d[s] = <span class="num">0</span></span>
+<span class="line">    Q = deque([s])</span>
+<span class="line">    <span class="kw">while</span> Q:</span>
+<span class="line">        u = Q.popleft()</span>
+<span class="line">        <span class="kw">for</span> v in adj[u]:</span>
+<span class="line">            <span class="kw">if</span> d[v] <span class="kw">is</span> <span class="kw">None</span>:            <span class="com"># 白 → 灰：設距離、入列</span></span>
+<span class="line">                d[v] = d[u] + <span class="num">1</span></span>
+<span class="line">                Q.append(v)</span>
+<span class="line">    <span class="kw">return</span> d</span>
+<span class="line"> </span>
+<span class="line"><span class="com"># CLRS 圖 20.3（無向）</span></span>
+<span class="line">G = {<span class="str">"r"</span>: [<span class="str">"s"</span>,<span class="str">"v"</span>], <span class="str">"s"</span>: [<span class="str">"r"</span>,<span class="str">"w"</span>], <span class="str">"t"</span>: [<span class="str">"u"</span>,<span class="str">"w"</span>,<span class="str">"x"</span>], <span class="str">"u"</span>: [<span class="str">"t"</span>,<span class="str">"x"</span>,<span class="str">"y"</span>],</span>
+<span class="line">     <span class="str">"v"</span>: [<span class="str">"r"</span>], <span class="str">"w"</span>: [<span class="str">"s"</span>,<span class="str">"t"</span>,<span class="str">"x"</span>], <span class="str">"x"</span>: [<span class="str">"t"</span>,<span class="str">"u"</span>,<span class="str">"w"</span>,<span class="str">"y"</span>], <span class="str">"y"</span>: [<span class="str">"u"</span>,<span class="str">"x"</span>]}</span>
+<span class="line">d = bfs(G, <span class="str">"s"</span>)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">" "</span>.join(<span class="str">"%s:%d"</span> % (v, d[v]) <span class="kw">for</span> v in <span class="fn">sorted</span>(d)))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs1/graph_traversal.py）</span><pre>BFS 距離（源點 s）： r:1 s:0 t:2 u:3 v:2 w:1 x:2 y:3</pre></div>
+          <div class="ct-note">完整可跑；與 C++ 版逐字同值。用「d 是否為 None」兼任白灰黑標記，一個 dict 搞定。</div>
         </div>
       </div>
     </div>
@@ -208,6 +347,69 @@ SAME-COMPONENT(e, g) = 0</pre></div>
     </div>
   </div>
 
+  <h3>白路徑定理與 d/f 判邊法則</h3>
+  <div class="viz-layout">
+    <div>
+      <div class="thm-box proof">
+        <div class="thm-label">白路徑定理（定理 20.9）</div>
+        <div style="font-size:.86rem;line-height:1.7;">
+        v 是 u 在 DFS 森林中的後裔 ⟺ <strong>發現 u 的那一刻（時間 u.d），存在一條 u 到 v 的全白路徑</strong>。<br>
+        （⇒）後裔在 [u.d, u.f] 間才被發現，發現時全是白的，樹邊串起來就是白路徑。<br>
+        （⇐）對白路徑上的頂點歸納：若 v 不成為 u 的後裔，取路徑上第一個非後裔 w，其前驅 x 是後裔；
+        由括號定理 x.f ≤ u.f，而 w 在 x 探索期間仍是白的、必在 x.f 前被發現 → w.d &lt; x.f ≤ u.f，
+        且 w.d &gt; u.d ⟹ [w.d, w.f] 巢在 [u.d, u.f] 內 ⟹ w 是 u 的後裔，矛盾。∎<br>
+        它是 SCC 正確性證明的主力引理——「第二趟 DFS 為何恰好收割一個元件」全靠它。</div>
+      </div>
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.84rem;">
+        <thead><tr><th>探索 (u,v) 時 v 的狀態</th><th>邊類型</th><th>用時間戳判讀</th></tr></thead>
+        <tbody>
+          <tr><td>白（未發現）</td><td class="best">tree</td><td>v 成為 u 的孩子</td></tr>
+          <tr><td>灰（在遞迴堆疊上）</td><td class="worst">back（→ 有環！）</td><td>[u.d,u.f] 巢在 [v.d,v.f] 內</td></tr>
+          <tr><td>黑，且 u.d &lt; v.d</td><td>forward</td><td>[v.d,v.f] 巢在 [u.d,u.f] 內、非樹邊</td></tr>
+          <tr><td>黑，且 u.d &gt; v.d</td><td>cross</td><td>[u.d,u.f] 與 [v.d,v.f] 不相交</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="font-size:.9rem;color:var(--muted);">無向圖只有 tree 與 back（定理 20.10）；有向圖四種都可能。
+      「灰 = back = 有環」是拓撲排序與死結偵測的核心判準。</p>
+    </div>
+    <div class="side-panel">
+      <div class="deck-extra" style="margin:0;">
+        <div class="dx-label">實跑：CLRS 圖 20.9 的完整邊分類（src/graphs1/edge_classify.cpp）</div>
+        <div class="expected-out" style="margin-top:0;"><span class="eo-tag">執行輸出</span><pre>邊分類（依 DFS 探索順序）：
+  a-&gt;b : tree
+  b-&gt;c : tree
+  c-&gt;d : tree
+  d-&gt;c : back
+  d-&gt;h : tree
+  h-&gt;h : back
+  c-&gt;g : tree
+  g-&gt;f : tree
+  f-&gt;g : back
+  g-&gt;h : cross
+  b-&gt;e : tree
+  e-&gt;a : back
+  e-&gt;f : cross
+  b-&gt;f : forward
+時間戳 [d, f]：a[1,16] b[2,15] c[3,12] d[4,7] e[13,14] f[9,10] g[8,11] h[5,6]</pre></div>
+        <p class="dx-note">拿時間戳自我驗證：b→f 是 forward（[9,10] 巢在 [2,15] 內、f 已黑且 b.d=2 &lt; f.d=9）；
+        g→h 是 cross（[8,11] 與 [5,6] 不相交、g.d &gt; h.d）；d→c 是 back（探索時 c 還灰著——[4,7] 巢在 [3,12] 內）。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02b · 判邊</div>
+    <p>上面實跑的時間戳中，e[13,14]、f[9,10]。邊 e→f 是哪一型？</p>
+    <div class="quiz-options" id="q09Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。探索 e→f 時 f 已完成（黑，f.f=10 < e.d=13），且 e.d=13 > f.d=9 → cross。兩個區間 [13,14] 與 [9,10] 完全不相交——括號定理的「不相交 = 無祖裔關係」對應 cross（或指向另一棵樹）。" onclick="quizCheck('q09', this)"><span class="opt-letter">(A)</span> cross：區間不相交且 e.d &gt; f.d</div>
+      <div class="quiz-opt" data-correct="false" data-fb="forward 要 e.d < f.d 且 [f.d,f.f] 巢在 [e.d,e.f] 內——這裡 13 > 9，方向不對。" onclick="quizCheck('q09', this)"><span class="opt-letter">(B)</span> forward</div>
+      <div class="quiz-opt" data-correct="false" data-fb="back 要 f 還是灰的（e 的區間巢在 f 的區間內）——[13,14] 沒有巢在 [9,10] 裡，f 早就完成了。" onclick="quizCheck('q09', this)"><span class="opt-letter">(C)</span> back</div>
+    </div>
+    <div class="quiz-feedback" id="q09Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P02 · 括號定理</div>
     <p>DFS 後得 u.d=3、u.f=8、v.d=5、v.f=7。下列何者正確？</p>
@@ -231,8 +433,35 @@ SAME-COMPONENT(e, g) = 0</pre></div>
     v 白則成為 u 的後裔 → v.f &lt; u.f；v 黑則 v 早就完成 → v.f &lt; u.f。
     兩種情況都有 <strong>v.f &lt; u.f</strong> → 按 f 遞減排，u 一定排在 v 前面。∎
   </div>
-  <div class="expected-out"><span class="eo-tag">C++／官方 Python 相同輸出（CLRS 圖 20.7 穿衣 DAG）</span><pre>topological sort：錶 襪子 襯衫 領帶 內褲 褲子 鞋 皮帶 外套</pre></div>
-  <p style="font-size:.9rem;color:var(--muted);">同一個 DAG 可以有多個合法拓撲序；換 DFS 的起點順序會得到不同但同樣正確的結果。另一個常用做法是 Kahn 演算法（重複移除入度 0 的頂點）——課本習題 20.4-5。</p>
+  <div class="deck-extra">
+    <div class="dx-label">完整實作：DFS 時間戳＋完成時間反序（src/graphs1/graph_traversal.py）</div>
+    <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 20/dfs.py＋topological_sort.py（MIT License）</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">dfs</span>(adj):</span>
+<span class="line">    disc, fin = {}, {}</span>
+<span class="line">    time = [<span class="num">0</span>]</span>
+<span class="line">    <span class="kw">def</span> <span class="fn">visit</span>(u):</span>
+<span class="line">        time[<span class="num">0</span>] += <span class="num">1</span></span>
+<span class="line">        disc[u] = time[<span class="num">0</span>]                 <span class="com"># 發現（塗灰）</span></span>
+<span class="line">        <span class="kw">for</span> v in adj[u]:</span>
+<span class="line">            <span class="kw">if</span> v <span class="kw">not</span> in disc:</span>
+<span class="line">                visit(v)</span>
+<span class="line">        time[<span class="num">0</span>] += <span class="num">1</span></span>
+<span class="line">        fin[u] = time[<span class="num">0</span>]                  <span class="com"># 完成（塗黑）</span></span>
+<span class="line">    <span class="kw">for</span> u in adj:                         <span class="com"># 主迴圈按頂點順序選白起點</span></span>
+<span class="line">        <span class="kw">if</span> u <span class="kw">not</span> in disc:</span>
+<span class="line">            visit(u)</span>
+<span class="line">    <span class="kw">return</span> disc, fin</span>
+<span class="line"> </span>
+<span class="line">H = {<span class="str">"內褲"</span>: [<span class="str">"褲子"</span>, <span class="str">"鞋"</span>], <span class="str">"褲子"</span>: [<span class="str">"皮帶"</span>, <span class="str">"鞋"</span>], <span class="str">"皮帶"</span>: [<span class="str">"外套"</span>],</span>
+<span class="line">     <span class="str">"襯衫"</span>: [<span class="str">"皮帶"</span>, <span class="str">"領帶"</span>], <span class="str">"領帶"</span>: [<span class="str">"外套"</span>], <span class="str">"外套"</span>: [],</span>
+<span class="line">     <span class="str">"襪子"</span>: [<span class="str">"鞋"</span>], <span class="str">"鞋"</span>: [], <span class="str">"錶"</span>: []}      <span class="com"># CLRS 圖 20.7</span></span>
+<span class="line">disc, fin = dfs(H)</span>
+<span class="line">topo = <span class="fn">sorted</span>(H, key=<span class="kw">lambda</span> v: -fin[v])       <span class="com"># 完成時間反序 = 拓撲序</span></span>
+<span class="line"><span class="fn">print</span>(<span class="str">"topological sort："</span>, <span class="str">" "</span>.join(topo))</span></div>
+    <div class="expected-out"><span class="eo-tag">執行輸出（與 C++ 版相同）</span><pre>topological sort： 錶 襪子 襯衫 領帶 內褲 褲子 鞋 皮帶 外套</pre></div>
+    <p class="dx-note">Python dict 保序讓「按頂點順序選起點」與 C++ 版一致，兩邊拓撲序逐字相同。</p>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">同一個 DAG 可以有多個合法拓撲序；換 DFS 的起點順序會得到不同但同樣正確的結果。另一個常用做法是 <strong>Kahn 演算法</strong>（預算入度 → 重複移除入度 0 的頂點入隊）——課本習題 20.4-5，工程上更常見（不需遞迴、天然偵測環：隊列空了還有頂點沒出 → 有環）。</p>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P03 · 失敗模式</div>
@@ -257,6 +486,16 @@ SAME-COMPONENT(e, g) = 0</pre></div>
     ③ 對 Gᵀ 跑 DFS，但主迴圈<strong>按 f 遞減</strong>的順序取起點——每棵 DFS 樹恰是一個 SCC。
   </div>
   <p>直覺：f 最大的頂點位在 component graph 的「源頭」SCC；在 Gᵀ 裡從它出發，只能走回自己的 SCC（其他方向的邊都被反向堵住）——一棵樹收割一個元件，收割完換下一個源頭。</p>
+  <div class="thm-box proof">
+    <div class="thm-label">兩條支柱：為什麼這招一定對</div>
+    <div style="font-size:.86rem;line-height:1.7;">
+    <strong>引理（元件圖是 DAG）</strong>：若兩個不同 SCC C、C′ 之間有 C→C′ 也有 C′→C 的路徑，
+    則兩邊所有頂點互達，C ∪ C′ 是一個更大的強連通集——與「極大」矛盾。∎<br>
+    <strong>引理 20.14（完成時間排序元件圖）</strong>：若元件圖有邊 C→C′，則 f(C) &gt; f(C′)
+    （C 中最大的完成時間晚於 C′ 的）——第一趟 DFS 的 f 值把元件圖「拓撲排序」了。<br>
+    合體：按 f 遞減取起點 = 沿元件圖的拓撲序逐一處理源頭；在 Gᵀ 中源頭 SCC 的出邊全被反向
+    → 第二趟每棵 DFS 樹恰好覆蓋一個 SCC（白路徑定理保證整個元件都會被走到）。∎</div>
+  </div>
   <div class="code-tabs" id="ctScc">
     <div class="ct-bar">
       <button class="ct-btn ct-pseudo active" onclick="tabShow('ctScc','pseudo',this)">Pseudocode</button>
@@ -281,9 +520,45 @@ SAME-COMPONENT(e, g) = 0</pre></div>
   { h }</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 20/strongly_connected_components.py</span></span><span class="line">H = AdjacencyListGraph(<span class="num">8</span>, directed=<span class="kw">True</span>)</span><span class="line"><span class="com"># … insert_edge 建 CLRS 圖 20.9 …</span></span><span class="line">strongly_connected_components(H)</span></div>
-      <div class="expected-out"><span class="eo-tag">輸出（頂點編號 a..h = 0..7）</span><pre>[[0, 4, 1], [2, 3], [6, 5], [7]]</pre></div>
-      <div class="ct-note">與 C++ 版一致：{a,e,b}、{c,d}、{g,f}、{h}。官方版內部用 Ch8 counting_sort 排完成時間。</div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 20/strongly_connected_components.py（MIT License）</span></span>
+<span class="line">G = {<span class="str">"a"</span>: [<span class="str">"b"</span>], <span class="str">"b"</span>: [<span class="str">"c"</span>,<span class="str">"e"</span>,<span class="str">"f"</span>], <span class="str">"c"</span>: [<span class="str">"d"</span>,<span class="str">"g"</span>], <span class="str">"d"</span>: [<span class="str">"c"</span>,<span class="str">"h"</span>],</span>
+<span class="line">     <span class="str">"e"</span>: [<span class="str">"a"</span>,<span class="str">"f"</span>], <span class="str">"f"</span>: [<span class="str">"g"</span>], <span class="str">"g"</span>: [<span class="str">"f"</span>,<span class="str">"h"</span>], <span class="str">"h"</span>: [<span class="str">"h"</span>]}  <span class="com"># 圖 20.9</span></span>
+<span class="line"> </span>
+<span class="line">order, visited = [], <span class="fn">set</span>()               <span class="com"># 第一趟：記完成順序</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">dfs1</span>(u):</span>
+<span class="line">    visited.add(u)</span>
+<span class="line">    <span class="kw">for</span> v in G[u]:</span>
+<span class="line">        <span class="kw">if</span> v <span class="kw">not</span> in visited:</span>
+<span class="line">            dfs1(v)</span>
+<span class="line">    order.append(u)                      <span class="com"># 完成時 push：尾端 f 最大</span></span>
+<span class="line"><span class="kw">for</span> u in G:</span>
+<span class="line">    <span class="kw">if</span> u <span class="kw">not</span> in visited:</span>
+<span class="line">        dfs1(u)</span>
+<span class="line"> </span>
+<span class="line">GT = {u: [] <span class="kw">for</span> u in G}                  <span class="com"># 轉置圖：所有邊反向</span></span>
+<span class="line"><span class="kw">for</span> u in G:</span>
+<span class="line">    <span class="kw">for</span> v in G[u]:</span>
+<span class="line">        GT[v].append(u)</span>
+<span class="line"> </span>
+<span class="line">comp = {}                                <span class="com"># 第二趟：在 G^T 按 f 遞減收割</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">dfs2</span>(u, c):</span>
+<span class="line">    comp[u] = c</span>
+<span class="line">    <span class="kw">for</span> v in GT[u]:</span>
+<span class="line">        <span class="kw">if</span> v <span class="kw">not</span> in comp:</span>
+<span class="line">            dfs2(v, c)</span>
+<span class="line"> </span>
+<span class="line">sccs = []</span>
+<span class="line"><span class="kw">for</span> u in <span class="fn">reversed</span>(order):                <span class="com"># f 最大者優先當起點</span></span>
+<span class="line">    <span class="kw">if</span> u <span class="kw">not</span> in comp:</span>
+<span class="line">        c = <span class="fn">len</span>(sccs)</span>
+<span class="line">        dfs2(u, c)</span>
+<span class="line">        sccs.append([v <span class="kw">for</span> v in comp <span class="kw">if</span> comp[v] == c])</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/graphs1/scc.py）</span><pre>共 4 個 SCC：
+  { a b e }
+  { c d }
+  { f g }
+  { h }</pre></div>
+      <div class="ct-note">完整可跑；三段結構（第一趟記序 → 建 Gᵀ → 第二趟收割）與 C++ 版、pseudocode 逐段對應，輸出相同。</div>
     </div>
   </div>
 
@@ -351,7 +626,7 @@ SAME-COMPONENT(e, g) = 0</pre></div>
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch7.json · 13 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch7.json · 18 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -381,7 +656,12 @@ const FLASHCARDS = [
   {"front":"拓撲排序（Topological Sort）","back":"DAG 的線性排序使所有邊由左指右：DFS 完成時間 f 遞減即為解。正確性：DAG 中每條邊 (u,v) 都有 v.f < u.f。O(V+E)。"},
   {"front":"強連通元件（SCC）","back":"極大的互達頂點集。兩趟 DFS：G 上記 f → 建 Gᵀ → 按 f 遞減在 Gᵀ 上 DFS，每棵樹一個 SCC。O(V+E)。"},
   {"front":"轉置圖（Transpose Graph）","back":"Gᵀ：所有邊反向。SCC(G) = SCC(Gᵀ)；第二趟 DFS 在 Gᵀ 上跑是為了堵住「流出 SCC」的邊，讓每棵樹不越界。"},
-  {"front":"元件圖（Component Graph）","back":"把每個 SCC 縮成一個頂點後的圖——必為 DAG（若兩個 SCC 互相可達就該合併成一個）。SCC 演算法的正確性架在它上面。"}
+  {"front":"元件圖（Component Graph）","back":"把每個 SCC 縮成一個頂點後的圖——必為 DAG（若兩個 SCC 互相可達就該合併成一個）。SCC 演算法的正確性架在它上面。"},
+  {"front":"鄰接串列 vs 鄰接矩陣","back":"串列 Θ(V+E) 空間、枚舉鄰居 O(deg)——稀疏圖首選（本課預設）；矩陣 Θ(V²) 空間、查邊 O(1)——稠密圖或 Floyd-Warshall 用。"},
+  {"front":"白路徑定理（White-Path Theorem）","back":"v 是 u 的 DFS 後裔 ⟺ 發現 u 那一刻存在 u→v 的全白路徑。SCC 第二趟「一棵樹恰收一個元件」的關鍵引理。"},
+  {"front":"d/f 判邊法則","back":"tree/forward：[v.d,v.f] 巢於 [u.d,u.f]；back：[u.d,u.f] 巢於 [v.d,v.f]（v 灰）；cross：兩區間不相交且 u.d > v.d。無向圖只有 tree 與 back。"},
+  {"front":"Kahn 演算法","back":"拓撲排序的 BFS 版：預算入度、入度 0 者入隊、出隊時把鄰居入度 −1。免遞迴、天然偵測環（隊空仍有頂點未出 = 有環）。習題 20.4-5。"},
+  {"front":"加權合併啟發式（Weighted-Union）","back":"linked-list 表示的 disjoint set：短串列併入長串列。單元素指標更新 ⟺ 所在集合翻倍 → 每元素至多 lg n 次，總 O(m + n lg n)。"}
 ];
 
 /* ---------- P00 disjoint set 動畫 ---------- */

@@ -50,5 +50,25 @@
  {
   "front": "元件圖（Component Graph）",
   "back": "把每個 SCC 縮成一個頂點後的圖——必為 DAG（若兩個 SCC 互相可達就該合併成一個）。SCC 演算法的正確性架在它上面。"
+ },
+ {
+  "front": "鄰接串列 vs 鄰接矩陣",
+  "back": "串列 Θ(V+E) 空間、枚舉鄰居 O(deg)——稀疏圖首選（本課預設）；矩陣 Θ(V²) 空間、查邊 O(1)——稠密圖或 Floyd-Warshall 用。"
+ },
+ {
+  "front": "白路徑定理（White-Path Theorem）",
+  "back": "v 是 u 的 DFS 後裔 ⟺ 發現 u 那一刻存在 u→v 的全白路徑。SCC 第二趟「一棵樹恰收一個元件」的關鍵引理。"
+ },
+ {
+  "front": "d/f 判邊法則",
+  "back": "tree/forward：[v.d,v.f] 巢於 [u.d,u.f]；back：[u.d,u.f] 巢於 [v.d,v.f]（v 灰）；cross：兩區間不相交且 u.d > v.d。無向圖只有 tree 與 back。"
+ },
+ {
+  "front": "Kahn 演算法",
+  "back": "拓撲排序的 BFS 版：預算入度、入度 0 者入隊、出隊時把鄰居入度 −1。免遞迴、天然偵測環（隊空仍有頂點未出 = 有環）。習題 20.4-5。"
+ },
+ {
+  "front": "加權合併啟發式（Weighted-Union）",
+  "back": "linked-list 表示的 disjoint set：短串列併入長串列。單元素指標更新 ⟺ 所在集合翻倍 → 每元素至多 lg n 次，總 O(m + n lg n)。"
  }
 ]
