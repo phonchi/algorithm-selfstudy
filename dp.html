@@ -477,6 +477,7 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
   <div class="fn-title">章節導覽</div>
   <a href="#framework" data-target="framework"><span class="fn-num">P00</span><span class="fn-name">DP 框架</span></a>
   <a href="#rodcut" data-target="rodcut"><span class="fn-num">P01</span><span class="fn-name">rod cutting</span></a>
+  <a href="#matrixchain" data-target="matrixchain"><span class="fn-num">P01b</span><span class="fn-name">matrix chain</span></a>
   <a href="#lcs" data-target="lcs"><span class="fn-num">P02</span><span class="fn-name">LCS</span></a>
   <a href="#knapsack" data-target="knapsack"><span class="fn-num">P03</span><span class="fn-name">0/1 knapsack</span></a>
   <a href="#obst" data-target="obst"><span class="fn-num">P04</span><span class="fn-name">optimal BST</span></a>
@@ -511,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
   <div class="toc-grid">
     <a href="#framework"><span class="toc-num">P00</span>DP 框架四步驟</a>
     <a href="#rodcut"><span class="toc-num">P01</span>rod cutting</a>
+    <a href="#matrixchain"><span class="toc-num">P01b</span>matrix chain（§14.2）</a>
     <a href="#lcs"><span class="toc-num">P02</span>LCS 填表</a>
     <a href="#knapsack"><span class="toc-num">P03</span>0/1 knapsack</a>
     <a href="#obst"><span class="toc-num">P04</span>optimal BST</a>
@@ -537,6 +539,20 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
         ③ 計算值——<strong>bottom-up 填表</strong>或 <strong>top-down memoization</strong>　④ 由表格<strong>回溯建構解本身</strong>
       </div>
       <p>步驟②的遞迴式是靈魂：之後每個例子都先問「<strong>子問題是什麼？狀態怎麼定義？最後一步在哪裡分歧？</strong>」。</p>
+      <div class="thm-box proof">
+        <div class="thm-label">剪貼論證的完整模板（以 rod cutting 實地走一遍）</div>
+        <div style="font-size:.87rem;line-height:1.75;">
+        <strong>主張</strong>：長度 n 的最佳切法中，若第一刀切出長度 i，剩下那段（長 n−i）的切法必是「長度 n−i 的最佳切法」。<br>
+        <strong>① 假設不是</strong>：剩下那段的切法收益 r′ &lt; r<sub>n−i</sub>（不是最佳）。<br>
+        <strong>② 剪下</strong>：把這段的切法整個拿掉。<br>
+        <strong>③ 貼上</strong>：換成長度 n−i 的最佳切法（收益 r<sub>n−i</sub>）。<br>
+        <strong>④ 矛盾</strong>：新總收益 = p<sub>i</sub> + r<sub>n−i</sub> &gt; p<sub>i</sub> + r′ = 原「最佳」收益——比最佳更好，矛盾。∎<br>
+        矛盾發生在<strong>第 ④ 步</strong>：替換合法（子問題彼此獨立）是整個論證的隱藏前提——
+        最長簡單路徑正是在「替換合法」這一步壞掉（見下方 quiz）。</div>
+      </div>
+      <p style="font-size:.9rem;color:var(--muted);"><strong>子問題圖（§14.3）</strong>：把每個子問題當頂點、「x 的轉移用到 y」畫一條 x→y 的邊，
+      DP 的成本 = <strong>頂點數 × 平均出邊數</strong>（rod cutting：n+1 個頂點、頂點 j 有 j 條出邊 → Θ(n²)）。
+      bottom-up 填表順序就是這張圖的<strong>反向拓撲序</strong>——下一章圖論會再遇到它。</p>
     </div>
     <div class="side-panel">
       <div class="info-card">
@@ -548,6 +564,17 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
         <div style="font-size:.85rem;line-height:1.8;">同樣 Θ(子問題數 × 轉移成本)。<br>▸ memo：好寫、只算用到的格子。<br>▸ bottom-up：無遞迴開銷、順序明確、好回溯。課本與考試以 bottom-up 為主。</div>
       </div>
     </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00b · 剪貼論證</div>
+    <p>剪貼論證四步驟（假設非最佳 → 剪下 → 貼上 → 矛盾）中，哪一步隱含了「子問題彼此獨立」的前提？</p>
+    <div class="quiz-options" id="q07Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。「貼上」要求：換掉子解不影響解的其他部分仍然合法。rod cutting 中兩段鋼條互不干涉、隨便換 ✓；最長簡單路徑中換掉子路徑可能與另一半共用頂點 → 貼上後不再是簡單路徑，論證在這一步斷裂。" onclick="quizCheck('q07', this)"><span class="opt-letter">(A)</span> 貼上：替換後的組合必須仍是合法解</div>
+      <div class="quiz-opt" data-correct="false" data-fb="「假設非最佳」只是反證法的起手式，任何問題都能寫——它不涉及子問題間的關係。" onclick="quizCheck('q07', this)"><span class="opt-letter">(B)</span> 假設非最佳</div>
+      <div class="quiz-opt" data-correct="false" data-fb="矛盾是結論不是前提——能否走到矛盾，取決於前面「貼上」是否合法。" onclick="quizCheck('q07', this)"><span class="opt-letter">(C)</span> 矛盾</div>
+    </div>
+    <div class="quiz-feedback" id="q07Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -610,12 +637,89 @@ document.addEventListener('DOMContentLoaded', function setupNav() {
 bottom-up = 30，切法：10</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.74rem;"><span class="line"><span class="com"># 官方 Chapter 14/cut_rod.py（MIT License）</span></span><span class="line"><span class="kw">def</span> <span class="fn">bottom_up_cut_rod</span>(p, n):</span><span class="line">    r = [<span class="num">0</span>] * (n + <span class="num">1</span>)</span><span class="line">    <span class="kw">for</span> j <span class="kw">in</span> range(<span class="num">1</span>, n + <span class="num">1</span>):</span><span class="line">        q = -float(<span class="str">'inf'</span>)</span><span class="line">        <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, j + <span class="num">1</span>):</span><span class="line">            q = max(q, p[i] + r[j - i])</span><span class="line">        r[j] = q</span><span class="line">    <span class="kw">return</span> r[n]</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出</span><pre>bottom_up_cut_rod(10): 30</pre></div>
-          <div class="ct-note">官方檔另有 memoized_cut_rod 與 extended 版（含切法重建），對應課本全部四個版本。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 14/cut_rod.py（MIT License）：bottom-up＋memoized 全文</span></span>
+<span class="line">p = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">5</span>, <span class="num">8</span>, <span class="num">9</span>, <span class="num">10</span>, <span class="num">17</span>, <span class="num">17</span>, <span class="num">20</span>, <span class="num">24</span>, <span class="num">30</span>]   <span class="com"># 圖 14.1 價目表</span></span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">bottom_up_cut_rod</span>(p, n):</span>
+<span class="line">    r = [<span class="num">0</span>] * (n + <span class="num">1</span>)</span>
+<span class="line">    s = [<span class="num">0</span>] * (n + <span class="num">1</span>)                     <span class="com"># s[j] = 長度 j 的最佳第一刀</span></span>
+<span class="line">    <span class="kw">for</span> j in <span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):             <span class="com"># 子問題由小到大</span></span>
+<span class="line">        q = <span class="fn">float</span>(<span class="str">"-inf"</span>)</span>
+<span class="line">        <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, j + <span class="num">1</span>):</span>
+<span class="line">            <span class="kw">if</span> p[i] + r[j - i] &gt; q:</span>
+<span class="line">                q = p[i] + r[j - i]</span>
+<span class="line">                s[j] = i</span>
+<span class="line">        r[j] = q</span>
+<span class="line">    <span class="kw">return</span> r, s</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">memoized_cut_rod</span>(p, n, r=<span class="kw">None</span>):       <span class="com"># top-down：算過就查表</span></span>
+<span class="line">    <span class="kw">if</span> r <span class="kw">is</span> <span class="kw">None</span>:</span>
+<span class="line">        r = [<span class="kw">None</span>] * (n + <span class="num">1</span>)</span>
+<span class="line">    <span class="kw">if</span> r[n] <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:</span>
+<span class="line">        <span class="kw">return</span> r[n]</span>
+<span class="line">    <span class="kw">if</span> n == <span class="num">0</span>:</span>
+<span class="line">        q = <span class="num">0</span></span>
+<span class="line">    <span class="kw">else</span>:</span>
+<span class="line">        q = <span class="fn">float</span>(<span class="str">"-inf"</span>)</span>
+<span class="line">        <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):</span>
+<span class="line">            q = <span class="fn">max</span>(q, p[i] + memoized_cut_rod(p, n - i, r))</span>
+<span class="line">    r[n] = q</span>
+<span class="line">    <span class="kw">return</span> q</span>
+<span class="line"> </span>
+<span class="line">r, s = bottom_up_cut_rod(p, <span class="num">10</span>)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"bottom-up r[10] ="</span>, r[<span class="num">10</span>])</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"memoized r(10) ="</span>, memoized_cut_rod(p, <span class="num">10</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/dp/cut_rod.py，含 s 表回溯切法）</span><pre>bottom-up r[10] = 30
+切法： [10]
+memoized r(10) = 30
+r 表： [0, 1, 5, 8, 10, 13, 17, 18, 22, 25, 30]</pre></div>
+          <div class="ct-note">n=10 的最佳解是「不切」（p₁₀ = 30 本身最大）；r 表整排就是每個長度的答案。</div>
         </div>
       </div>
     </div>
+  </div>
+
+  <h3>top-down 的另一半：MEMOIZED-CUT-ROD</h3>
+  <div class="viz-layout">
+    <div class="side-panel">
+      <div class="clrs-code" style="font-size:.75rem;">
+        <div class="cc-title"><span class="fn">MEMOIZED-CUT-ROD-AUX</span>(p, n, r)</div>
+        <span class="line"><span class="ln">1</span><span class="kw">if</span> r[n] ≥ 0：<span class="kw">return</span> r[n]　<span class="com">// 查表命中，直接回</span></span>
+        <span class="line"><span class="ln">2</span><span class="kw">if</span> n == 0：q = 0</span>
+        <span class="line"><span class="ln">3</span><span class="kw">else</span> q = −∞</span>
+        <span class="line"><span class="ln">4</span>    <span class="kw">for</span> i = 1 <span class="kw">to</span> n</span>
+        <span class="line"><span class="ln">5</span>        q = max(q, p[i] + <span class="fn">AUX</span>(p, n−i, r))</span>
+        <span class="line"><span class="ln">6</span>r[n] = q　<span class="com">// 存表再回</span></span>
+        <span class="line"><span class="ln">7</span><span class="kw">return</span> q</span>
+      </div>
+    </div>
+    <div>
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.85rem;">
+        <thead><tr><th></th><th>top-down（memoized）</th><th>bottom-up</th></tr></thead>
+        <tbody>
+          <tr><td>寫法</td><td class="best">保留遞迴原形＋查表</td><td>迴圈照依賴順序填</td></tr>
+          <tr><td>算了哪些格</td><td class="best">只算真正用到的子問題</td><td>全部子問題</td></tr>
+          <tr><td>常數開銷</td><td>遞迴呼叫成本</td><td class="best">無遞迴、cache 友善</td></tr>
+          <tr><td>漸近成本</td><td>Θ(n²)</td><td>Θ(n²)（相同）</td></tr>
+          <tr><td>適合場景</td><td>狀態空間稀疏、順序難排</td><td class="best">課本／考試預設、好回溯</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="font-size:.9rem;color:var(--muted);">兩版都是「每個子問題恰解一次」——差別只在誰決定順序：
+      bottom-up 由你排、top-down 由遞迴自然展開。</p>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01b · memo 的帳</div>
+    <p>MEMOIZED-CUT-ROD(p, 10) 執行過程中，AUX 的「非查表命中」呼叫（真正跑迴圈算的）共幾次？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。r(0)…r(10) 每個子問題恰好「實算」一次 = 11 次；其餘全是查表命中 O(1) 返回。總成本 = Σ(每次實算的迴圈長度) = Σj = Θ(n²)——與 bottom-up 完全同帳。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> 11 次（r(0) 到 r(10) 各一次）</div>
+      <div class="quiz-opt" data-correct="false" data-fb="2¹⁰ 是「不記憶」的 naive 遞迴呼叫數——memo 的存在就是為了把它壓到 n+1 次實算。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> 約 2¹⁰ 次</div>
+      <div class="quiz-opt" data-correct="false" data-fb="55 = Σj 是「迴圈總圈數」（轉移數），不是實算的呼叫次數——兩個帳要分開記。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 55 次</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -627,6 +731,124 @@ bottom-up = 30，切法：10</pre></div>
       <div class="quiz-opt" data-correct="false" data-fb="排序與此無關；rod cutting 從頭到尾沒有排序。" onclick="quizCheck('q01', this)"><span class="opt-letter">(C)</span> DP 先排序了價目表</div>
     </div>
     <div class="quiz-feedback" id="q01Feedback"></div>
+  </div>
+</section>
+
+<section id="matrixchain">
+  <div class="section-number">P01b · MATRIX CHAIN</div>
+  <h2>矩陣鏈乘法：括號怎麼加，成本差百倍 <span class="sec-badge">§14.2</span></h2>
+  <p>連乘 A₁A₂…Aₙ（Aᵢ 是 p<sub>i−1</sub>×p<sub>i</sub> 矩陣），乘法滿足結合律——
+  <strong>怎麼加括號不影響答案，但嚴重影響成本</strong>：A₁(10×100)、A₂(100×5)、A₃(5×50)：
+  ((A₁A₂)A₃) 要 10·100·5 + 10·5·50 = <strong>7500</strong> 次乘法；(A₁(A₂A₃)) 要 100·5·50 + 10·100·50 = <strong>75000</strong> 次——差 10 倍。
+  括號化方式有 Catalan 數 Ω(4ⁿ/n<sup>3/2</sup>) 種，暴力免談；區間 DP 出場：</p>
+  <div class="info-box">
+    <span class="info-label">遞迴式（§14.2）</span>
+    m[i][j] = 算出 Aᵢ..Aⱼ 乘積的最少乘法數；<strong>最後一步</strong>＝最後一次相乘把鏈切成兩半（切點 k）：<br>
+    m[i][j] = min<sub>i≤k&lt;j</sub> ( m[i][k] + m[k+1][j] + p<sub>i−1</sub>·p<sub>k</sub>·p<sub>j</sub> )，m[i][i] = 0。<br>
+    Θ(n³)：n² 個區間 × 每區間 O(n) 個切點；s[i][j] 記最佳切點供重建。
+  </div>
+
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div style="overflow-x:auto;"><table class="adj-matrix" id="mcTable" style="font-size:.72rem;"></table></div>
+      <div class="status-banner" id="mcStatus"><span class="status-icon">▸</span><span class="status-text">CLRS 圖 14.5：p = ⟨30,35,15,5,10,20,25⟩。按「單步」沿對角線填 m 表。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="mcPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="mcPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="mcPlayer.reset()">↺ 重來</button>
+        <div class="slider-row" style="flex:1;margin:0;">
+          <span class="slider-label">速度</span>
+          <input type="range" id="mcDelay" min="100" max="1000" value="420">
+        </div>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="code-tabs" id="ctMc">
+        <div class="ct-bar">
+          <button class="ct-btn ct-pseudo active" onclick="tabShow('ctMc','pseudo',this)">Pseudo</button>
+          <button class="ct-btn" onclick="tabShow('ctMc','cpp',this)">C++</button>
+          <button class="ct-btn" onclick="tabShow('ctMc','py',this)">Python</button>
+        </div>
+        <div class="ct-panel active" data-lang="pseudo">
+          <div class="clrs-code" style="font-size:.74rem;">
+            <div class="cc-title"><span class="fn">MATRIX-CHAIN-ORDER</span>(p, n)</div>
+            <span class="line"><span class="ln">1</span>m[i][i] = 0 <span class="kw">for all</span> i</span>
+            <span class="line"><span class="ln">2</span><span class="kw">for</span> l = 2 <span class="kw">to</span> n　<span class="com">// 區間長度由小到大</span></span>
+            <span class="line"><span class="ln">3</span>  <span class="kw">for</span> i = 1 <span class="kw">to</span> n − l + 1</span>
+            <span class="line"><span class="ln">4</span>    j = i + l − 1；m[i][j] = ∞</span>
+            <span class="line"><span class="ln">5</span>    <span class="kw">for</span> k = i <span class="kw">to</span> j − 1　<span class="com">// 枚舉切點</span></span>
+            <span class="line"><span class="ln">6</span>      q = m[i][k] + m[k+1][j] + p<sub>i−1</sub>p<sub>k</sub>p<sub>j</sub></span>
+            <span class="line"><span class="ln">7</span>      <span class="kw">if</span> q &lt; m[i][j]：m[i][j] = q；s[i][j] = k</span>
+          </div>
+          <div class="clrs-code" style="font-size:.74rem;margin-top:.6rem;">
+            <div class="cc-title"><span class="fn">PRINT-OPTIMAL-PARENS</span>(s, i, j)</div>
+            <span class="line"><span class="ln">1</span><span class="kw">if</span> i == j：印 "A"ᵢ</span>
+            <span class="line"><span class="ln">2</span><span class="kw">else</span> 印 "("；<span class="fn">PRINT</span>(s, i, s[i][j])；<span class="fn">PRINT</span>(s, s[i][j]+1, j)；印 ")"</span>
+          </div>
+        </div>
+        <div class="ct-panel" data-lang="cpp">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="kw">for</span> (<span class="kw">int</span> len = <span class="num">2</span>; len &lt;= n; ++len)               <span class="com">// 區間長度由小到大</span></span>
+<span class="line">    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i + len - <span class="num">1</span> &lt;= n; ++i) {</span>
+<span class="line">        <span class="kw">int</span> j = i + len - <span class="num">1</span>;</span>
+<span class="line">        m[i][j] = INF;</span>
+<span class="line">        <span class="kw">for</span> (<span class="kw">int</span> k = i; k &lt; j; ++k) {            <span class="com">// 枚舉切點</span></span>
+<span class="line">            <span class="kw">long long</span> q = m[i][k] + m[k + <span class="num">1</span>][j] + p[i - <span class="num">1</span>] * p[k] * p[j];</span>
+<span class="line">            <span class="kw">if</span> (q &lt; m[i][j]) { m[i][j] = q; s[i][j] = k; }</span>
+<span class="line">        }</span>
+<span class="line">    }</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/dp/matrix_chain.cpp）</span><pre>m 表（上三角，對角線 0 略）：
+  長度 2：m[1][2]=15750 m[2][3]=2625 m[3][4]=750 m[4][5]=1000 m[5][6]=5000
+  長度 3：m[1][3]=7875 m[2][4]=4375 m[3][5]=2500 m[4][6]=3500
+  長度 4：m[1][4]=9375 m[2][5]=7125 m[3][6]=5375
+  長度 5：m[1][5]=11875 m[2][6]=10500
+  長度 6：m[1][6]=15125
+最少乘法次數 m[1][6] = 15125
+最佳括號化：((A1(A2A3))((A4A5)A6))</pre></div>
+        </div>
+        <div class="ct-panel" data-lang="py">
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 14/matrix_chain_multiply.py（MIT License）：完整平鋪版</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">matrix_chain_order</span>(p):</span>
+<span class="line">    n = <span class="fn">len</span>(p) - <span class="num">1</span></span>
+<span class="line">    m = [[<span class="num">0</span>] * (n + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(n + <span class="num">1</span>)]</span>
+<span class="line">    s = [[<span class="num">0</span>] * (n + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(n + <span class="num">1</span>)]</span>
+<span class="line">    <span class="kw">for</span> length in <span class="fn">range</span>(<span class="num">2</span>, n + <span class="num">1</span>):        <span class="com"># 區間長度由小到大</span></span>
+<span class="line">        <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, n - length + <span class="num">2</span>):</span>
+<span class="line">            j = i + length - <span class="num">1</span></span>
+<span class="line">            m[i][j] = <span class="fn">float</span>(<span class="str">"inf"</span>)</span>
+<span class="line">            <span class="kw">for</span> k in <span class="fn">range</span>(i, j):         <span class="com"># 枚舉切點</span></span>
+<span class="line">                q = m[i][k] + m[k + <span class="num">1</span>][j] + p[i - <span class="num">1</span>] * p[k] * p[j]</span>
+<span class="line">                <span class="kw">if</span> q &lt; m[i][j]:</span>
+<span class="line">                    m[i][j] = q</span>
+<span class="line">                    s[i][j] = k</span>
+<span class="line">    <span class="kw">return</span> m, s</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">print_optimal_parens</span>(s, i, j):</span>
+<span class="line">    <span class="kw">if</span> i == j:</span>
+<span class="line">        <span class="kw">return</span> <span class="str">"A%d"</span> % i</span>
+<span class="line">    <span class="kw">return</span> <span class="str">"(%s%s)"</span> % (print_optimal_parens(s, i, s[i][j]),</span>
+<span class="line">                       print_optimal_parens(s, s[i][j] + <span class="num">1</span>, j))</span>
+<span class="line"> </span>
+<span class="line">p = [<span class="num">30</span>, <span class="num">35</span>, <span class="num">15</span>, <span class="num">5</span>, <span class="num">10</span>, <span class="num">20</span>, <span class="num">25</span>]</span>
+<span class="line">m, s = matrix_chain_order(p)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"最少乘法次數 m[1][6] ="</span>, m[<span class="num">1</span>][<span class="num">6</span>])</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"最佳括號化："</span>, print_optimal_parens(s, <span class="num">1</span>, <span class="num">6</span>))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/dp/matrix_chain.py）</span><pre>最少乘法次數 m[1][6] = 15125
+最佳括號化： ((A1(A2A3))((A4A5)A6))</pre></div>
+          <div class="ct-note">與 C++ 版逐字一致；m 表全表對照課本圖 14.5。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P01c · 讀 m 表</div>
+    <p>由上面的 m 表，m[2][5]（A₂A₃A₄A₅ 的最少乘法數）= 7125。它是由哪個切點 k 達成的？（p = ⟨30,35,15,5,10,20,25⟩）</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。k=3：m[2][3] + m[4][5] + p₁p₃p₅ = 2625 + 1000 + 35·5·20 = 2625 + 1000 + 3500 = 7125 ✓。對照 k=2：0 + m[3][5] + p₁p₂p₅ = 2500 + 35·15·20 = 13000；k=4：m[2][4] + 0 + p₁p₄p₅ = 4375 + 35·10·20 = 11375——k=3 明顯最省。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> k = 3：(A₂A₃)(A₄A₅) = 2625 + 1000 + 3500</div>
+      <div class="quiz-opt" data-correct="false" data-fb="k=2 是 A₂(A₃A₄A₅) = 0 + 2500 + 35·15·20 = 13000，比 7125 貴近一倍。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> k = 2：A₂(A₃A₄A₅)</div>
+      <div class="quiz-opt" data-correct="false" data-fb="k=4 是 (A₂A₃A₄)A₅ = 4375 + 0 + 35·10·20 = 11375，也不是最省——動手算三個候選就分曉。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> k = 4：(A₂A₃A₄)A₅</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
   </div>
 </section>
 
@@ -668,8 +890,17 @@ bottom-up = 30，切法：10</pre></div>
             <span class="line"><span class="ln">1</span>首列首行清 0</span>
             <span class="line"><span class="ln">2</span><span class="kw">for</span> i = 1 <span class="kw">to</span> m；<span class="kw">for</span> j = 1 <span class="kw">to</span> n</span>
             <span class="line"><span class="ln">3</span>  <span class="kw">if</span> xᵢ == yⱼ：c[i][j] = c[i−1][j−1]+1　<span class="com">// ↖</span></span>
-            <span class="line"><span class="ln">4</span>  <span class="kw">elseif</span> c[i−1][j] ≥ c[i][j−1]：↑</span>
-            <span class="line"><span class="ln">5</span>  <span class="kw">else</span>：←</span>
+            <span class="line"><span class="ln">4</span>  <span class="kw">elseif</span> c[i−1][j] ≥ c[i][j−1]：c[i][j] = c[i−1][j]；b[i][j] = "↑"</span>
+            <span class="line"><span class="ln">5</span>  <span class="kw">else</span>：c[i][j] = c[i][j−1]；b[i][j] = "←"</span>
+            <span class="line"><span class="ln">6</span><span class="kw">return</span> c, b</span>
+          </div>
+          <div class="clrs-code" style="font-size:.75rem;margin-top:.6rem;">
+            <div class="cc-title"><span class="fn">PRINT-LCS</span>(b, X, i, j) <span class="com">// 初呼叫 (b, X, m, n)</span></div>
+            <span class="line"><span class="ln">1</span><span class="kw">if</span> i == 0 <span class="kw">or</span> j == 0：<span class="kw">return</span></span>
+            <span class="line"><span class="ln">2</span><span class="kw">if</span> b[i][j] == "↖"</span>
+            <span class="line"><span class="ln">3</span>    <span class="fn">PRINT-LCS</span>(b, X, i−1, j−1)；印出 xᵢ　<span class="com">// 先遞迴再印 → 正序</span></span>
+            <span class="line"><span class="ln">4</span><span class="kw">elseif</span> b[i][j] == "↑"：<span class="fn">PRINT-LCS</span>(b, X, i−1, j)</span>
+            <span class="line"><span class="ln">5</span><span class="kw">else</span>：<span class="fn">PRINT-LCS</span>(b, X, i, j−1)</span>
           </div>
         </div>
         <div class="ct-panel" data-lang="cpp">
@@ -678,10 +909,40 @@ bottom-up = 30，切法：10</pre></div>
 BCBA</pre></div>
         </div>
         <div class="ct-panel" data-lang="py">
-          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 官方 Chapter 14/longest_common_subsequence.py</span></span><span class="line">c, b = lcs_length(X, Y, len(X), len(Y))</span><span class="line">print_lcs(b, X, len(X), len(Y))</span></div>
-          <div class="expected-out"><span class="eo-tag">輸出（X=ABCBDAB, Y=BDCABA）</span><pre>LCS 長度: 4
-BCBA</pre></div>
-          <div class="ct-note">官方版把方向表 b（↖↑←）分開存，print_lcs 遞迴回溯列印。</div>
+          <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 14/longest_common_subsequence.py（MIT License）：含重建全文</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">lcs_length</span>(X, Y):</span>
+<span class="line">    m, n = <span class="fn">len</span>(X), <span class="fn">len</span>(Y)</span>
+<span class="line">    c = [[<span class="num">0</span>] * (n + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(m + <span class="num">1</span>)]</span>
+<span class="line">    b = [[<span class="str">""</span>] * (n + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(m + <span class="num">1</span>)]   <span class="com"># 方向表 ↖ ↑ ←</span></span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, m + <span class="num">1</span>):</span>
+<span class="line">        <span class="kw">for</span> j in <span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):</span>
+<span class="line">            <span class="kw">if</span> X[i - <span class="num">1</span>] == Y[j - <span class="num">1</span>]:</span>
+<span class="line">                c[i][j] = c[i - <span class="num">1</span>][j - <span class="num">1</span>] + <span class="num">1</span></span>
+<span class="line">                b[i][j] = <span class="str">"↖"</span>                       <span class="com"># 配對成功</span></span>
+<span class="line">            <span class="kw">elif</span> c[i - <span class="num">1</span>][j] &gt;= c[i][j - <span class="num">1</span>]:</span>
+<span class="line">                c[i][j] = c[i - <span class="num">1</span>][j]</span>
+<span class="line">                b[i][j] = <span class="str">"↑"</span></span>
+<span class="line">            <span class="kw">else</span>:</span>
+<span class="line">                c[i][j] = c[i][j - <span class="num">1</span>]</span>
+<span class="line">                b[i][j] = <span class="str">"←"</span></span>
+<span class="line">    <span class="kw">return</span> c, b</span>
+<span class="line"> </span>
+<span class="line"><span class="kw">def</span> <span class="fn">print_lcs</span>(b, X, i, j):                        <span class="com"># 沿 ↖ 反向收字</span></span>
+<span class="line">    <span class="kw">if</span> i == <span class="num">0</span> <span class="kw">or</span> j == <span class="num">0</span>:</span>
+<span class="line">        <span class="kw">return</span> <span class="str">""</span></span>
+<span class="line">    <span class="kw">if</span> b[i][j] == <span class="str">"↖"</span>:</span>
+<span class="line">        <span class="kw">return</span> print_lcs(b, X, i - <span class="num">1</span>, j - <span class="num">1</span>) + X[i - <span class="num">1</span>]</span>
+<span class="line">    <span class="kw">if</span> b[i][j] == <span class="str">"↑"</span>:</span>
+<span class="line">        <span class="kw">return</span> print_lcs(b, X, i - <span class="num">1</span>, j)</span>
+<span class="line">    <span class="kw">return</span> print_lcs(b, X, i, j - <span class="num">1</span>)</span>
+<span class="line"> </span>
+<span class="line">X, Y = <span class="str">"ABCBDAB"</span>, <span class="str">"BDCABA"</span></span>
+<span class="line">c, b = lcs_length(X, Y)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"LCS 長度 ="</span>, c[<span class="fn">len</span>(X)][<span class="fn">len</span>(Y)])</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"LCS ="</span>, print_lcs(b, X, <span class="fn">len</span>(X), <span class="fn">len</span>(Y)))</span></div>
+          <div class="expected-out"><span class="eo-tag">執行輸出（src/dp/lcs.py）</span><pre>LCS 長度 = 4
+LCS = BCBA</pre></div>
+          <div class="ct-note">完整可跑：填表＋方向表＋遞迴重建全文。</div>
         </div>
       </div>
       <div class="info-card">
@@ -746,10 +1007,45 @@ BCBA</pre></div>
       <div class="expected-out"><span class="eo-tag">執行輸出（W = 9）</span><pre>W = 9 最大價值 = 13，選物品：3 4</pre></div>
     </div>
     <div class="ct-panel" data-lang="py">
-      <div class="pseudo-code"><span class="line"><span class="com"># 自寫簡例（官方 clrsPython 未附 knapsack）</span></span><span class="line"><span class="kw">def</span> <span class="fn">knapsack</span>(w, v, W):</span><span class="line">    n = len(w)</span><span class="line">    dp = [[<span class="num">0</span>] * (W + <span class="num">1</span>) <span class="kw">for</span> _ <span class="kw">in</span> range(n + <span class="num">1</span>)]</span><span class="line">    <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">1</span>, n + <span class="num">1</span>):</span><span class="line">        <span class="kw">for</span> c <span class="kw">in</span> range(W + <span class="num">1</span>):</span><span class="line">            dp[i][c] = dp[i-<span class="num">1</span>][c]</span><span class="line">            <span class="kw">if</span> c &gt;= w[i-<span class="num">1</span>]:</span><span class="line">                dp[i][c] = max(dp[i][c],</span><span class="line">                    dp[i-<span class="num">1</span>][c - w[i-<span class="num">1</span>]] + v[i-<span class="num">1</span>])</span><span class="line">    <span class="kw">return</span> dp[n][W]</span></div>
-      <div class="expected-out"><span class="eo-tag">輸出</span><pre>knapsack([2,3,4,5], [3,4,5,8], 9) = 13</pre></div>
+      <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 自寫完整版（官方 clrsPython 未附 knapsack）：填表＋回溯</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">knapsack</span>(w, v, W):</span>
+<span class="line">    n = <span class="fn">len</span>(w)</span>
+<span class="line">    dp = [[<span class="num">0</span>] * (W + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(n + <span class="num">1</span>)]</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):</span>
+<span class="line">        <span class="kw">for</span> c in <span class="fn">range</span>(W + <span class="num">1</span>):</span>
+<span class="line">            dp[i][c] = dp[i - <span class="num">1</span>][c]                 <span class="com"># 不拿第 i 件</span></span>
+<span class="line">            <span class="kw">if</span> c &gt;= w[i - <span class="num">1</span>]:</span>
+<span class="line">                dp[i][c] = <span class="fn">max</span>(dp[i][c],</span>
+<span class="line">                               dp[i - <span class="num">1</span>][c - w[i - <span class="num">1</span>]] + v[i - <span class="num">1</span>])   <span class="com"># 拿</span></span>
+<span class="line">    chosen, c = [], W</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(n, <span class="num">0</span>, -<span class="num">1</span>):                    <span class="com"># 回溯：值變了 ⟺ 有拿</span></span>
+<span class="line">        <span class="kw">if</span> dp[i][c] != dp[i - <span class="num">1</span>][c]:</span>
+<span class="line">            chosen.append(i)</span>
+<span class="line">            c -= w[i - <span class="num">1</span>]</span>
+<span class="line">    <span class="kw">return</span> dp, <span class="fn">sorted</span>(chosen)</span>
+<span class="line"> </span>
+<span class="line">dp, chosen = knapsack([<span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>], [<span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">8</span>], <span class="num">9</span>)</span>
+<span class="line"><span class="fn">print</span>(<span class="str">"最大價值 ="</span>, dp[<span class="num">4</span>][<span class="num">9</span>], <span class="str">"，選物品："</span>, chosen)</span></div>
+      <div class="expected-out"><span class="eo-tag">執行輸出（src/dp/knapsack.py）</span><pre>最大價值 = 13 ，選物品： [3, 4]</pre></div>
+      <div class="ct-note">回溯規則：dp[i][c] ≠ dp[i−1][c] ⟺ 第 i 件被拿了（拿了才會讓值變）。</div>
     </div>
   </div>
+
+  <h3>全表 trace：手跑就照這張抄</h3>
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.78rem;font-family:'JetBrains Mono',monospace;">
+    <thead><tr><th>dp[i][c]</th><th>c=0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th></tr></thead>
+    <tbody>
+      <tr><td>i=0（沒物品）</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><td>i=1（w2,v3）</td><td>0</td><td>0</td><td>3</td><td>3</td><td>3</td><td>3</td><td>3</td><td>3</td><td>3</td><td>3</td></tr>
+      <tr><td>i=2（w3,v4）</td><td>0</td><td>0</td><td>3</td><td>4</td><td>4</td><td>7</td><td>7</td><td>7</td><td>7</td><td>7</td></tr>
+      <tr><td>i=3（w4,v5）</td><td>0</td><td>0</td><td>3</td><td>4</td><td>5</td><td>7</td><td>8</td><td>9</td><td>9</td><td>12</td></tr>
+      <tr><td>i=4（w5,v8）</td><td>0</td><td>0</td><td>3</td><td>4</td><td>5</td><td>8</td><td>8</td><td>11</td><td>12</td><td class="best">13</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">讀表練習：dp[4][9] = max(dp[3][9]=12（不拿）, dp[3][4]+8 = 5+8 = 13（拿））= 13。
+  回溯：dp[4][9]≠dp[3][9] → 拿物品 4、c 剩 4；dp[3][4]≠dp[2][4] → 拿物品 3、c 剩 0——選 {3, 4} ✓（整張表由 src/dp/knapsack.py 實跑印出）。</p>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P03 · 手算</div>
@@ -775,11 +1071,38 @@ BCBA</pre></div>
     <br>其中 w(i,j) = Σp + Σq 是「整個區間深度 +1」的代價。
     嘗試每個 r 當根 → Θ(n³)（n² 個區間 × 每區間 O(n) 個根）。
   </div>
-  <p>與 rod cutting（一維）、LCS（二維前綴）不同，這是<strong>區間 DP</strong>：按「區間長度由小到大」填表。
-  同型的還有 matrix-chain multiplication（§14.2，官方 <code>matrix_chain_order</code>）——期中考最愛的手算題型之一。
-  用 CLRS 圖 14.9 的機率表驗證（官方實作）：</p>
-  <div class="expected-out"><span class="eo-tag">官方 optimal_BST 輸出（p = [.15,.10,.05,.10,.20]、q = [.05,.10,.05,.05,.05,.10]）</span><pre>期望搜尋成本 e[1][5] = 2.75
+  <p>與 rod cutting（一維）、LCS（二維前綴）不同，這是<strong>區間 DP</strong>——和 P01b 的 matrix chain 同型：
+  按「區間長度由小到大」填表、枚舉「誰當根」（matrix chain 是「哪裡切」）。完整實作與實跑：</p>
+  <div class="deck-extra">
+    <div class="dx-label">OPTIMAL-BST 完整實作（src/dp/optimal_bst.py，CLRS 圖 14.9 機率表）</div>
+    <div class="pseudo-code" style="font-size:.72rem;"><span class="line"><span class="com"># 改寫自官方 Chapter 14/optimal_BST.py（MIT License）：e/w/root 三表全文</span></span>
+<span class="line"><span class="kw">def</span> <span class="fn">optimal_bst</span>(p, q, n):</span>
+<span class="line">    e = [[<span class="num">0.0</span>] * (n + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(n + <span class="num">2</span>)]</span>
+<span class="line">    w = [[<span class="num">0.0</span>] * (n + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(n + <span class="num">2</span>)]</span>
+<span class="line">    root = [[<span class="num">0</span>] * (n + <span class="num">1</span>) <span class="kw">for</span> _ in <span class="fn">range</span>(n + <span class="num">1</span>)]</span>
+<span class="line">    <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">2</span>):</span>
+<span class="line">        e[i][i - <span class="num">1</span>] = q[i - <span class="num">1</span>]              <span class="com"># 空區間 = 只有間隙 qᵢ₋₁</span></span>
+<span class="line">        w[i][i - <span class="num">1</span>] = q[i - <span class="num">1</span>]</span>
+<span class="line">    <span class="kw">for</span> length in <span class="fn">range</span>(<span class="num">1</span>, n + <span class="num">1</span>):          <span class="com"># 區間長度由小到大</span></span>
+<span class="line">        <span class="kw">for</span> i in <span class="fn">range</span>(<span class="num">1</span>, n - length + <span class="num">2</span>):</span>
+<span class="line">            j = i + length - <span class="num">1</span></span>
+<span class="line">            e[i][j] = <span class="fn">float</span>(<span class="str">"inf"</span>)</span>
+<span class="line">            w[i][j] = w[i][j - <span class="num">1</span>] + p[j] + q[j]   <span class="com"># 整區間「深度+1」代價</span></span>
+<span class="line">            <span class="kw">for</span> r in <span class="fn">range</span>(i, j + <span class="num">1</span>):        <span class="com"># 枚舉根</span></span>
+<span class="line">                t = e[i][r - <span class="num">1</span>] + e[r + <span class="num">1</span>][j] + w[i][j]</span>
+<span class="line">                <span class="kw">if</span> t &lt; e[i][j]:</span>
+<span class="line">                    e[i][j] = t</span>
+<span class="line">                    root[i][j] = r</span>
+<span class="line">    <span class="kw">return</span> e, root</span>
+<span class="line"> </span>
+<span class="line">p = [<span class="num">0</span>, <span class="num">0.15</span>, <span class="num">0.10</span>, <span class="num">0.05</span>, <span class="num">0.10</span>, <span class="num">0.20</span>]</span>
+<span class="line">q = [<span class="num">0.05</span>, <span class="num">0.10</span>, <span class="num">0.05</span>, <span class="num">0.05</span>, <span class="num">0.05</span>, <span class="num">0.10</span>]</span>
+<span class="line">e, root = optimal_bst(p, q, <span class="num">5</span>)</span></div>
+    <div class="expected-out"><span class="eo-tag">執行輸出</span><pre>期望搜尋成本 e[1][5] = 2.75
 整棵樹的根 root[1][5] = k2</pre></div>
+    <p class="dx-note">k₂ 當根（機率只有 0.10）——不是頻率最高的 k₅（0.20）！最佳 BST 顧的是「整棵樹的加權深度」，
+    貪婪選高頻當根會失敗（練習 14.5-3 的精神），這正是需要 DP 而不能貪婪的原因——下一章開場的伏筆。</p>
+  </div>
 
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P04 · 區間 DP 的順序</div>
@@ -845,7 +1168,7 @@ BCBA</pre></div>
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch5.json · 12 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch5.json · 17 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -874,7 +1197,12 @@ const FLASHCARDS = [
   {"front":"擬多項式時間（Pseudo-polynomial）","back":"執行時間對輸入的「數值大小」是多項式，但對「輸入位元長度」是指數。0/1 背包的 Θ(nW) 是典型；與 NP-completeness 的弱 NP-hard 概念相關。"},
   {"front":"區間 DP（Interval DP）","back":"狀態是連續區間 [i, j]，轉移枚舉分割點；填表按區間長度由小到大。matrix chain（Θ(n³)）與 optimal BST 都是此型。"},
   {"front":"矩陣鏈乘法（Matrix-Chain Multiplication）","back":"m[i][j] = min over k of m[i][k] + m[k+1][j] + p₍ᵢ₋₁₎pₖpⱼ：括號化順序使乘法次數最少。Θ(n³) 區間 DP。"},
-  {"front":"回溯重建（Solution Reconstruction）","back":"DP 表存的是最佳「值」；重建解要嘛額外存決策表（s、b 表），要嘛從終點反推「這格是哪個選擇轉移來的」。"}
+  {"front":"回溯重建（Solution Reconstruction）","back":"DP 表存的是最佳「值」；重建解要嘛額外存決策表（s、b 表），要嘛從終點反推「這格是哪個選擇轉移來的」。"},
+  {"front":"剪貼論證（Cut-and-Paste）","back":"證最佳子結構的標準四步：假設子解非最佳→剪下→貼上更好的→總解變好，矛盾。隱藏前提在「貼上」：子問題彼此獨立、替換後仍合法。"},
+  {"front":"子問題圖（Subproblem Graph）","back":"子問題當頂點、轉移依賴畫邊。DP 成本 = 頂點數×平均出邊數；bottom-up 填表順序 = 反向拓撲序。判斷複雜度的視覺工具。"},
+  {"front":"MEMOIZED-CUT-ROD（top-down）","back":"保留遞迴原形＋查表：r[n] 算過直接回，否則算完存表。每個子問題恰實算一次，Θ(n²) 與 bottom-up 同帳；只算真正用到的格子。"},
+  {"front":"Catalan 數與括號化","back":"n 個矩陣的括號化方式 P(n) = C(n−1) = Ω(4ⁿ/n^1.5)——暴力枚舉指數爆炸，這是 matrix chain 需要 DP 的理由。"},
+  {"front":"OBST 的 w(i,j)","back":"w(i,j) = Σp + Σq：把子樹掛到某根下，整棵子樹每個節點深度 +1，期望成本恰增加 w(i,j)。遞迴式 e[i][j] = min(e[i][r−1]+e[r+1][j]) + w(i,j)。"}
 ];
 
 /* ---------- P01 rod cutting 計數 ---------- */
@@ -935,6 +1263,52 @@ function lcsApply(f) {
 const lcsPlayer = new Player({frames: lcsFrames(), apply: lcsApply, delayInput: null});
 lcsPlayer.delayInput = $('lcsDelay');
 lcsPlayer.reset();
+
+/* ---------- P01b matrix chain 對角線填表動畫 ---------- */
+function mcFrames() {
+  const p = [30, 35, 15, 5, 10, 20, 25];
+  const n = 6;
+  const m = Array.from({length: n + 1}, () => new Array(n + 1).fill(null));
+  const s = Array.from({length: n + 1}, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= n; i++) m[i][i] = 0;
+  const frames = [{m: m.map(r => [...r]), cur: null,
+    msg: '對角線 m[i][i] = 0（單一矩陣不用乘）。按「單步」沿對角線由短到長填表。'}];
+  for (let len = 2; len <= n; len++)
+    for (let i = 1; i + len - 1 <= n; i++) {
+      const j = i + len - 1;
+      let best = Infinity, bk = i;
+      const cands = [];
+      for (let k = i; k < j; k++) {
+        const q = m[i][k] + m[k + 1][j] + p[i - 1] * p[k] * p[j];
+        cands.push('k=' + k + ':' + q);
+        if (q < best) { best = q; bk = k; }
+      }
+      m[i][j] = best; s[i][j] = bk;
+      frames.push({m: m.map(r => [...r]), cur: [i, j],
+        msg: 'm[' + i + '][' + j + '] = min(' + cands.join(', ') + ') = ' + best + '（切點 k=' + bk + '）。'});
+    }
+  frames.push({m: m.map(r => [...r]), cur: null,
+    msg: '完成：m[1][6] = ' + m[1][6] + '，回溯 s 表得 ((A1(A2A3))((A4A5)A6))。'});
+  return frames;
+}
+function mcApply(f) {
+  let html = '<tr><th>m</th>' + [1,2,3,4,5,6].map(j => '<th>j=' + j + '</th>').join('') + '</tr>';
+  for (let i = 1; i <= 6; i++) {
+    html += '<tr><th>i=' + i + '</th>';
+    for (let j = 1; j <= 6; j++) {
+      const isCur = f.cur && f.cur[0] === i && f.cur[1] === j;
+      const v = f.m[i][j];
+      const cls = isCur ? 'highlight' : (v === null ? '' : (v === 0 ? 'zero' : 'nonzero'));
+      html += '<td class="' + cls + '">' + (j < i ? '' : (v === null ? '·' : v)) + '</td>';
+    }
+    html += '</tr>';
+  }
+  $('mcTable').innerHTML = html;
+  setStatus('mcStatus', f.msg);
+}
+const mcPlayer = new Player({frames: mcFrames(), apply: mcApply, delayInput: null});
+mcPlayer.delayInput = $('mcDelay');
+mcPlayer.reset();
 </script>
 <script>
 /* ===== code tabs（pseudocode / C++ / Python 切換）===== */
