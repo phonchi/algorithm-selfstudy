@@ -573,6 +573,32 @@ iter 3 [0, 0, 0, 0, 1, 1, 1, 1] （不再變動，收斂）</pre></div>
     </div>
   </div>
 
+  <div class="thm-box proof">
+    <div class="thm-label">收斂性證明：兩步都不讓目標變大</div>
+    <div style="font-size:.87rem;line-height:1.75;">
+    目標函數 φ = Σ<sub>i</sub> ‖xᵢ − c<sub>assign(i)</sub>‖²（群內平方和）。<br>
+    <strong>指派步不增 φ</strong>：每點改投「更近的中心」，它的貢獻 ‖xᵢ − c‖² 只會變小或不變。<br>
+    <strong>更新步不增 φ</strong>：固定分群後，最小化 Σ‖xᵢ − c‖² 的 c 恰是<strong>平均值</strong>
+    （對 c 微分歸零：Σ2(c − xᵢ) = 0 ⟹ c = mean）——把中心移到平均只會更好。<br>
+    φ 單調不增、有下界 0、可能的指派只有有限種（kⁿ）⟹ <strong>有限步內收斂</strong>。∎<br>
+    但收斂點只是<strong>局部</strong>最佳：動畫的爛初始最後仍分對，是因為這組資料太好分——
+    構造兩群靠太近的資料，爛初始就會停在爛答案。</div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);"><strong>k-means++ 初始化</strong>：第一個中心均勻隨機，
+  之後每個中心以「與最近既有中心的距離平方」為權重抽樣——天生傾向彼此遠離的初始。
+  理論保證 E[φ] ≤ 8(ln k + 2)·φ*（期望 O(lg k) 近似），實務幾乎是標配。</p>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P00b · 為何是平均值</div>
+    <p>更新步把中心移到群平均。「平均值最小化平方和」這件事的證明是？</p>
+    <div class="quiz-options" id="q05Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。f(c) = Σ‖xᵢ − c‖² 是凸二次函數，∇f = Σ2(c − xᵢ) = 0 解出 c = (Σxᵢ)/m。一階條件＋凸性 = 全域最小。若改用 L1 距離（Σ|xᵢ−c|），最小化者變成中位數——那是 k-medians，對離群值更穩健。" onclick="quizCheck('q05', this)"><span class="opt-letter">(A)</span> 對 c 微分歸零：Σ2(c − xᵢ) = 0 ⟹ c = 平均</div>
+      <div class="quiz-opt" data-correct="false" data-fb="平均值不是定義而是「平方和的最優解」這個定理；換成 L1 距離最優解就變中位數了。" onclick="quizCheck('q05', this)"><span class="opt-letter">(B)</span> 這是 centroid 的定義，不用證</div>
+      <div class="quiz-opt" data-correct="false" data-fb="與大數法則無關——這是確定性的最佳化敘述，一階條件三行了事。" onclick="quizCheck('q05', this)"><span class="opt-letter">(C)</span> 大數法則</div>
+    </div>
+    <div class="quiz-feedback" id="q05Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P00 · 收斂到哪</div>
     <p>k-means（Lloyd）迭代保證的是？</p>
@@ -661,6 +687,60 @@ iter 3 [0, 0, 0, 0, 1, 1, 1, 1] （不再變動，收斂）</pre></div>
   </div>
   <p style="font-size:.9rem;color:var(--muted);">關鍵詞是「線上（online）」：資料一筆筆到、當場決策不能反悔——與前面「拿到整個輸入再算」的離線世界完全不同的賽制。</p>
 
+  <div class="viz-layout">
+    <div class="viz-panel">
+      <div id="wmBars" style="display:flex;gap:14px;align-items:flex-end;height:120px;justify-content:center;"></div>
+      <div class="stats-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="stat-tile"><div class="stat-label">我的錯誤</div><div class="stat-value" id="wmMine">0</div></div>
+        <div class="stat-tile"><div class="stat-label">最佳專家錯誤</div><div class="stat-value" id="wmBest">0</div></div>
+      </div>
+      <div class="status-banner" id="wmStatus"><span class="status-icon">▸</span><span class="status-text">三位專家權重全為 1。按「單步」過一天：加權多數決 → 錯的專家砍半。</span></div>
+      <div class="controls-bar">
+        <button class="btn btn-play" onclick="wmPlayer.play()">▶ 播放</button>
+        <button class="btn btn-step" onclick="wmPlayer.step()">⏭ 單步</button>
+        <button class="btn btn-reset" onclick="wmPlayer.reset()">↺ 重來</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="thm-box proof" style="margin:0;">
+        <div class="thm-label">錯誤上界的完整推導（位能夾擠）</div>
+        <div style="font-size:.84rem;line-height:1.7;">
+        令 W<sub>t</sub> = 全體權重和（W₀ = N）。<br>
+        <strong>上壓</strong>：演算法每錯一次，至少一半的權重站錯邊、被砍半 ⟹ W 掉到 ≤ 3/4 倍。
+        錯 M 次後 W<sub>T</sub> ≤ N·(3/4)<sup>M</sup>。<br>
+        <strong>下撐</strong>：最佳專家錯 m* 次，權重 (1/2)<sup>m*</sup>，而 W<sub>T</sub> ≥ 它。<br>
+        夾擠：(1/2)<sup>m*</sup> ≤ N·(3/4)<sup>M</sup>，取 lg 整理得
+        <strong>M ≤ (m* + lg N)/lg(4/3) ≈ 2.41(m* + lg N)</strong>。∎<br>
+        把「乘 1/2」改成「乘 (1−ε)」再對 ε 最佳化，可壓到 M ≤ 2(1+ε)m* + O(ln N / ε)——
+        multiplicative weights 框架的原型。</div>
+      </div>
+    </div>
+  </div>
+  <div class="deck-extra">
+    <div class="dx-label">實跑：12 天完整 trace（src/modern/weighted_majority.py）</div>
+    <div class="expected-out" style="margin-top:0;"><span class="eo-tag">執行輸出（節錄）</span><pre>day  預測(加權)  結果  權重(E1,E2,E3)
+  1      0       1    (1, 0.5, 0.5)
+  2      1       1    (1, 0.5, 0.25)
+  4      0       1    (0.5, 0.25, 0.0625)
+  6      1       0    (0.25, 0.25, 0.03125)
+ 12      1       1    (0.125, 0.0625, 0.0004883)
+我的錯誤 = 6 ；各專家錯誤 = {'E1': 3, 'E2': 4, 'E3': 11}
+上界 2.41·m* + 2.41·lg N = 11.05（m* = 3, N = 3）</pre></div>
+    <p class="dx-note">實測 6 ≤ 11.05 ✓。注意前幾天演算法被爛專家 E3 拖累（day 1 就聽錯邊）——
+    但 E3 的權重指數墜落（12 天後只剩 0.0005），影響力自動消失。「錯了砍半」就是這麼絕情而有效。</p>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P02b · lg N 從哪來</div>
+    <p>上界 2.41(m* + lg N) 中的 lg N 項，直覺上是什麼代價？</p>
+    <div class="quiz-options" id="q06Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。W₀ = N：一開始爛專家跟好專家權重一樣，演算法要付「找出誰是好專家」的學費——每次自己犯錯，總權重掉 3/4 倍，把 N 的初始膨脹「洗」掉需要 O(lg N) 次錯。專家越多、識人成本越高，但只有對數級——這就是它能吃海量專家的原因。" onclick="quizCheck('q06', this)"><span class="opt-letter">(A)</span> 從 N 個候選中「認出」好專家的學費</div>
+      <div class="quiz-opt" data-correct="false" data-fb="與天數 T 無關——上界只含 m* 與 N；就算 T 無限大，只要最佳專家錯得少、你就錯得少。" onclick="quizCheck('q06', this)"><span class="opt-letter">(B)</span> 天數 T 的對數</div>
+      <div class="quiz-opt" data-correct="false" data-fb="砍半的 1/2 貢獻的是常數 2.41 = 1/lg(4/3) 那部分；lg N 來自初始權重和 W₀ = N。" onclick="quizCheck('q06', this)"><span class="opt-letter">(C)</span> 權重砍半造成的損失</div>
+    </div>
+    <div class="quiz-feedback" id="q06Feedback"></div>
+  </div>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P02 · 保證的形狀</div>
     <p>weighted-majority 的錯誤上界厲害在哪？</p>
@@ -697,6 +777,47 @@ iter 3 [0, 0, 0, 0, 1, 1, 1, 1] （不再變動，收斂）</pre></div>
     ② <strong>貪婪</strong>（最近鄰）——快但無保證（Ch15 的極限）；
     ③ <strong>Held–Karp DP</strong> O(2ⁿn²)——指數但遠勝窮舉（Ch14 位元 DP 實戰）；
     ④ <strong>ACO</strong>——大 n 的實務解（本節）。做完你就親手量過「理論 vs 實務」的每一格。
+  </div>
+
+  <h3>模擬退火的數學心臟：exp(−Δ/T)</h3>
+  <div class="viz-layout">
+    <div>
+      <p>hill climbing 卡在局部最佳，是因為它<strong>永不接受變差的移動</strong>。SA 的修正：
+      變好必收；變差 Δ &gt; 0 的移動以機率 <strong>exp(−Δ/T)</strong> 接受——
+      溫度 T 高時「什麼都肯試」（探索）、T 低時逼近 hill climbing（利用）。
+      配合<strong>降溫排程</strong>（如幾何式 T ← 0.9995·T）從探索平滑過渡到收斂。
+      靈感來自金屬退火：急冷得到脆的次佳結構、慢冷得到穩定晶格。</p>
+      <div style="overflow-x:auto;">
+      <table class="cmp-table" style="width:100%;font-size:.84rem;">
+        <thead><tr><th>溫度</th><th>Δ = 0.5 的接受率</th><th>Δ = 2 的接受率</th><th>行為</th></tr></thead>
+        <tbody>
+          <tr><td>T = 5</td><td class="best">90%</td><td>67%</td><td>幾乎隨機走（探索）</td></tr>
+          <tr><td>T = 1</td><td>61%</td><td>14%</td><td>小虧肯吃、大虧謹慎</td></tr>
+          <tr><td>T = 0.1</td><td>0.7%</td><td class="worst">≈ 0</td><td>幾乎純 hill climbing（利用）</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="side-panel">
+      <div class="deck-extra" style="margin:0;">
+        <div class="dx-label">實跑：SA 解同一組 8 城 TSP（src/modern/simulated_annealing.cpp，seed=7）</div>
+        <div class="expected-out" style="margin-top:0;"><span class="eo-tag">執行輸出（2-opt 鄰居＋幾何降溫 0.9995）</span><pre>SA 最佳成本 = 14.7148（暴力最佳 14.7148）
+接受過 1372 次「變差的移動」——高溫期的探索本錢</pre></div>
+        <p class="dx-note">與 P04 的 ACO 同一組城市：SA 也命中全域最佳。那 1372 次「明知變差還接受」
+        正是它翻出局部最佳的手段——把這個數字改成 0（純 hill climbing）常會卡在 15.2x 的次佳環。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <div class="quiz-label">QUIZ P03b · 降溫的兩個極端</div>
+    <p>SA 的溫度排程若「一開始就 T ≈ 0」或「永遠 T = ∞」，各退化成什麼？</p>
+    <div class="quiz-options" id="q07Options">
+      <div class="quiz-opt" data-correct="true" data-fb="正確。T→0：exp(−Δ/T)→0，變差全拒 = hill climbing（會卡局部最佳）；T→∞：exp(−Δ/T)→1，什麼都收 = 隨機漫步（不收斂）。SA 的價值全在「從 ∞ 端平滑走向 0 端」的過渡——降溫太快 = 急冷變 hill climbing，太慢 = 浪費時間。" onclick="quizCheck('q07', this)"><span class="opt-letter">(A)</span> T≈0 是 hill climbing；T=∞ 是隨機漫步</div>
+      <div class="quiz-opt" data-correct="false" data-fb="反了——低溫才拒絕變差（利用）、高溫才亂走（探索）。" onclick="quizCheck('q07', this)"><span class="opt-letter">(B)</span> T≈0 是隨機漫步；T=∞ 是 hill climbing</div>
+      <div class="quiz-opt" data-correct="false" data-fb="兩個極端都跑得動（不會當機）——只是搜尋行為分別退化成兩種失效模式。" onclick="quizCheck('q07', this)"><span class="opt-letter">(C)</span> 兩者都會除以零而失敗</div>
+    </div>
+    <div class="quiz-feedback" id="q07Feedback"></div>
   </div>
 
   <div class="quiz-box">
@@ -766,6 +887,22 @@ tour: abchfged cost 14.7148</pre></div>
     </div>
   </div>
 
+  <div style="overflow-x:auto;">
+  <table class="cmp-table" style="width:100%;font-size:.85rem;">
+    <thead><tr><th>參數</th><th>角色</th><th>調大了會怎樣</th><th>本頁取值</th></tr></thead>
+    <tbody>
+      <tr><td>α（費洛蒙指數）</td><td>從眾程度</td><td class="worst">早熟收斂（全跟老路）</td><td>1</td></tr>
+      <tr><td>β（能見度指數）</td><td>貪婪程度（1/d 的權重）</td><td>退化成最近鄰貪婪</td><td>2</td></tr>
+      <tr><td>ρ（蒸發率）</td><td>遺忘速度</td><td class="best">探索多、收斂慢</td><td>0.5</td></tr>
+      <tr><td>Q（沉積常數）</td><td>報酬尺度</td><td>與 τ 初值的相對比例才重要</td><td>10</td></tr>
+      <tr><td>螞蟻數 m</td><td>每輪取樣寬度</td><td>品質穩但每輪變貴</td><td>8</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted);">作業實戰提示：n 大時先用最近鄰建一條「不錯的」初始費洛蒙、
+  每輪只讓最佳螞蟻沉積（elitist）、ρ 隨輪數調小——都是文獻裡的標準加速件。
+  參數靈敏度本身就是 metaheuristic 與「有保證演算法」的文化差異：前者要調參、後者開箱即用。</p>
+
   <div class="quiz-box">
     <div class="quiz-label">QUIZ P04 · 蒸發的必要性</div>
     <p>把蒸發拿掉（ρ = 0，費洛蒙只增不減）會發生什麼？</p>
@@ -831,7 +968,7 @@ tour: abchfged cost 14.7148</pre></div>
 
 <section id="cards">
   <div class="section-number">CARDS · 關鍵詞彙卡</div>
-  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch10.json · 13 張</span></h2>
+  <h2>關鍵詞彙卡：點卡片翻面 <span class="sec-badge">ch10.json · 18 張</span></h2>
   <p>先看正面術語，心中默想定義再翻面對答案；洗牌後再過一輪，直到每張都能不假思索說出來。</p>
   <div class="fc-controls">
     <button id="fcShuffle">🔀 洗牌</button>
@@ -861,7 +998,12 @@ const FLASHCARDS = [
   {"front":"ACO（蟻群最佳化）","back":"螞蟻按 τ^α·(1/d)^β 輪盤選下一城；每輪費洛蒙先蒸發 ×(1−ρ) 再由各導覽沉積 Q/成本。短路留味濃→正回饋強化好路。"},
   {"front":"費洛蒙蒸發（Evaporation）","back":"τ ← (1−ρ)τ：遺忘機制。沒有它，早期次佳路徑被正回饋鎖死（早熟收斂）；有它，搜尋保有翻盤與探索空間。"},
   {"front":"探索 vs 利用（Exploration vs Exploitation）","back":"利用＝加碼目前最好的方向；探索＝嘗試未知方向。所有 metaheuristic 的核心平衡：全利用→早熟收斂，全探索→隨機亂走。"},
-  {"front":"TSP 求解工具箱（依 n 選）","back":"n≲12 窮舉 O(n!)；n≲25 Held–Karp DP O(2ⁿn²)；更大→metric 2-近似兜底＋ACO/2-opt 等 metaheuristic 往上衝。課程四連作業的主線。"}
+  {"front":"TSP 求解工具箱（依 n 選）","back":"n≲12 窮舉 O(n!)；n≲25 Held–Karp DP O(2ⁿn²)；更大→metric 2-近似兜底＋ACO/2-opt 等 metaheuristic 往上衝。課程四連作業的主線。"},
+  {"front":"k-means 收斂性證明","back":"指派步（投更近中心）與更新步（中心=平均，由一階條件）都不增 φ=群內平方和；φ 有下界、指派有限種 → 有限步收斂（到局部最佳）。"},
+  {"front":"k-means++","back":"新中心以「與最近既有中心的距離平方」加權抽樣——初始天生分散。保證 E[φ] ≤ 8(ln k+2)·φ*，實務標配。"},
+  {"front":"weighted-majority 上界推導","back":"位能 W_t 夾擠：我錯一次 W ≤ ×3/4（上壓）；W ≥ (1/2)^m*（下撐，最佳專家）→ M ≤ (m*+lg N)/lg(4/3) ≈ 2.41(m*+lg N)。"},
+  {"front":"SA 接受機率 exp(−Δ/T)","back":"變好必收、變差以 e^{-Δ/T} 收：T 高近隨機漫步（探索）、T 低近 hill climbing（利用）。降溫排程 = 兩端間的平滑過渡；急冷會卡局部最佳。"},
+  {"front":"2-opt","back":"TSP 的經典鄰居動作：反轉導覽的一段 = 拆兩條邊重接（消除交叉）。SA/局部搜尋的標準 move；配合退火跳出局部最佳。"}
 ];
 
 /* ---------- P00 k-means 動畫 ---------- */
@@ -994,6 +1136,54 @@ function acoApply(f) {
 }
 const acoPlayer = new Player({frames: acoFrames(), apply: acoApply, delayInput: null});
 acoPlayer.reset();
+
+/* ---------- P02 weighted-majority 動畫 ---------- */
+const WM_PRED = {E1: [1,1,1,0,1,1,1,1,0,1,1,1], E2: [0,1,0,1,1,0,1,0,1,1,0,1], E3: [0,0,0,0,0,0,0,0,0,0,0,0]};
+const WM_OUT = [1,1,1,1,1,0,1,1,1,1,1,1];
+function wmFrames() {
+  const w = {E1: 1, E2: 1, E3: 1};
+  let mine = 0;
+  const em = {E1: 0, E2: 0, E3: 0};
+  const frames = [{w: {...w}, mine, best: 0, msg: '三位專家權重全為 1。按「單步」過第 1 天。'}];
+  for (let day = 0; day < 12; day++) {
+    let v1 = 0, v0 = 0;
+    for (const e in WM_PRED) (WM_PRED[e][day] === 1 ? v1 += w[e] : v0 += w[e]);
+    const guess = v1 >= v0 ? 1 : 0;
+    const wrong = guess !== WM_OUT[day];
+    if (wrong) mine++;
+    const punished = [];
+    for (const e in WM_PRED)
+      if (WM_PRED[e][day] !== WM_OUT[day]) { w[e] /= 2; em[e]++; punished.push(e); }
+    frames.push({w: {...w}, mine, best: Math.min(em.E1, em.E2, em.E3),
+      msg: 'Day ' + (day + 1) + '：加權票 1 得 ' + v1.toFixed(3) + '、0 得 ' + v0.toFixed(3) +
+           ' → 猜 ' + guess + '，結果 ' + WM_OUT[day] + (wrong ? '（我錯了）' : '（答對）') +
+           '；砍半：' + (punished.join('、') || '無') + '。'});
+  }
+  frames.push({w: {...w}, mine, best: Math.min(em.E1, em.E2, em.E3),
+    msg: '12 天結束：我錯 ' + mine + ' 次 ≤ 2.41(m* + lg 3) = 11.05 ✓。爛專家 E3 的權重已趨近 0。'});
+  return frames;
+}
+function wmApply(f) {
+  const el = $('wmBars'); el.innerHTML = '';
+  ['E1', 'E2', 'E3'].forEach(e => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;';
+    const bar = document.createElement('div');
+    const hgt = Math.max(2, f.w[e] * 90);
+    bar.style.cssText = 'width:44px;height:' + hgt + 'px;border-radius:4px 4px 0 0;background:' +
+      (e === 'E1' ? '#1a6b4a' : e === 'E2' ? '#2c3e7a' : '#c0392b') + ';';
+    const lab = document.createElement('div');
+    lab.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted);";
+    lab.textContent = e + ' ' + (f.w[e] >= 0.01 ? f.w[e].toFixed(2) : f.w[e].toExponential(0));
+    wrap.appendChild(bar); wrap.appendChild(lab);
+    el.appendChild(wrap);
+  });
+  $('wmMine').textContent = f.mine;
+  $('wmBest').textContent = f.best;
+  setStatus('wmStatus', f.msg);
+}
+const wmPlayer = new Player({frames: wmFrames(), apply: wmApply, delayInput: null});
+wmPlayer.reset();
 </script>
 <script>
 /* ===== code tabs（pseudocode / C++ / Python 切換）===== */
